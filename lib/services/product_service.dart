@@ -18,7 +18,6 @@ class ProductService {
     required String status_product, // Enum (available, out_of_stock)
   }) async {
     try {
-
         // Take seller ID from logged in user
         final String seller_id = supabase.auth.currentUser!.id;
 
@@ -60,9 +59,9 @@ class StorageService {
 
   Future<String?> uploadProductImage(File imageFile) async {
     try {
-      final userId = supabase.auth.currentUser!.id;
+      final user_id = supabase.auth.currentUser!.id;
       // Membuat path unik: user_id/timestamp.jpg
-      final path = '$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final path = '$user_id/${DateTime.now().millisecondsSinceEpoch}.jpg';
       
       // Mengunggah ke bucket 'product-image'
       await supabase.storage.from('product-image').upload(path, imageFile);
