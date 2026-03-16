@@ -4,6 +4,40 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class ProductService {
   final supabase = Supabase.instance.client;
 
+  // Get all products
+  Future<List<ProductModel>> getProducts() async {
+    try {
+      final response = await supabase.from('products').select();
+      return response.map((json) => ProductModel.fromJson(json)).toList();
+    } catch (e) {
+      print('Error getting products: $e');
+      return [];
+    }
+  }
+
+  // Get product by ID
+  Future<ProductModel?> getProductById(int product_id) async {
+    try {
+      final response = await supabase.from('products').select().eq('product_id', product_id).single();
+      return ProductModel.fromJson(response);
+    } catch (e) {
+      print('Error getting product by ID: $e');
+      return null;
+    }
+  }
+
+  // Get product by category
+  Future<List<ProductModel>> getProductsByCategory(int category_id) async {
+    try {
+      final response = await supabase.from('products').select().eq('category_id', category_id);
+      return response.map((json) => ProductModel.fromJson(json)).toList();
+    } catch (e) {
+      print('Error getting products by category: $e');
+      return [];
+    }
+  }
+
+  // Add product
   Future<void> addProduct({
     required int category_id
     required String product_name,
@@ -52,6 +86,71 @@ class ProductService {
       return false;
     }
   }
+
+  // Update product
+  Future<void> updateProduct({
+    required int product_id,
+    required int category_id,
+    required String product_name,
+    required String description,
+    required double cost_price,
+    required double selling_price,
+    required double ai_recommendation_price,
+    required int stock,
+    required String unit, // kg, pcs, liter, dll
+    required File image_file,
+    required DateTime harvest_date,
+    required String status_product, // Enum (available, out_of_stock)
+  }) async {
+    try {
+      // Take seller ID from logged in user
+      final String seller_id = supabase.auth.currentUser!.id;
+
+      // Upload image to storage
+      final String file_name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final String path = '$seller_id/$file_name';
+
+      await supabase.storage.from('product-image').upload(path, image_file);
+
+      // Get public URL
+      final String image_url = supabase.storage.from('product-image').getPublicUrl(path);
+
+      // Update product data
+      await supabase.from('products').update({
+        'seller_id' : seller_id,
+        'category_id' : category_id,
+        'product_name' : product_name,
+        'description' : description,
+        'cost_price' : cost_price,
+        'selling_price' : selling_price,
+        'ai_recommendation_price' : ai_recommendation_price,
+        'stock' : stock,
+        'unit' : unit,
+        'image_url' : image_url,
+        'harvest_date' : harvest_date,
+        'status_product' : status_product,
+      }).eq('product_id', product_id);
+      print('✅ Produk berhasil diupdate!');
+      return true;
+    } catch (e) {
+      print('Error updating product: $e');
+      return false;
+    }
+  }
+
+  // Delete product
+  Future<void> deleteProduct(int product_id) async {
+    try {
+      await supabase.from('products').delete().eq('product_id', product_id);
+      print('✅ Produk berhasil dihapus!');
+      return true;
+    } catch (e) {
+      print('Error deleting product: $e');
+      return false;
+    }
+  }
+
+  
 }
 
 class StorageService {
