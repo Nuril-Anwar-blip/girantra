@@ -19,47 +19,34 @@ class AuthService {
 
   // Sign Up with Email, Password, and additional fields
   Future<User?> signUpWithEmailPassword({
-    required String full_name,
-    required String email,
-    required String password,
-    required String phone_number,
-    required String address,
-    required String role,
-    required String account_status,
-  }) async {
-    try {
-      final response = await supabase.auth.signUp(
-        email: email,
-        password: password,
-        data: {
-          'full_name': full_name,
-          'phone_number': phone_number,
-          'address': address,
-          'role': role,
-          'account_status': account_status,
-        },
-      );
+  required String full_name,
+  required String email,
+  required String password,
+  required String phone_number,
+  required String address,
+  required String role,
+  required String account_status,
+}) async {
+  try {
+    final response = await supabase.auth.signUp(
+      email: email,
+      password: password,
+      
+      data: {
+        'full_name': full_name,
+        'phone_number': phone_number,
+        'address': address,
+        'role': role,
+        'account_status': account_status,
+      },
+    );
 
-      // Setelah berhasil terdaftar di auth.users, kita masukkan profilnya ke tabel public.users
-      if (response.user != null) {
-        await supabase.from('users').insert({
-          'id': response.user!.id,           // Menggunakan ID (UUID) yang sama dengan auth.users
-          'email': email,
-          'full_name': full_name,
-          'phone_number': phone_number,
-          'address': address,
-          'role': role,
-          'account_status': account_status,
-          // 'created_at': DateTime.now().toIso8601String(), // Optional: Supabase biasanya otomatis mengisi ini jika ada default now()
-        });
-      }
-
-      return response.user;
-    } catch (e) {
-      print('Error signing up: $e');
-      return null;
-    }
+    return response.user;
+  } catch (e) {
+    print('Error signing up: $e');
+    return null;
   }
+}
 
   // Sign Out
   Future<void> signOut() async {
