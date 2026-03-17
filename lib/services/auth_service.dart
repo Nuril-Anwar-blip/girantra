@@ -4,7 +4,7 @@ class AuthService {
   static final supabase = Supabase.instance.client;
 
   // Sign In with Email and Password
-  Future<User?> signInWithEmailPassword(String email, String password) async {
+  Future<User?> signIn(String email, String password) async {
     try {
       final response = await supabase.auth.signInWithPassword(
         email: email,
@@ -18,33 +18,32 @@ class AuthService {
   }
 
   // Sign Up with Email, Password, and additional fields
-  Future<User?> signUpWithEmailPassword({
-  required String full_name,
-  required String email,
-  required String password,
-  required String phone_number,
-  required String address,
-  required String role,
-  required String account_status,
-}) async {
-  try {
-    final response = await supabase.auth.signUp(
-      email: email,
-      password: password,
-      
-      data: {
-        'full_name': full_name,
-        'phone_number': phone_number,
-        'address': address,
-        'role': role,
-        'account_status': account_status,
+  Future<User?> signUp({
+    required String full_name,
+    required String email,
+    required String password,
+    required String phone_number,
+    required String address,
+    required String role,
+    required String account_status,
+  }) async {  
+    try {
+      final response = await supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'full_name': full_name,
+          'phone_number': phone_number,
+          'address': address,
+          'role': role,
+          'account_status': account_status,
       },
     );
-
-    return response.user;
-  } catch (e) {
-    print('Error signing up: $e');
-    return null;
+      return response.user;
+    } catch (e) {
+      print('Error signing up: $e');
+      return null;
+    }
   }
 }
 
