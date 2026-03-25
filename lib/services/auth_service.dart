@@ -26,26 +26,25 @@ class AuthService {
     required String address,
     required String role,
     required String account_status,
-  }) async {  
-    try {
-      final response = await supabase.auth.signUp(
-        email: email,
-        password: password,
-        data: {
-          'full_name': full_name,
-          'phone_number': phone_number,
-          'address': address,
-          'role': role,
-          'account_status': account_status,
-      },
-    );
-      return response.user;
-    } catch (e) {
-      print('Error signing up: $e');
-      return null;
-    }
+    }) async {  
+      try {
+        final response = await supabase.auth.signUp(
+          email: email,
+          password: password,
+          data: {
+            'full_name': full_name,
+            'phone_number': phone_number,
+            'address': address,
+            'role': role,
+            'account_status': account_status,
+        },
+      );
+        return response.user;
+      } catch (e) {
+        print('Error signing up: $e');
+        return null;
+      }
   }
-}
 
   // Sign Out
   Future<void> signOut() async {

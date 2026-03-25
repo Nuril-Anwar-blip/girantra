@@ -50,41 +50,41 @@ class ProductService {
     required File image_file,
     required DateTime harvest_date,
     required String status_product, // Enum (available, out_of_stock)
-  }) async {
-    try {
-        // Take seller ID from logged in user
-        final String seller_id = supabase.auth.currentUser!.id;
+    }) async {
+      try {
+          // Take seller ID from logged in user
+          final String seller_id = supabase.auth.currentUser!.id;
 
-        // Upload image to storage
-        final String file_name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final String path = '$seller_id/$file_name';
+          // Upload image to storage
+          final String file_name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final String path = '$seller_id/$file_name';
 
-        await supabase.storage.from('product-image').upload(path, image_file);
+          await supabase.storage.from('product-image').upload(path, image_file);
 
-        // Get public URL
-        final String image_url = supabase.storage.from('product-image').getPublicUrl(path);
+          // Get public URL
+          final String image_url = supabase.storage.from('product-image').getPublicUrl(path);
 
-        // Insert product data
-      await supabase.from('products').insert({
-        'seller_id' : seller_id,
-        'category_id' : category_id,
-        'product_name' : product_name,
-        'description' : description,
-        'cost_price' : cost_price,
-        'selling_price' : selling_price,
-        'ai_recommendation_price' : ai_recommendation_price,
-        'stock' : stock,
-        'unit' : unit,
-        'image_url' : image_url,
-        'harvest_date' : harvest_date,
-        'status_product' : status_product,
-      });
-      print('✅ Produk berhasil ditambahkan!');
-      return true;
-    } catch (e) {
-      print('Error adding product: $e');
-      return false;
-    }
+          // Insert product data
+        await supabase.from('products').insert({
+          'seller_id' : seller_id,
+          'category_id' : category_id,
+          'product_name' : product_name,
+          'description' : description,
+          'cost_price' : cost_price,
+          'selling_price' : selling_price,
+          'ai_recommendation_price' : ai_recommendation_price,
+          'stock' : stock,
+          'unit' : unit,
+          'image_url' : image_url,
+          'harvest_date' : harvest_date,
+          'status_product' : status_product,
+        });
+        print('✅ Produk berhasil ditambahkan!');
+        return true;
+      } catch (e) {
+        print('Error adding product: $e');
+        return false;
+      }
   }
 
   // Update product
@@ -101,41 +101,41 @@ class ProductService {
     required File image_file,
     required DateTime harvest_date,
     required String status_product, // Enum (available, out_of_stock)
-  }) async {
-    try {
-      // Take seller ID from logged in user
-      final String seller_id = supabase.auth.currentUser!.id;
+    }) async {
+      try {
+        // Take seller ID from logged in user
+        final String seller_id = supabase.auth.currentUser!.id;
 
-      // Upload image to storage
-      final String file_name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final String path = '$seller_id/$file_name';
+        // Upload image to storage
+        final String file_name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final String path = '$seller_id/$file_name';
 
-      await supabase.storage.from('product-image').upload(path, image_file);
+        await supabase.storage.from('product-image').upload(path, image_file);
 
-      // Get public URL
-      final String image_url = supabase.storage.from('product-image').getPublicUrl(path);
+        // Get public URL
+        final String image_url = supabase.storage.from('product-image').getPublicUrl(path);
 
-      // Update product data
-      await supabase.from('products').update({
-        'seller_id' : seller_id,
-        'category_id' : category_id,
-        'product_name' : product_name,
-        'description' : description,
-        'cost_price' : cost_price,
-        'selling_price' : selling_price,
-        'ai_recommendation_price' : ai_recommendation_price,
-        'stock' : stock,
-        'unit' : unit,
-        'image_url' : image_url,
-        'harvest_date' : harvest_date,
-        'status_product' : status_product,
-      }).eq('product_id', product_id);
-      print('✅ Produk berhasil diupdate!');
-      return true;
-    } catch (e) {
-      print('Error updating product: $e');
-      return false;
-    }
+        // Update product data
+        await supabase.from('products').update({
+          'seller_id' : seller_id,
+          'category_id' : category_id,
+          'product_name' : product_name,
+          'description' : description,
+          'cost_price' : cost_price,
+          'selling_price' : selling_price,
+          'ai_recommendation_price' : ai_recommendation_price,
+          'stock' : stock,
+          'unit' : unit,
+          'image_url' : image_url,
+          'harvest_date' : harvest_date,
+          'status_product' : status_product,
+        }).eq('product_id', product_id);
+        print('✅ Produk berhasil diupdate!');
+        return true;
+      } catch (e) {
+        print('Error updating product: $e');
+        return false;
+      }
   }
 
   // Delete product
