@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../main.dart'; // To navigate to MyHomePage later if needed
+import 'package:girantra/screens/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,13 +12,10 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulate a delay before navigating to the next page
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const MyHomePage(title: 'Flutter Demo Home Page'),
-          ),
+          MaterialPageRoute(builder: (context) => const OnboardingScreen()),
         );
       }
     });
