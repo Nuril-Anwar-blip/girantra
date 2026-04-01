@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/product_model.dart';
 
 class ProductService {
   final supabase = Supabase.instance.client;
@@ -16,9 +17,9 @@ class ProductService {
   }
 
   // Get product by ID
-  Future<ProductModel?> getProductById(int product_id) async {
+  Future<ProductModel?> getProductById(int productId) async {
     try {
-      final response = await supabase.from('products').select().eq('product_id', product_id).single();
+      final response = await supabase.from('products').select().eq('product_id', productId).single();
       return ProductModel.fromJson(response);
     } catch (e) {
       print('Error getting product by ID: $e');
@@ -27,9 +28,9 @@ class ProductService {
   }
 
   // Get product by category
-  Future<List<ProductModel>> getProductsByCategory(int category_id) async {
+  Future<List<ProductModel>> getProductsByCategory(int categoryId) async {
     try {
-      final response = await supabase.from('products').select().eq('category_id', category_id);
+      final response = await supabase.from('products').select().eq('category_id', categoryId);
       return response.map((json) => ProductModel.fromJson(json)).toList();
     } catch (e) {
       print('Error getting products by category: $e');
@@ -38,8 +39,8 @@ class ProductService {
   }
 
   // Add product
-  Future<void> addProduct({
-    required int category_id
+  Future<bool> addProduct({
+    required int category_id,
     required String product_name,
     required String description,
     required double cost_price,
@@ -53,20 +54,20 @@ class ProductService {
     }) async {
       try {
           // Take seller ID from logged in user
-          final String seller_id = supabase.auth.currentUser!.id;
+          final String sellerId = supabase.auth.currentUser!.id;
 
           // Upload image to storage
-          final String file_name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-          final String path = '$seller_id/$file_name';
+          final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final String path = '$sellerId/$fileName';
 
           await supabase.storage.from('product-image').upload(path, image_file);
 
           // Get public URL
-          final String image_url = supabase.storage.from('product-image').getPublicUrl(path);
+          final String imageUrl = supabase.storage.from('product-image').getPublicUrl(path);
 
           // Insert product data
         await supabase.from('products').insert({
-          'seller_id' : seller_id,
+          'seller_id' : sellerId,
           'category_id' : category_id,
           'product_name' : product_name,
           'description' : description,
@@ -75,7 +76,7 @@ class ProductService {
           'ai_recommendation_price' : ai_recommendation_price,
           'stock' : stock,
           'unit' : unit,
-          'image_url' : image_url,
+          'image_url' : imageUrl,
           'harvest_date' : harvest_date,
           'status_product' : status_product,
         });
@@ -88,7 +89,7 @@ class ProductService {
   }
 
   // Update product
-  Future<void> updateProduct({
+  Future<bool> updateProduct({
     required int product_id,
     required int category_id,
     required String product_name,
@@ -104,20 +105,20 @@ class ProductService {
     }) async {
       try {
         // Take seller ID from logged in user
-        final String seller_id = supabase.auth.currentUser!.id;
+        final String sellerId = supabase.auth.currentUser!.id;
 
         // Upload image to storage
-        final String file_name = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final String path = '$seller_id/$file_name';
+        final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final String path = '$sellerId/$fileName';
 
         await supabase.storage.from('product-image').upload(path, image_file);
 
         // Get public URL
-        final String image_url = supabase.storage.from('product-image').getPublicUrl(path);
+        final String imageUrl = supabase.storage.from('product-image').getPublicUrl(path);
 
         // Update product data
         await supabase.from('products').update({
-          'seller_id' : seller_id,
+          'seller_id' : sellerId,
           'category_id' : category_id,
           'product_name' : product_name,
           'description' : description,
@@ -126,7 +127,7 @@ class ProductService {
           'ai_recommendation_price' : ai_recommendation_price,
           'stock' : stock,
           'unit' : unit,
-          'image_url' : image_url,
+          'image_url' : imageUrl,
           'harvest_date' : harvest_date,
           'status_product' : status_product,
         }).eq('product_id', product_id);
@@ -139,9 +140,9 @@ class ProductService {
   }
 
   // Delete product
-  Future<void> deleteProduct(int product_id) async {
+  Future<bool> deleteProduct(int productId) async {
     try {
-      await supabase.from('products').delete().eq('product_id', product_id);
+      await supabase.from('products').delete().eq('product_id', productId);
       print('✅ Produk berhasil dihapus!');
       return true;
     } catch (e) {
@@ -158,9 +159,9 @@ class StorageService {
 
   Future<String?> uploadProductImage(File imageFile) async {
     try {
-      final user_id = supabase.auth.currentUser!.id;
+      final userId = supabase.auth.currentUser!.id;
       // Membuat path unik: user_id/timestamp.jpg
-      final path = '$user_id/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final path = '$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
       
       // Mengunggah ke bucket 'product-image'
       await supabase.storage.from('product-image').upload(path, imageFile);

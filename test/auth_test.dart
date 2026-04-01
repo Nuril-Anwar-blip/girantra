@@ -23,7 +23,7 @@ void main() {
     final authService = AuthService();
 
     // 2. Jalankan method yang ingin dites
-    final user = await authService.signUpWithEmailPassword(
+    final user = await authService.signUp(
       full_name: "Budi Petani",
       email: "budi.test${DateTime.now().millisecondsSinceEpoch}@gmail.com", // Email unik tiap tes
       password: "password123",

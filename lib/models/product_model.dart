@@ -1,4 +1,3 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProductModel{
   final int? product_id;        // int8
