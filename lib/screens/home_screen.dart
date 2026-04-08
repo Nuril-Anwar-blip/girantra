@@ -26,11 +26,53 @@ class _HomeScreenState extends State<HomeScreen> {
   final _authService = AuthService();
 
   late Future<List<ProductModel>> _futureProducts;
+  String _userAddress = 'Memuat...';
 
   @override
   void initState() {
     super.initState();
     _futureProducts = _productService.getProducts();
+    _loadUserAddress();
+  }
+
+  Future<void> _loadUserAddress() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      try {
+        final data = await Supabase.instance.client
+            .from('users')
+            .select('address')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        if (data != null && data['address'] != null) {
+          if (mounted) {
+            setState(() {
+              _userAddress = data['address'];
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              _userAddress = 'Alamat tidak diatur';
+            });
+          }
+        }
+      } catch (e) {
+        print('Error fetching address: $e');
+        if (mounted) {
+          setState(() {
+            _userAddress = 'Gagal memuat alamat';
+          });
+        }
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _userAddress = 'Belum login';
+        });
+      }
+    }
   }
 
   List<ProductModel> _dummyProducts() {
@@ -66,14 +108,16 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
+          children: [
+            const Text(
               'Location',
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
             Text(
-              'Jl. Jendral Sudirman',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              _userAddress,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
