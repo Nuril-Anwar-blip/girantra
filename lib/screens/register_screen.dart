@@ -4,50 +4,74 @@ import '../services/auth_service.dart';
 import '../ui/app_colors.dart';
 import '../ui/app_text_styles.dart';
 import '../ui/app_widgets.dart';
-import 'register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
 
+  final _fullNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
   bool _isLoading = false;
 
-  Future<void> _onLogin() async {
+  Future<void> _onRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
-
-    final user = await _authService.signIn(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
-
-    setState(() {
-      _isLoading = false;
-    });
+    setState(() => _isLoading = true);
 
     if (!mounted) return;
 
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login gagal, periksa email/password.')),
+    try {
+      final user = await _authService.signUp(
+        full_name: _fullNameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+        phone_number: _phoneController.text.trim(),
+        address: _addressController.text.trim(),
+        role: 'customer',
+        account_status: 'active',
       );
+
+      if (!mounted) return;
+
+      if (user != null) {
+        Navigator.of(context).pop();
+      } else {
+        // Sering terjadi kalau Supabase butuh email verification:
+        // user bisa dibuat tapi session belum aktif.
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Registrasi berhasil. Silakan cek email untuk verifikasi.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registrasi gagal: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   void dispose() {
+    _fullNameController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -104,7 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ],
                               ),
                               const Text(
-                                'Login',
+                                'Register',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
@@ -113,7 +137,37 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _fullNameController,
+                            decoration: authFieldDecoration(
+                              hint: 'Full Name',
+                              icon: Icons.person_outline,
+                            ),
+                            validator: (v) =>
+                                v == null || v.isEmpty ? 'Wajib diisi' : null,
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _phoneController,
+                            decoration: authFieldDecoration(
+                              hint: 'Phone Number',
+                              icon: Icons.call_outlined,
+                            ),
+                            validator: (v) =>
+                                v == null || v.isEmpty ? 'Wajib diisi' : null,
+                          ),
+                          const SizedBox(height: 10),
+                          TextFormField(
+                            controller: _addressController,
+                            decoration: authFieldDecoration(
+                              hint: 'Address',
+                              icon: Icons.location_on_outlined,
+                            ),
+                            validator: (v) =>
+                                v == null || v.isEmpty ? 'Wajib diisi' : null,
+                          ),
+                          const SizedBox(height: 10),
                           TextFormField(
                             controller: _emailController,
                             decoration: authFieldDecoration(
@@ -124,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             validator: (v) =>
                                 v == null || v.isEmpty ? 'Wajib diisi' : null,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           TextFormField(
                             controller: _passwordController,
                             decoration: authFieldDecoration(
@@ -136,82 +190,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ? null
                                 : 'Minimal 6 karakter',
                           ),
-                          const SizedBox(height: 6),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppColors.primaryDark,
-                                padding: EdgeInsets.zero,
-                              ),
-                              onPressed: () {},
-                              child: const Text(
-                                'Forgot Password',
-                                style: TextStyle(fontSize: 11),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 18),
                           PrimaryPillButton(
-                            text: 'Login',
+                            text: 'Register',
                             isLoading: _isLoading,
-                            onPressed: _onLogin,
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Container(height: 1, color: AppColors.divider),
-                              ),
-                              const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 10),
-                                child: Text('or login with',
-                                    style: TextStyle(fontSize: 11, color: AppColors.mutedText)),
-                              ),
-                              Expanded(
-                                child: Container(height: 1, color: AppColors.divider),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Center(
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.divider),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  'G',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.red,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            onPressed: _onRegister,
                           ),
                           const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text(
-                                'Don\'t have an account? ',
+                                'Already have an account? ',
                                 style: TextStyle(fontSize: 11, color: AppColors.mutedText),
                               ),
                               GestureDetector(
-                                onTap: () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => const RegisterScreen(),
-                                    ),
-                                  );
-                                },
-                                child: const Text('Register', style: AppTextStyles.link),
+                                onTap: () => Navigator.of(context).pop(),
+                                child: const Text('Login', style: AppTextStyles.link),
                               ),
                             ],
                           ),

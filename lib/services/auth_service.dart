@@ -27,23 +27,20 @@ class AuthService {
     required String role,
     required String account_status,
     }) async {  
-      try {
-        final response = await supabase.auth.signUp(
-          email: email,
-          password: password,
-          data: {
-            'full_name': full_name,
-            'phone_number': phone_number,
-            'address': address,
-            'role': role,
-            'account_status': account_status,
+      final response = await supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {
+          'full_name': full_name,
+          'phone_number': phone_number,
+          'address': address,
+          'role': role,
+          'account_status': account_status,
         },
       );
-        return response.user;
-      } catch (e) {
-        print('Error signing up: $e');
-        return null;
-      }
+      // Kalau email confirmation aktif, biasanya session/user bisa null tergantung setting.
+      // Maka UI akan menampilkan pesan yang sesuai saat `user == null`.
+      return response.user;
   }
 
   // Sign Out

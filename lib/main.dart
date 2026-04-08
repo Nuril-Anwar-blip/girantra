@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:girantra/models/users_model.dart';
 import 'package:girantra/screens/splash_screen.dart';
 
 Future<void> main() async {
@@ -11,9 +10,6 @@ Future<void> main() async {
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
-
-  // DEBUGGING: Cek koneksi ke tabel users
-  await UsersModel.testConnectionAndFetchUsers();
 
   runApp(const MyApp());
 }
