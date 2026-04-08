@@ -33,12 +33,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final user = await _authService.signUp(
-        full_name: _fullNameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
+        full_name: _fullNameController.text.trim(),
         phone_number: _phoneController.text.trim(),
         address: _addressController.text.trim(),
-        role: 'customer',
+        role: 'buyer',
         account_status: 'active',
       );
 
@@ -59,9 +59,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registrasi gagal: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Registrasi gagal: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -124,7 +124,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 children: const [
                                   Text('Hello!', style: AppTextStyles.h1),
                                   SizedBox(height: 4),
-                                  Text('welcome to Girantra', style: AppTextStyles.subtitle),
+                                  Text(
+                                    'welcome to Girantra',
+                                    style: AppTextStyles.subtitle,
+                                  ),
                                 ],
                               ),
                               const Text(
@@ -202,11 +205,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             children: [
                               const Text(
                                 'Already have an account? ',
-                                style: TextStyle(fontSize: 11, color: AppColors.mutedText),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.mutedText,
+                                ),
                               ),
                               GestureDetector(
                                 onTap: () => Navigator.of(context).pop(),
-                                child: const Text('Login', style: AppTextStyles.link),
+                                child: const Text(
+                                  'Login',
+                                  style: AppTextStyles.link,
+                                ),
                               ),
                             ],
                           ),
@@ -223,4 +232,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-

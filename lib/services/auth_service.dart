@@ -26,21 +26,41 @@ class AuthService {
     required String address,
     required String role,
     required String account_status,
-    }) async {  
-      final response = await supabase.auth.signUp(
-        email: email,
-        password: password,
-        data: {
+  }) async {
+    final response = await supabase.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'full_name': full_name,
+        'phone_number': phone_number,
+        'address': address,
+        'role': role,
+        'account_status': account_status,
+      },
+    );
+
+    // Memasukkan data tambahan ke tabel 'users' di public schema
+    if (response.user != null) {
+      try {
+        await supabase.from('users').insert({
+          'user_id': response.user!.id,
           'full_name': full_name,
+          'email': email,
           'phone_number': phone_number,
           'address': address,
           'role': role,
           'account_status': account_status,
-        },
-      );
-      // Kalau email confirmation aktif, biasanya session/user bisa null tergantung setting.
-      // Maka UI akan menampilkan pesan yang sesuai saat `user == null`.
-      return response.user;
+        });
+      } catch (e) {
+        print('Gagal memasukkan data ke tabel users: $e');
+        // Error tidak dilempar agar user tetap berhasil terbuat di auth.users
+        // (meskipun disarankan memantaunya lewat log terminal)
+      }
+    }
+
+    // Kalau email confirmation aktif, biasanya session/user bisa null tergantung setting.
+    // Maka UI akan menampilkan pesan yang sesuai saat `user == null`.
+    return response.user;
   }
 
   // Sign Out
@@ -76,10 +96,10 @@ class AuthService {
   // Update user profile
   Future<void> updateProfile(String name, String email) async {
     try {
-      await supabase.from('users').update({
-        'name': name,
-        'email': email,
-      }).eq('id', supabase.auth.currentUser!.id);
+      await supabase
+          .from('users')
+          .update({'name': name, 'email': email})
+          .eq('id', supabase.auth.currentUser!.id);
       print('✅ Update profile berhasil!');
     } catch (e) {
       print('Error updating profile: $e');

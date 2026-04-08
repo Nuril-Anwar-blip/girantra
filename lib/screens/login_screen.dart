@@ -5,6 +5,7 @@ import '../ui/app_colors.dart';
 import '../ui/app_text_styles.dart';
 import '../ui/app_widgets.dart';
 import 'register_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,7 +40,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!mounted) return;
 
-    if (user == null) {
+    if (user != null) {
+      // Navigasi ke HomeScreen setelah login sukses
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login gagal, periksa email/password.')),
       );
@@ -100,7 +107,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 children: const [
                                   Text('Hello!', style: AppTextStyles.h1),
                                   SizedBox(height: 4),
-                                  Text('welcome to Girantra', style: AppTextStyles.subtitle),
+                                  Text(
+                                    'welcome to Girantra',
+                                    style: AppTextStyles.subtitle,
+                                  ),
                                 ],
                               ),
                               const Text(
@@ -161,15 +171,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           Row(
                             children: [
                               Expanded(
-                                child: Container(height: 1, color: AppColors.divider),
+                                child: Container(
+                                  height: 1,
+                                  color: AppColors.divider,
+                                ),
                               ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 10),
-                                child: Text('or login with',
-                                    style: TextStyle(fontSize: 11, color: AppColors.mutedText)),
+                                child: Text(
+                                  'or login with',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.mutedText,
+                                  ),
+                                ),
                               ),
                               Expanded(
-                                child: Container(height: 1, color: AppColors.divider),
+                                child: Container(
+                                  height: 1,
+                                  color: AppColors.divider,
+                                ),
                               ),
                             ],
                           ),
@@ -201,17 +222,24 @@ class _LoginScreenState extends State<LoginScreen> {
                             children: [
                               const Text(
                                 'Don\'t have an account? ',
-                                style: TextStyle(fontSize: 11, color: AppColors.mutedText),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.mutedText,
+                                ),
                               ),
                               GestureDetector(
                                 onTap: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (context) => const RegisterScreen(),
+                                      builder: (context) =>
+                                          const RegisterScreen(),
                                     ),
                                   );
                                 },
-                                child: const Text('Register', style: AppTextStyles.link),
+                                child: const Text(
+                                  'Register',
+                                  style: AppTextStyles.link,
+                                ),
                               ),
                             ],
                           ),
@@ -228,4 +256,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
