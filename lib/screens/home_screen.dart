@@ -12,6 +12,7 @@ import 'like_screen.dart';
 import 'notification_screen.dart';
 import 'product_detail_screen.dart';
 import 'register_screen.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -81,12 +82,17 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.notifications_none, color: Colors.black87),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const NotificationScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const NotificationScreen(),
+                ),
               );
             },
           ),
           IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black87),
+            icon: const Icon(
+              Icons.shopping_bag_outlined,
+              color: Colors.black87,
+            ),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const CartScreen()),
@@ -101,11 +107,20 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () async {
               if (session == null) {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const RegisterScreen(),
+                  ),
                 );
                 return;
               }
               await _authService.signOut();
+
+              if (mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
             },
           ),
           const SizedBox(width: 8),
@@ -146,7 +161,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Text(
                           'Cari pupuk atau hasil tani...',
-                          style: TextStyle(fontSize: 12, color: AppColors.mutedText),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.mutedText,
+                          ),
                         ),
                       ),
                     ],
@@ -158,7 +176,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const FilterScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const FilterScreen(),
+                    ),
                   );
                 },
                 child: Container(
@@ -251,7 +271,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => ProductDetailScreen(product: product),
+                          builder: (context) =>
+                              ProductDetailScreen(product: product),
                         ),
                       );
                     },
@@ -328,7 +349,11 @@ class _ProductCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
                   ChipTag(text: 'Pupuk'),
-                  ChipTag(text: 'Benih', background: Colors.white, foreground: AppColors.mutedText),
+                  ChipTag(
+                    text: 'Benih',
+                    background: Colors.white,
+                    foreground: AppColors.mutedText,
+                  ),
                 ],
               ),
             ),
@@ -358,22 +383,45 @@ class _ProductCard extends StatelessWidget {
                     product.product_name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: const [
-                      Icon(Icons.location_on_outlined, size: 12, color: AppColors.mutedText),
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 12,
+                        color: AppColors.mutedText,
+                      ),
                       SizedBox(width: 2),
-                      Text('Surakarta', style: TextStyle(fontSize: 10, color: AppColors.mutedText)),
+                      Text(
+                        'Surakarta',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.mutedText,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      const Icon(Icons.star, size: 12, color: Color(0xFFFFC107)),
+                      const Icon(
+                        Icons.star,
+                        size: 12,
+                        color: Color(0xFFFFC107),
+                      ),
                       const SizedBox(width: 2),
-                      const Text('4.9 (200)', style: TextStyle(fontSize: 10, color: AppColors.mutedText)),
+                      const Text(
+                        '4.9 (200)',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.mutedText,
+                        ),
+                      ),
                       const Spacer(),
                       Text(
                         'Rp ${product.selling_price.toStringAsFixed(0)}',
@@ -383,7 +431,13 @@ class _ProductCard extends StatelessWidget {
                           color: AppColors.primaryDark,
                         ),
                       ),
-                      const Text(' /kg', style: TextStyle(fontSize: 10, color: AppColors.mutedText)),
+                      const Text(
+                        ' /kg',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.mutedText,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -395,4 +449,3 @@ class _ProductCard extends StatelessWidget {
     );
   }
 }
-
