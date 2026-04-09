@@ -27,6 +27,24 @@ class AuthService {
     required String role,
     required String account_status,
   }) async {
+    // 1. Validasi email terlebih dahulu ke tabel users (jika role anon bisa baca)
+    try {
+      final existingUser = await supabase
+          .from('users')
+          .select('email')
+          .eq('email', email)
+          .maybeSingle();
+
+      if (existingUser != null) {
+        throw Exception('Email sudah terdaftar. Silakan gunakan email lain atau login.');
+      }
+    } catch (e) {
+      if (e.toString().contains('Email sudah terdaftar')) {
+        rethrow;
+      }
+      // Pengecualian lain seperti RLS diabaikan agar tetap mencoba auth.signUp()
+    }
+
     final response = await supabase.auth.signUp(
       email: email,
       password: password,
@@ -38,6 +56,13 @@ class AuthService {
         'account_status': account_status,
       },
     );
+
+    // Proteksi tambahan: jika identities kosong, artinya user sudah ada namun proteksi enumerasi aktif
+    if (response.user != null &&
+        response.user!.identities != null &&
+        response.user!.identities!.isEmpty) {
+      throw Exception('Email sudah terdaftar. Silakan gunakan email lain atau login.');
+    }
 
     // Memasukkan data tambahan ke tabel 'users' di public schema
     if (response.user != null) {

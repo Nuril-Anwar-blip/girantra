@@ -23,8 +23,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
+  String? _emailErrorMessage;
 
   Future<void> _onRegister() async {
+    setState(() => _emailErrorMessage = null);
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -59,9 +61,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Registrasi gagal: $e')));
+      String errorMsg = e.toString();
+      if (errorMsg.startsWith('Exception: ')) {
+        errorMsg = errorMsg.substring(11); // Menghapus tulisan "Exception: " agar lebih rapi
+      }
+      
+      if (errorMsg.contains('Email sudah terdaftar')) {
+        setState(() => _emailErrorMessage = errorMsg);
+        _formKey.currentState!.validate(); // Trigger ulang validasi untuk menampilkan error di textbox
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Registrasi gagal: $errorMsg')));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -178,8 +190,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               icon: Icons.email_outlined,
                             ),
                             keyboardType: TextInputType.emailAddress,
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Wajib diisi' : null,
+                            onChanged: (v) {
+                              if (_emailErrorMessage != null) {
+                                setState(() => _emailErrorMessage = null);
+                                _formKey.currentState!.validate();
+                              }
+                            },
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Wajib diisi';
+                              if (_emailErrorMessage != null) return _emailErrorMessage;
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 10),
                           TextFormField(
@@ -189,9 +210,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               icon: Icons.lock_outline,
                             ),
                             obscureText: true,
-                            validator: (v) => v != null && v.length >= 6
-                                ? null
-                                : 'Minimal 6 karakter',
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Wajib diisi';
+                              if (v.length < 6) return 'Minimal 6 karakter';
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 18),
                           PrimaryPillButton(
