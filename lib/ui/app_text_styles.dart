@@ -8,18 +8,21 @@ class AppTextStyles {
     fontWeight: FontWeight.w600,
     color: AppColors.text,
     height: 1.1,
+    fontFamily: 'Montserrat',
   );
 
   static const subtitle = TextStyle(
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: FontWeight.w400,
     color: AppColors.mutedText,
+    fontFamily: 'Montserrat',
   );
 
   static const link = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w700,
     color: AppColors.primaryDark,
+    fontFamily: 'Montserrat',
   );
 }
 

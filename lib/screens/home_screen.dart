@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:girantra/ui/app_text_styles.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/product_model.dart';
@@ -106,18 +107,45 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            const Text(
-              'Location',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
+            Image.asset(
+              'assets/images/logo_girantra.png',
+              width: 40,
+              height: 40,
             ),
-            Text(
-              _userAddress,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Location',
+                    style: AppTextStyles.subtitle,
+                  ),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on,
+                        color: AppColors.accent,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          _userAddress,
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: AppColors.text,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -176,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             height: 120,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(5),
               color: Colors.white,
               image: const DecorationImage(
                 fit: BoxFit.cover,
@@ -194,7 +222,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.divider),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -229,11 +257,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.primaryDark,
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.divider),
                   ),
-                  child: const Icon(Icons.tune, color: AppColors.primaryDark),
+                  child: const Icon(Icons.tune, color: Colors.white),
                 ),
               ),
             ],

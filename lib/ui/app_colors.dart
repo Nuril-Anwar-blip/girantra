@@ -11,5 +11,7 @@ class AppColors {
   static const mutedText = Color(0xFF7C7C7C);
 
   static const divider = Color(0xFFE9E9E9);
+
+  static const accent = Color(0xFFFF9800);
 }
 
