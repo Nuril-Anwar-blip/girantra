@@ -150,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             obscureText: true,
                             validator: (v) => v != null && v.length >= 6
                                 ? null
-                                : 'Minimal 6 karakter',
+                                : 'Masukkan Password',
                           ),
                           const SizedBox(height: 2),
                           Align(
