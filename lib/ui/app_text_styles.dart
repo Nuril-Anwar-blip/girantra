@@ -5,19 +5,19 @@ import 'app_colors.dart';
 class AppTextStyles {
   static const h1 = TextStyle(
     fontSize: 28,
-    fontWeight: FontWeight.w700,
+    fontWeight: FontWeight.w600,
     color: AppColors.text,
     height: 1.1,
   );
 
   static const subtitle = TextStyle(
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: FontWeight.w400,
     color: AppColors.mutedText,
   );
 
   static const link = TextStyle(
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: FontWeight.w700,
     color: AppColors.primaryDark,
   );

@@ -142,12 +142,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ],
                               ),
-                              const Text(
+                              Text(
                                 'Register',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
+                                style: AppTextStyles.subtitle.copyWith(
                                   color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -198,6 +197,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             },
                             validator: (v) {
                               if (v == null || v.isEmpty) return 'Wajib diisi';
+                              if (!v.contains('@')) return 'Format email tidak valid';
                               if (_emailErrorMessage != null) return _emailErrorMessage;
                               return null;
                             },
@@ -227,18 +227,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text(
+                              Text(
                                 'Already have an account? ',
-                                style: TextStyle(
-                                  fontSize: 11,
+                                style: AppTextStyles.subtitle.copyWith(
                                   color: AppColors.mutedText,
                                 ),
                               ),
                               GestureDetector(
                                 onTap: () => Navigator.of(context).pop(),
-                                child: const Text(
+                                child: Text(
                                   'Login',
-                                  style: AppTextStyles.link,
+                                  style: AppTextStyles.link.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w500,
+                                  )
                                 ),
                               ),
                             ],

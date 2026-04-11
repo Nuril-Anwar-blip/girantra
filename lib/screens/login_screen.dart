@@ -108,17 +108,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Text('Hello!', style: AppTextStyles.h1),
                                   SizedBox(height: 4),
                                   Text(
-                                    'welcome to Girantra',
+                                    'Welcome to Girantra',
                                     style: AppTextStyles.subtitle,
                                   ),
                                 ],
                               ),
-                              const Text(
+                              Text(
                                 'Login',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
+                                style: AppTextStyles.subtitle.copyWith(
                                   color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -131,8 +130,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               icon: Icons.email_outlined,
                             ),
                             keyboardType: TextInputType.emailAddress,
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Wajib diisi' : null,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return 'Wajib diisi';
+                              }
+                              if (!v.contains('@')) {
+                                return 'Format email tidak valid';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 12),
                           TextFormField(
@@ -146,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ? null
                                 : 'Minimal 6 karakter',
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 2),
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
@@ -155,13 +161,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                 padding: EdgeInsets.zero,
                               ),
                               onPressed: () {},
-                              child: const Text(
+                              child: Text(
                                 'Forgot Password',
-                                style: TextStyle(fontSize: 11),
+                                style: AppTextStyles.link.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w500,
+                                ),  
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 4),
                           PrimaryPillButton(
                             text: 'Login',
                             isLoading: _isLoading,
@@ -220,10 +229,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text(
+                              Text(
                                 'Don\'t have an account? ',
-                                style: TextStyle(
-                                  fontSize: 11,
+                                style: AppTextStyles.subtitle.copyWith(
                                   color: AppColors.mutedText,
                                 ),
                               ),
@@ -236,9 +244,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   );
                                 },
-                                child: const Text(
+                                child: Text(
                                   'Register',
-                                  style: AppTextStyles.link,
+                                  style: AppTextStyles.link.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w500,
+                                  )
                                 ),
                               ),
                             ],
