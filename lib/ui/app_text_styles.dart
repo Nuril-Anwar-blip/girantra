@@ -18,6 +18,13 @@ class AppTextStyles {
     fontFamily: 'Montserrat',
   );
 
+  static const subtitleBlack = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.text,
+    fontFamily: 'Montserrat',
+  );
+
   static const link = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w700,

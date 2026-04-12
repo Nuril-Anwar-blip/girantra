@@ -14,6 +14,7 @@ import 'notification_screen.dart';
 import 'product_detail_screen.dart';
 import 'register_screen.dart';
 import 'login_screen.dart';
+import '../widgets/product_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -134,10 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Text(
                           _userAddress,
-                          style: AppTextStyles.subtitle.copyWith(
-                            color: AppColors.text,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: AppTextStyles.subtitleBlack,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -296,9 +294,9 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'Lihat Produk Favorit',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                style: AppTextStyles.subtitleBlack,
               ),
               GestureDetector(
                 onTap: () {
@@ -306,9 +304,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(builder: (context) => const LikeScreen()),
                   );
                 },
-                child: const Text(
+                child: Text(
                   'Lihat Selengkapnya >',
-                  style: TextStyle(fontSize: 11, color: AppColors.mutedText),
+                  style: AppTextStyles.link.copyWith(
+                    color: AppColors.accent,
+                    fontWeight: FontWeight.w400,
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.accent,
+                  ),
                 ),
               ),
             ],
@@ -338,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemCount: products.length,
                 itemBuilder: (context, index) {
                   final product = products[index];
-                  return _ProductCard(
+                  return ProductCard(
                     product: product,
                     onTap: () {
                       Navigator.of(context).push(
@@ -387,7 +390,7 @@ class _CategoryShortcut extends StatelessWidget {
           children: [
             Icon(icon, color: AppColors.primaryDark, size: 22),
             const SizedBox(height: 6),
-            Text(label, style: const TextStyle(fontSize: 11)),
+            Text(label, style: AppTextStyles.subtitle.copyWith(color: AppColors.primaryDark)),
           ],
         ),
       ),
@@ -395,129 +398,4 @@ class _CategoryShortcut extends StatelessWidget {
   }
 }
 
-class _ProductCard extends StatelessWidget {
-  final ProductModel product;
-  final VoidCallback onTap;
 
-  const _ProductCard({required this.product, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  ChipTag(text: 'Pupuk'),
-                  ChipTag(
-                    text: 'Benih',
-                    background: Colors.white,
-                    foreground: AppColors.mutedText,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: AspectRatio(
-                aspectRatio: 1.15,
-                child: Image.network(
-                  product.image_url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.image_not_supported),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.product_name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: const [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 12,
-                        color: AppColors.mutedText,
-                      ),
-                      SizedBox(width: 2),
-                      Text(
-                        'Surakarta',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.mutedText,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star,
-                        size: 12,
-                        color: Color(0xFFFFC107),
-                      ),
-                      const SizedBox(width: 2),
-                      const Text(
-                        '4.9 (200)',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.mutedText,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        'Rp ${product.selling_price.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primaryDark,
-                        ),
-                      ),
-                      const Text(
-                        ' /kg',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.mutedText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
