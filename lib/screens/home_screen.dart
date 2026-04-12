@@ -97,6 +97,24 @@ class _HomeScreenState extends State<HomeScreen> {
         seller_id: 'dummy',
         created_at: DateTime.now(),
       ),
+      ProductModel(
+        product_id: -2,
+        category_id: 2,
+        product_name: 'Bibit Cabai Rawit (Dummy)',
+        description:
+            'Bibit cabai rawit berkualitas tinggi, cocok untuk ditanam di lahan pertanian.',
+        cost_price: 25000,
+        selling_price: 45000,
+        ai_recommendation_price: 45000,
+        stock: 50,
+        unit: 'kg',
+        image_url:
+            'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=1200&q=60',
+        harvest_date: DateTime.now(),
+        status_product: 'available',
+        seller_id: 'dummy',
+        created_at: DateTime.now(),
+      ),
     ];
   }
 
@@ -135,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Text(
                           _userAddress,
-                          style: AppTextStyles.subtitleBlack,
+                          style: AppTextStyles.subtitle.copyWith(color: AppColors.text, fontWeight: FontWeight.w600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -245,10 +263,9 @@ class _HomeScreenState extends State<HomeScreen> {
               InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const FilterScreen(),
-                    ),
+                  showDialog(
+                    context: context,
+                    builder: (context) => const FilterDialog(),
                   );
                 },
                 child: Container(
@@ -290,13 +307,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 25),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
                 'Lihat Produk Favorit',
-                style: AppTextStyles.subtitleBlack,
+                style: AppTextStyles.h2,
               ),
               GestureDetector(
                 onTap: () {
