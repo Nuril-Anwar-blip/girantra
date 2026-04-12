@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../ui/app_colors.dart';
+import '../ui/app_text_styles.dart';
 
 class ProductCard extends StatelessWidget {
   final ProductModel product;
@@ -15,12 +16,12 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(5),
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(5),
           // Subtle shadow to mimic the card feel requested
           boxShadow: [
             BoxShadow(
@@ -39,7 +40,7 @@ class ProductCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
                     child: Container(
                       color: Colors.grey[200],
                       child: Image.network(
@@ -58,24 +59,17 @@ class ProductCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: const BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(4),
-                          bottomRight: Radius.circular(4),
-                        ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Pupuk',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        ),
+                        style: AppTextStyles.subtitle.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12),
                       ),
                     ),
                   ),
                 ],
               ),
             ),
+            
             // Bottom Section (Information)
             Padding(
               padding: const EdgeInsets.all(10.0),
@@ -87,11 +81,7 @@ class ProductCard extends StatelessWidget {
                     product.product_name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.text,
-                    ),
+                    style: AppTextStyles.h2.copyWith(color: AppColors.text, fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   const SizedBox(height: 6),
                   Row(
@@ -106,7 +96,7 @@ class ProductCard extends StatelessWidget {
                         'Surakarta',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: AppColors.mutedText,
                         ),
                       ),
                     ],
@@ -117,14 +107,14 @@ class ProductCard extends StatelessWidget {
                       Icon(
                         Icons.star,
                         size: 14,
-                        color: Color(0xFFFFB300),
+                        color: AppColors.accent,
                       ),
                       SizedBox(width: 4),
                       Text(
                         '4.8 (120)',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey,
+                          color: AppColors.mutedText,
                         ),
                       ),
                     ],
@@ -137,9 +127,9 @@ class ProductCard extends StatelessWidget {
                         child: Text(
                           'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
                           style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primaryDark,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
                           ),
                         ),
                       ),
