@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/product_model.dart';
 import '../ui/app_colors.dart';
+import '../ui/app_text_styles.dart';
 import '../ui/app_widgets.dart';
 
 class ProductDetailScreen extends StatelessWidget {
@@ -18,20 +19,20 @@ class ProductDetailScreen extends StatelessWidget {
         elevation: 0,
         leading: TextButton.icon(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 18),
+          icon: const Icon(Icons.arrow_back, color: AppColors.text, size: 18),
           label: const Text(
             'Kembali',
-            style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w700),
+            style: TextStyle(color: AppColors.text, fontWeight: FontWeight.w700),
           ),
         ),
         leadingWidth: 110,
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_outlined, color: Colors.black87),
+            icon: const Icon(Icons.ios_share, color: AppColors.primary),
             onPressed: () {},
           ),
           IconButton(
-            icon: const Icon(Icons.favorite_border, color: Colors.black87),
+            icon: const Icon(Icons.favorite, color: Colors.grey),
             onPressed: () {},
           ),
           const SizedBox(width: 6),
@@ -40,163 +41,165 @@ class ProductDetailScreen extends StatelessWidget {
       body: Stack(
         children: [
           ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(bottom: 100),
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: AspectRatio(
-                  aspectRatio: 1.1,
-                  child: Image.network(
-                    product.image_url,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.image_not_supported),
-                      );
-                    },
-                  ),
-                ),
+              Image.network(
+                product.image_url,
+                width: double.infinity,
+                height: 280,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 280,
+                    color: Colors.grey[200],
+                    child: const Icon(Icons.image_not_supported),
+                  );
+                },
               ),
-              const SizedBox(height: 14),
-              Text(
-                'Rp ${product.selling_price.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.primaryDark,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: const [
-                  Expanded(
-                    child: Text(
-                      'Pupuk Kompos Organik',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                  ChipTag(text: 'Pupuk'),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                product.description,
-                style: const TextStyle(fontSize: 12, color: AppColors.mutedText, height: 1.35),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: const [
-                  Icon(Icons.inventory_2_outlined, size: 16, color: AppColors.mutedText),
-                  SizedBox(width: 6),
-                  Text('Stok', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text('${product.stock}', style: const TextStyle(fontSize: 12, color: AppColors.mutedText)),
-              const SizedBox(height: 12),
-              Row(
-                children: const [
-                  Icon(Icons.star, size: 16, color: Color(0xFFFFC107)),
-                  SizedBox(width: 4),
-                  Text('4.9', style: TextStyle(fontWeight: FontWeight.w800)),
-                  SizedBox(width: 6),
-                  Text('Penilaian Produk (200)', style: TextStyle(fontSize: 11, color: AppColors.mutedText)),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.divider),
-                ),
-                child: Row(
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE9F5EA),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.divider),
-                      ),
-                      child: const Icon(Icons.person_outline, color: AppColors.primaryDark),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Plant Store', style: TextStyle(fontWeight: FontWeight.w900)),
-                          SizedBox(height: 2),
-                          Text('SURAKARTA', style: TextStyle(fontSize: 10, color: AppColors.mutedText)),
-                        ],
-                      ),
-                    ),
-                    Column(
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
-                      children: const [
-                        Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('HARGA', style: TextStyle(fontSize: 10, color: AppColors.mutedText, fontWeight: FontWeight.w400)),
+                              Text('Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}', style: AppTextStyles.h2.copyWith(color: AppColors.primary, fontSize: 21)),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Icon(Icons.circle, size: 8, color: Colors.green),
-                            SizedBox(width: 6),
-                            Text('Online', style: TextStyle(fontSize: 10, color: AppColors.mutedText)),
+                            const Text('KATEGORI', style: TextStyle(fontSize: 10, color: AppColors.mutedText, fontWeight: FontWeight.w400)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              color: AppColors.primary,
+                              child: const Text('Pupuk', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                            ),
                           ],
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    const Text('NAMA PRODUK', style: TextStyle(fontSize: 10, color: AppColors.mutedText, fontWeight: FontWeight.w400)),
+                    Text(product.product_name, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: Colors.black)),
+                    const SizedBox(height: 16),
+                    const Text('DESKRIPSI', style: TextStyle(fontSize: 10, color: AppColors.mutedText, fontWeight: FontWeight.w400)),
+                    const SizedBox(height: 2),
+                    Text(product.description, style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.4)),
+                    const SizedBox(height: 16),
+                    const Text('STOK', style: TextStyle(fontSize: 10, color: AppColors.mutedText, fontWeight: FontWeight.w400)),
+                    Text('${product.stock} Stok', style: const TextStyle(fontSize: 14, color: Colors.black, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: Colors.grey[300]!),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ],
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: const [
+                              Text('4.9', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14)),
+                              SizedBox(width: 4),
+                              Icon(Icons.star, size: 16, color: Color(0xFFFFC107)),
+                              SizedBox(width: 8),
+                              Text('Penilaian Produk (300)', style: TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              ClipOval(
+                                child: Image.network(
+                                  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=60',
+                                  width: 48,
+                                  height: 48,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: const [
+                                    Text('Plant Store', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Colors.black)),
+                                    SizedBox(height: 2),
+                                    Text('SURAKARTA', style: TextStyle(fontSize: 11, color: Colors.black87)),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                children: const [
+                                  Icon(Icons.circle, size: 8, color: Colors.green),
+                                  SizedBox(width: 4),
+                                  Text('Online', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 72),
             ],
           ),
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-              decoration: BoxDecoration(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              decoration: const BoxDecoration(
                 color: Colors.white,
                 border: Border(top: BorderSide(color: AppColors.divider)),
               ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 52,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: const Icon(Icons.shopping_cart_outlined, color: AppColors.primaryDark),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: SizedBox(
-                      height: 44,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryDark,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+              child: SafeArea(
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: const BorderSide(color: AppColors.primary),
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: Radius.circular(4))),
                         ),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Aksi beli (UI mockup).')),
-                          );
-                        },
-                        child: const Text('Beli', style: TextStyle(fontWeight: FontWeight.w800)),
+                        onPressed: () {},
+                        child: const Icon(Icons.shopping_cart_outlined, color: AppColors.primary),
                       ),
                     ),
-                  ),
-                ],
+                    Expanded(
+                      flex: 1,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          backgroundColor: AppColors.primary,
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(4))),
+                          elevation: 0,
+                        ),
+                        onPressed: () {},
+                        child: const Text('Beli', style: TextStyle(color: Colors.white, fontSize: 16)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
