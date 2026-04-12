@@ -13,5 +13,6 @@ class AppColors {
   static const divider = Color(0xFFE9E9E9);
 
   static const accent = Color(0xFFFF9800);
+  static const accentDark = Color(0xFFCE7B00);
 }
 

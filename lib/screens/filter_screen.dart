@@ -86,13 +86,9 @@ class _FilterDialogState extends State<FilterDialog> {
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: const Text(
+                    child: Text(
                       'Reset',
-                      style: TextStyle(
-                        color: Color(0xFFD97706),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
+                      style: AppTextStyles.subtitle.copyWith(color: AppColors.accentDark, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),
