@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../ui/app_colors.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
+
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  bool _isBannerVisible = true;
 
   @override
   Widget build(BuildContext context) {
@@ -12,70 +19,166 @@ class NotificationScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        centerTitle: true,
-        title: const Text(
-          'Notifikasi',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w700),
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Row(
+                  children: const [
+                    Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 18),
+                    SizedBox(width: 6),
+                    Text(
+                      'Kembali',
+                      style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+              const Text(
+                'Notifikasi',
+                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w700, fontSize: 16),
+              ),
+            ],
+          ),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF3CD),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFFFE69C)),
+          // Yellow Banner
+          if (_isBannerVisible)
+            Container(
+              color: const Color(0xFFFFDB7A), // Yellowish banner matching mockup
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF9800), // Orange circle
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.notifications_none, color: Colors.white, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Aktifkan notifikasi untuk dapatkan info status pesanan dan promo eksekutif',
+                      style: TextStyle(fontSize: 12, color: Colors.black87, height: 1.3),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isBannerVisible = false;
+                      });
+                    },
+                    child: const Icon(Icons.close, color: Colors.black54, size: 20),
+                  ),
+                ],
+              ),
             ),
-            child: const Text(
-              'Pastikan notifikasi untuk aplikasi ini selalu dalam keadaan ON',
-              style: TextStyle(fontSize: 11, color: Color(0xFF7A5A00)),
+          
+          // Cards Content
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // Order Card Structure
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text(
+                            'Pesanan Saya',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF7A7A7A)),
+                          ),
+                          Text(
+                            'Tandai Sudah Dibaca (1)',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFFDB944E)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Order Item 1
+                      const _OrderItem(
+                        title: 'Pupuk Kompos Organik',
+                        price: 'Rp 45.000',
+                        status: 'Pesanan Selesai',
+                        imageUrl: 'https://images.unsplash.com/photo-1620577438162-817887e14577?auto=format&fit=crop&w=100&q=60', // Mock plant image
+                      ),
+                      const SizedBox(height: 10),
+                      // Order Item 2
+                      const _OrderItem(
+                        title: 'Bibit Padi Unggul',
+                        price: 'Rp 75.000',
+                        status: 'Pesanan Selesai',
+                        imageUrl: 'https://images.unsplash.com/photo-1596724896798-17de24c9eb72?w=100&auto=format&fit=crop&q=60', // Mock plant image
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // General Notifications Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text(
+                            'Notifikasi Umum',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF7A7A7A)),
+                          ),
+                          Text(
+                            'Tandai Sudah Dibaca (2)',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFFDB944E)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const _GeneralNotifItem(text: 'Akun Girantra Berhasil diaktifkan'),
+                      const Divider(height: 32, thickness: 1, color: Color(0xFFEEEEEE)),
+                      const _GeneralNotifItem(text: 'Lorem Ipsum'),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Pesanan Saya', style: TextStyle(fontWeight: FontWeight.w800)),
-              Text('Tandai Sudah Dibaca', style: TextStyle(fontSize: 11, color: AppColors.mutedText)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _OrderNotifTile(
-            title: 'Pupuk Kompos Organik',
-            subtitle: 'Rp 75.000',
-            status: 'Pesanan Selesai',
-          ),
-          const SizedBox(height: 10),
-          _OrderNotifTile(
-            title: 'Bibit Padi Unggul',
-            subtitle: 'Rp 75.000',
-            status: 'Pesanan Selesai',
-          ),
-          const SizedBox(height: 18),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text('Notifikasi Umum', style: TextStyle(fontWeight: FontWeight.w800)),
-              Text('Tandai Sudah Dibaca', style: TextStyle(fontSize: 11, color: AppColors.mutedText)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _GeneralNotifTile(
-            icon: Icons.check_circle_outline,
-            iconColor: Colors.orange,
-            title: 'Akun Girantra Berhasil diaktivasi',
-          ),
-          const SizedBox(height: 10),
-          _GeneralNotifTile(
-            icon: Icons.campaign_outlined,
-            iconColor: Colors.green,
-            title: 'Lorem ipsum',
           ),
         ],
       ),
@@ -83,62 +186,71 @@ class NotificationScreen extends StatelessWidget {
   }
 }
 
-class _OrderNotifTile extends StatelessWidget {
+class _OrderItem extends StatelessWidget {
   final String title;
-  final String subtitle;
+  final String price;
   final String status;
+  final String imageUrl;
 
-  const _OrderNotifTile({
+  const _OrderItem({
     required this.title,
-    required this.subtitle,
+    required this.price,
     required this.status,
+    required this.imageUrl,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      height: 70, // Fixed height per item
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: AppColors.primary, width: 1), // Green outline border
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: const Color(0xFFE9F5EA),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.divider),
-            ),
-            child: const Icon(Icons.local_florist_outlined, color: AppColors.primaryDark),
+          // Item Image
+          Image.network(
+            imageUrl,
+            width: 70,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(width: 70, color: Colors.grey[200]),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
+          // Info Column
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.mutedText)),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE9F5EA),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.divider),
-            ),
-            child: Text(
-              status,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primaryDark,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8, bottom: 8, right: 12),
+              child: Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black87, fontSize: 13),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        price,
+                        style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Text(
+                      status,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -148,38 +260,31 @@ class _OrderNotifTile extends StatelessWidget {
   }
 }
 
-class _GeneralNotifTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
+class _GeneralNotifItem extends StatelessWidget {
+  final String text;
 
-  const _GeneralNotifTile({
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-  });
+  const _GeneralNotifItem({required this.text});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: iconColor),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-            ),
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: const BoxDecoration(
+            color: Color(0xFFFF9800), // Orange circle
+            shape: BoxShape.circle,
           ),
-        ],
-      ),
+          child: const Icon(Icons.notifications_none, color: Colors.white, size: 20),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 13, color: Colors.black87),
+          ),
+        ),
+      ],
     );
   }
 }
