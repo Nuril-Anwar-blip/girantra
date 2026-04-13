@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../ui/app_colors.dart';
 import '../ui/app_text_styles.dart';
-import '../ui/app_widgets.dart';
+// import '../ui/app_widgets.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final ProductModel product;

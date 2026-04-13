@@ -6,7 +6,6 @@ import '../models/product_model.dart';
 import '../services/auth_service.dart';
 import '../services/product_service.dart';
 import '../ui/app_colors.dart';
-import '../ui/app_widgets.dart';
 import 'cart_screen.dart';
 import 'filter_screen.dart';
 import 'like_screen.dart';
