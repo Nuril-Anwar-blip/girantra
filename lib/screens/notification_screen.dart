@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:girantra/ui/app_text_styles.dart';
 
 import '../ui/app_colors.dart';
 
@@ -52,14 +53,14 @@ class _NotificationScreenState extends State<NotificationScreen> {
           // Yellow Banner
           if (_isBannerVisible)
             Container(
-              color: const Color(0xFFFFDB7A), // Yellowish banner matching mockup
+              color: const Color(0xFFFFEAAC), // Yellowish banner matching mockup
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: const BoxDecoration(
-                      color: Color(0xFFFF9800), // Orange circle
+                      color: AppColors.accent, // Orange circle
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.notifications_none, color: Colors.white, size: 18),
@@ -108,14 +109,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
+                        children: [
                           Text(
                             'Pesanan Saya',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF7A7A7A)),
+                            style: AppTextStyles.h2.copyWith(color: AppColors.text, fontWeight: FontWeight.w500),
                           ),
                           Text(
                             'Tandai Sudah Dibaca (1)',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFFDB944E)),
+                            style: AppTextStyles.link.copyWith(
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.w400,
+                              decoration: TextDecoration.underline,
+                              decorationColor: AppColors.accent,
+                            ),
                           ),
                         ],
                       ),
@@ -159,14 +165,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
+                        children: [
                           Text(
                             'Notifikasi Umum',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF7A7A7A)),
+                            style: AppTextStyles.h2.copyWith(color: AppColors.text, fontWeight: FontWeight.w500),
                           ),
                           Text(
                             'Tandai Sudah Dibaca (2)',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFFDB944E)),
+                            style: AppTextStyles.link.copyWith(
+                              color: AppColors.accent,
+                              fontWeight: FontWeight.w400,
+                              decoration: TextDecoration.underline,
+                              decorationColor: AppColors.accent,
+                            ),
                           ),
                         ],
                       ),
@@ -205,17 +216,24 @@ class _OrderItem extends StatelessWidget {
       height: 70, // Fixed height per item
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: AppColors.primary, width: 1), // Green outline border
+        border: Border.all(color: AppColors.primary, width: 0.4), // Green outline border
+        borderRadius: BorderRadius.circular(5),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Item Image
-          Image.network(
-            imageUrl,
-            width: 70,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(width: 70, color: Colors.grey[200]),
+          ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(5),
+              bottomLeft: Radius.circular(5),
+            ),
+            child: Image.network(
+              imageUrl,
+              width: 70,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(width: 70, color: Colors.grey[200]),
+            ),
           ),
           const SizedBox(width: 12),
           // Info Column
@@ -229,12 +247,12 @@ class _OrderItem extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black87, fontSize: 13),
+                        style: AppTextStyles.subtitle.copyWith(color: AppColors.text, fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         price,
-                        style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary, fontSize: 11),
+                        style: AppTextStyles.subtitle.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -243,11 +261,7 @@ class _OrderItem extends StatelessWidget {
                     right: 0,
                     child: Text(
                       status,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                        fontSize: 10,
-                      ),
+                      style: AppTextStyles.subtitle.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500, fontSize: 12),
                     ),
                   ),
                 ],
@@ -272,7 +286,7 @@ class _GeneralNotifItem extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: const BoxDecoration(
-            color: Color(0xFFFF9800), // Orange circle
+            color: AppColors.accent, // Orange circle
             shape: BoxShape.circle,
           ),
           child: const Icon(Icons.notifications_none, color: Colors.white, size: 20),
@@ -281,7 +295,7 @@ class _GeneralNotifItem extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(fontSize: 13, color: Colors.black87),
+            style: AppTextStyles.subtitle.copyWith(color: AppColors.text, fontWeight: FontWeight.w400),
           ),
         ),
       ],
