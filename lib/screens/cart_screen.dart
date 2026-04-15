@@ -13,14 +13,32 @@ class CartScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        centerTitle: true,
-        title: const Text(
-          'Keranjang Saya',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w700),
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.of(context).pop(),
+                child: Row(
+                  children: const [
+                    Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 18),
+                    SizedBox(width: 6),
+                    Text(
+                      'Kembali',
+                      style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+              const Text(
+                'Keranjang Saya',
+                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w700, fontSize: 16),
+              ),
+            ],
+          ),
         ),
       ),
       body: Column(
