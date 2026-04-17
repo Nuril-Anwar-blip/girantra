@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth_screen.dart';
-import 'home_screen.dart';
+import 'main_navigation.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -15,7 +15,7 @@ class AuthGate extends StatelessWidget {
       stream: supabase.auth.onAuthStateChange,
       builder: (context, snapshot) {
         final session = supabase.auth.currentSession;
-        if (session != null) return const HomeScreen();
+        if (session != null) return const MainNavigation();
         return const AuthScreen();
       },
     );

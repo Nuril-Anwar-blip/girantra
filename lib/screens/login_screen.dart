@@ -5,7 +5,7 @@ import '../ui/app_colors.dart';
 import '../ui/app_text_styles.dart';
 import '../ui/app_widgets.dart';
 import 'register_screen.dart';
-import 'home_screen.dart';
+import 'main_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -41,9 +41,9 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (user != null) {
-      // Navigasi ke HomeScreen setelah login sukses
+      // Navigasi ke MainNavigation setelah login sukses
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
         (route) => false,
       );
     } else {
