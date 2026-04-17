@@ -358,7 +358,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemBuilder: (context, index) {
                   final product = products[index];
                   return ProductCard(
-                    product: product,
+                    imageUrl: product.image_url,
+                    tag: product.category_id == 1 ? 'Pupuk' : (product.category_id == 2 ? 'Benih' : 'Produk'),
+                    title: product.product_name,
+                    location: 'Surakarta',
+                    rating: '4.8 (120)',
+                    price: 'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
+                    unit: ' / ${product.unit.length > 1 ? product.unit.substring(0, 1).toUpperCase() + product.unit.substring(1).toLowerCase() : product.unit}',
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(

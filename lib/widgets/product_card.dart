@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
-import '../models/product_model.dart';
+// import '../models/product_model.dart';
 import '../ui/app_colors.dart';
 import '../ui/app_text_styles.dart';
 
 class ProductCard extends StatelessWidget {
-  final ProductModel product;
+  final String imageUrl;
+  final String tag;
+  final String title;
+  final String location;
+  final String rating;
+  final String price;
+  final String unit;
   final VoidCallback onTap;
 
   const ProductCard({
     Key? key,
-    required this.product,
+    required this.imageUrl,
+    required this.tag,
+    required this.title,
+    required this.location,
+    required this.rating,
+    required this.price,
+    required this.unit,
     required this.onTap,
   }) : super(key: key);
 
@@ -43,13 +55,15 @@ class ProductCard extends StatelessWidget {
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
                     child: Container(
                       color: Colors.grey[200],
-                      child: Image.network(
-                        product.image_url,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.image_not_supported, color: Colors.grey);
-                        },
-                      ),
+                      child: imageUrl.isNotEmpty
+                          ? Image.network(
+                              imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return const Icon(Icons.image_not_supported, color: Colors.grey);
+                              },
+                            )
+                          : const Icon(Icons.image_outlined, color: Colors.grey),
                     ),
                   ),
                   Positioned(
@@ -61,7 +75,7 @@ class ProductCard extends StatelessWidget {
                         color: Colors.white,
                       ),
                       child: Text(
-                        'Pupuk',
+                        tag,
                         style: AppTextStyles.subtitle.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12),
                       ),
                     ),
@@ -78,23 +92,23 @@ class ProductCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    product.product_name,
+                    title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.h2.copyWith(color: AppColors.text, fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                   const SizedBox(height: 6),
                   Row(
-                    children: const [
-                      Icon(
+                    children: [
+                      const Icon(
                         Icons.location_on,
                         size: 14,
                         color: Colors.grey,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        'Surakarta',
-                        style: TextStyle(
+                        location,
+                        style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.mutedText,
                         ),
@@ -103,16 +117,16 @@ class ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Row(
-                    children: const [
-                      Icon(
+                    children: [
+                      const Icon(
                         Icons.star,
                         size: 14,
                         color: AppColors.accent,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        '4.8 (120)',
-                        style: TextStyle(
+                        rating,
+                        style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.mutedText,
                         ),
@@ -125,7 +139,7 @@ class ProductCard extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
+                          price,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -134,7 +148,7 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        ' / ${product.unit.length > 1 ? product.unit.substring(0, 1).toUpperCase() + product.unit.substring(1).toLowerCase() : product.unit}',
+                        unit,
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.grey,
