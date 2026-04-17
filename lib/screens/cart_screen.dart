@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../ui/app_colors.dart';
 import '../ui/app_widgets.dart';
+import '../widgets/product_card.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -46,54 +47,99 @@ class CartScreen extends StatelessWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.all(16),
-              children: const [
-                _CartItemTile(
+              children: [
+                ProductCart(
                   tag: 'Pupuk',
                   title: 'Pupuk Kompos Organik',
+                  description: 'Lorem ipsum dolor sit amet, conse ksdjf ...',
                   price: 'Rp 45.000',
+                  qty: 3,
+                  imageUrl: 'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                  onAdd: () {},
+                  onRemove: () {},
                 ),
-                SizedBox(height: 12),
-                _CartItemTile(
+                const SizedBox(height: 12),
+                ProductCart(
                   tag: 'Benih',
-                  title: 'Bibit Padi Unggul Cireang',
+                  title: 'Bibit Padi Unggul Ciherang',
+                  description: 'Lorem ipsum dolor sit amet, conse ksdjf ...',
                   price: 'Rp 75.000',
+                  qty: 1,
+                  imageUrl: 'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                  onAdd: () {},
+                  onRemove: () {},
                 ),
-                SizedBox(height: 12),
-                _CartItemTile(
+                const SizedBox(height: 12),
+                ProductCart(
                   tag: 'Sayuran',
                   title: 'Tomat Cherry Segar Hydro',
+                  description: 'Lorem ipsum dolor sit amet, conse ksdjf ...',
                   price: 'Rp 15.000',
+                  qty: 7,
+                  imageUrl: 'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                  onAdd: () {},
+                  onRemove: () {},
                 ),
               ],
             ),
           ),
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border(top: BorderSide(color: AppColors.divider)),
             ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text('total', style: TextStyle(fontSize: 12, color: AppColors.mutedText)),
-                    Text('Rp 315.000', style: TextStyle(fontWeight: FontWeight.w800)),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: SizedBox(
-                    width: 140,
-                    child: PrimaryPillButton(
-                      text: 'Checkout (4)',
-                      onPressed: null,
+            child: SafeArea(
+              top: false,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Text(
+                        'TOTAL',
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: AppColors.mutedText,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Rp 315.000',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                            color: AppColors.primary),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 40,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                      ),
+                      onPressed: () {},
+                      child: const Text(
+                        'Checkout (3)',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -101,95 +147,3 @@ class CartScreen extends StatelessWidget {
     );
   }
 }
-
-class _CartItemTile extends StatelessWidget {
-  final String tag;
-  final String title;
-  final String price;
-
-  const _CartItemTile({
-    required this.tag,
-    required this.title,
-    required this.price,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.image_outlined, color: AppColors.mutedText),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ChipTag(text: tag),
-                const SizedBox(height: 6),
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text(price, style: const TextStyle(fontSize: 11, color: AppColors.mutedText)),
-              ],
-            ),
-          ),
-          Column(
-            children: [
-              _QtyBox(
-                icon: Icons.remove,
-                onTap: () {},
-              ),
-              const SizedBox(height: 6),
-              const Text('3', style: TextStyle(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 6),
-              _QtyBox(
-                icon: Icons.add,
-                onTap: () {},
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QtyBox extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _QtyBox({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: onTap,
-      child: Container(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Icon(icon, size: 18, color: AppColors.primaryDark),
-      ),
-    );
-  }
-}
-
