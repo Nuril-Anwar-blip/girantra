@@ -95,7 +95,7 @@ class ProductCard extends StatelessWidget {
                     title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.h2.copyWith(color: AppColors.text, fontWeight: FontWeight.w600, fontSize: 14),
+                    style: AppTextStyles.productName,
                   ),
                   const SizedBox(height: 6),
                   Row(
@@ -108,10 +108,7 @@ class ProductCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         location,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mutedText,
-                        ),
+                        style: AppTextStyles.subtitle,
                       ),
                     ],
                   ),
@@ -126,10 +123,7 @@ class ProductCard extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         rating,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.mutedText,
-                        ),
+                        style: AppTextStyles.subtitle,
                       ),
                     ],
                   ),
@@ -240,7 +234,7 @@ class ProductCart extends StatelessWidget {
                 // Title
                 Text(
                   title,
-                  style: AppTextStyles.h2.copyWith(color: AppColors.text, fontWeight: FontWeight.w600, fontSize: 14),
+                  style: AppTextStyles.productName,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -248,10 +242,7 @@ class ProductCart extends StatelessWidget {
                 // Description
                 Text(
                   description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.mutedText,
-                  ),
+                  style: AppTextStyles.subtitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),

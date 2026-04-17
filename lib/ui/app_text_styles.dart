@@ -25,11 +25,31 @@ class AppTextStyles {
     fontFamily: 'Montserrat',
   );
 
+  static const productName = TextStyle(
+    fontSize: 16,
+    fontWeight: FontWeight.w600,
+    color: AppColors.text,
+    fontFamily: 'Montserrat',
+  );
+
+  static const medium = TextStyle(
+    fontFamily: 'Montserrat',
+    fontSize: 12,
+    color: AppColors.mutedText,
+    fontWeight: FontWeight.w400,
+  );
 
   static const link = TextStyle(
     fontSize: 14,
     fontWeight: FontWeight.w700,
     color: AppColors.primaryDark,
+    fontFamily: 'Montserrat',
+  );
+
+  static const finalPrice = TextStyle(
+    fontWeight: FontWeight.w800,
+    fontSize: 18,
+    color: AppColors.primary,
     fontFamily: 'Montserrat',
   );
 }

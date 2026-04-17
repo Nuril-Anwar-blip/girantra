@@ -23,7 +23,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget build(BuildContext context) {
     final double shippingFee = 5000;
     final double serviceFee = 2500;
-    final double totalPrice = widget.product.selling_price + shippingFee + serviceFee;
+    final double totalPrice =
+        widget.product.selling_price + shippingFee + serviceFee;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
@@ -34,7 +35,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         leadingWidth: 110,
         leading: TextButton.icon(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.text, size: 16),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColors.text,
+            size: 16,
+          ),
           label: const Text(
             'Kembali',
             style: TextStyle(
@@ -58,7 +63,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
       body: ListView(
@@ -76,7 +81,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   color: Colors.black.withOpacity(0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
             ),
             child: Row(
@@ -89,22 +94,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       RichText(
-                        text: const TextSpan(
+                        text: TextSpan(
                           text: 'John Doe ',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
+                          style: AppTextStyles.link.copyWith(
                             color: AppColors.text,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
                           ),
                           children: [
                             TextSpan(
                               text: '+23 1234567890',
-                              style: TextStyle(
-                                fontWeight: FontWeight.normal,
-                                color: AppColors.mutedText,
-                              ),
-                            )
+                              style: AppTextStyles.subtitle,
+                            ),
                           ],
                         ),
                       ),
@@ -138,21 +137,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   color: Colors.black.withOpacity(0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Produk',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    color: AppColors.text,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
+                const Text('Produk', style: AppTextStyles.h2),
                 const SizedBox(height: 12),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -182,23 +173,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         children: [
                           Text(
                             widget.product.product_name,
-                            style: const TextStyle(
-                              fontFamily: 'Montserrat',
-                              color: AppColors.text,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
+                            style: AppTextStyles.productName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
                           const Text(
                             'Plant Store', // Replace with real store name if available
-                            style: TextStyle(
-                              fontFamily: 'Montserrat',
-                              color: AppColors.mutedText,
-                              fontSize: 12,
-                            ),
+                            style: AppTextStyles.subtitle,
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -225,7 +207,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       'Total Produk',
                       style: TextStyle(
                         fontFamily: 'Montserrat',
-                        color: AppColors.text,
+                        color: AppColors.mutedText,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
@@ -258,21 +240,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   color: Colors.black.withOpacity(0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Metode Pembayaran',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    color: AppColors.text,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
+                const Text('Metode Pembayaran', style: AppTextStyles.h2),
                 const SizedBox(height: 12),
                 InkWell(
                   onTap: () => setState(() => _selectedPaymentMethod = 0),
@@ -290,8 +264,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                         Icon(
-                          _selectedPaymentMethod == 0 ? Icons.check_circle : Icons.radio_button_unchecked,
-                          color: _selectedPaymentMethod == 0 ? const Color(0xFF358C36) : Colors.grey[400],
+                          _selectedPaymentMethod == 0
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: _selectedPaymentMethod == 0
+                              ? const Color(0xFF358C36)
+                              : Colors.grey[400],
                         ),
                       ],
                     ),
@@ -328,8 +306,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ],
                         ),
                         Icon(
-                          _selectedPaymentMethod == 1 ? Icons.check_circle : Icons.radio_button_unchecked,
-                          color: _selectedPaymentMethod == 1 ? const Color(0xFF358C36) : Colors.grey[400],
+                          _selectedPaymentMethod == 1
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          color: _selectedPaymentMethod == 1
+                              ? const Color(0xFF358C36)
+                              : Colors.grey[400],
                         ),
                       ],
                     ),
@@ -352,25 +334,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   color: Colors.black.withOpacity(0.04),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Rincian Pembayaran',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    color: AppColors.text,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
+                const Text('Rincian Pembayaran', style: AppTextStyles.h2),
                 const SizedBox(height: 12),
-                _buildPaymentRow('Subtotal Pemesanan', formatCurrency(widget.product.selling_price)),
+                _buildPaymentRow(
+                  'Subtotal Pemesanan',
+                  formatCurrency(widget.product.selling_price),
+                ),
                 const SizedBox(height: 8),
-                _buildPaymentRow('Subtotal Pengiriman', formatCurrency(shippingFee)),
+                _buildPaymentRow(
+                  'Subtotal Pengiriman',
+                  formatCurrency(shippingFee),
+                ),
                 const SizedBox(height: 8),
                 _buildPaymentRow('Biaya Layanan', formatCurrency(serviceFee)),
                 const SizedBox(height: 12),
@@ -383,9 +363,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       'Total Pembayaran',
                       style: TextStyle(
                         fontFamily: 'Montserrat',
-                        color: AppColors.text,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                        color: AppColors.mutedText,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                     ),
                     Text(
@@ -419,31 +399,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'TOTAL',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
-                        color: AppColors.mutedText,
-                        fontSize: 10,
-                        letterSpacing: 1,
-                      ),
-                    ),
+                    const Text('TOTAL', style: AppTextStyles.subtitle),
                     Text(
                       formatCurrency(totalPrice),
-                      style: const TextStyle(
-                        fontFamily: 'Montserrat',
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
+                      style: AppTextStyles.finalPrice,
                     ),
                   ],
                 ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF358C36), // Green from the design
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  backgroundColor: const Color(
+                    0xFF358C36,
+                  ), // Green from the design
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
                   ),
@@ -452,13 +424,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 onPressed: () {
                   // Handle order creation
                 },
-                child: const Text(
+                child: Text(
                   'Buat Pemesanan',
-                  style: TextStyle(
-                    fontFamily: 'Montserrat',
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                  style: AppTextStyles.link.copyWith(
+                    color: AppColors.background,
                   ),
                 ),
               ),
