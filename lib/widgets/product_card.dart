@@ -317,3 +317,84 @@ class ProductCart extends StatelessWidget {
     );
   }
 }
+
+class ProductListTile extends StatelessWidget {
+  final String title;
+  final String storeName;
+  final String price;
+  final String imageUrl;
+
+  const ProductListTile({
+    Key? key,
+    required this.title,
+    this.storeName = '',
+    required this.price,
+    required this.imageUrl,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: imageUrl.isNotEmpty
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, color: Colors.grey),
+                  ),
+                )
+              : const Icon(Icons.image_outlined, color: Colors.grey),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: SizedBox(
+            height: 80, // Menyamakan tinggi teks dengan tinggi gambar (80px)
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.productName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (storeName.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        storeName,
+                        style: AppTextStyles.subtitle,
+                      ),
+                    ],
+                  ],
+                ),
+                Text(
+                  price,
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

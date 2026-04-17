@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
+import '../widgets/product_card.dart';
 import '../ui/app_colors.dart';
 import '../ui/app_text_styles.dart';
 
@@ -145,57 +146,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               children: [
                 const Text('Produk', style: AppTextStyles.h2),
                 const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: widget.product.image_url.isNotEmpty
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: Image.network(
-                                widget.product.image_url,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const SizedBox(),
-                              ),
-                            )
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.product.product_name,
-                            style: AppTextStyles.productName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Plant Store', // Replace with real store name if available
-                            style: AppTextStyles.subtitle,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            formatCurrency(widget.product.selling_price),
-                            style: const TextStyle(
-                              fontFamily: 'Montserrat',
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                ProductListTile(
+                  title: widget.product.product_name,
+                  storeName: 'Plant Store',
+                  price: formatCurrency(widget.product.selling_price),
+                  imageUrl: widget.product.image_url,
                 ),
                 const SizedBox(height: 12),
                 const Divider(),

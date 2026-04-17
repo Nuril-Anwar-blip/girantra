@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:girantra/screens/cart_screen.dart';
 import 'package:girantra/screens/checkout_screen.dart';
+import 'package:girantra/screens/seller_screen.dart';
 
 import '../models/product_model.dart';
 import '../ui/app_colors.dart';
@@ -230,61 +231,70 @@ class ProductDetailScreen extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              ClipOval(
-                                child: Image.network(
-                                  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=60',
-                                  width: 48,
-                                  height: 48,
-                                  fit: BoxFit.cover,
+                          InkWell(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const SellerScreen(),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    Text(
-                                      'Plant Store',
-                                      style: TextStyle(
-                                        fontFamily: 'Montserrat',
-                                        fontSize: 16,
-                                        color: AppColors.text,
-                                        fontWeight: FontWeight.w600,
+                              );
+                            },
+                            child: Row(
+                              children: [
+                                ClipOval(
+                                  child: Image.network(
+                                    'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=60',
+                                    width: 48,
+                                    height: 48,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: const [
+                                      Text(
+                                        'Plant Store',
+                                        style: TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          fontSize: 16,
+                                          color: AppColors.text,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
+                                      SizedBox(height: 2),
+                                      Text(
+                                        'SURAKARTA',
+                                        style: TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          fontSize: 11,
+                                          color: AppColors.mutedText,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Row(
+                                  children: const [
+                                    Icon(
+                                      Icons.circle,
+                                      size: 8,
+                                      color: AppColors.primary,
                                     ),
-                                    SizedBox(height: 2),
+                                    SizedBox(width: 4),
                                     Text(
-                                      'SURAKARTA',
+                                      'Online',
                                       style: TextStyle(
                                         fontFamily: 'Montserrat',
-                                        fontSize: 11,
-                                        color: AppColors.mutedText,
+                                        fontSize: 12,
+                                        color: AppColors.text,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                              Row(
-                                children: const [
-                                  Icon(
-                                    Icons.circle,
-                                    size: 8,
-                                    color: AppColors.primary,
-                                  ),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    'Online',
-                                    style: TextStyle(
-                                      fontFamily: 'Montserrat',
-                                      fontSize: 12,
-                                      color: AppColors.text,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ],
                       ),
