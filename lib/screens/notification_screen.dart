@@ -20,33 +20,36 @@ class _NotificationScreenState extends State<NotificationScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Row(
-                  children: const [
-                    Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 18),
-                    SizedBox(width: 6),
-                    Text(
-                      'Kembali',
-                      style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ),
-              const Text(
-                'Notifikasi',
-                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w700, fontSize: 16),
-              ),
-            ],
+        centerTitle: false,
+        leadingWidth: 110,
+        leading: TextButton.icon(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.text, size: 16),
+          label: const Text(
+            'Kembali',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              color: AppColors.text,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Text(
+                'Notifikasi',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  color: AppColors.text,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          )
+        ],
       ),
       body: Column(
         children: [

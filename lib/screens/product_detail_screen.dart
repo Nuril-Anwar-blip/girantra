@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:girantra/screens/cart_screen.dart';
+import 'package:girantra/screens/checkout_screen.dart';
 
 import '../models/product_model.dart';
 import '../ui/app_colors.dart';
@@ -19,10 +21,14 @@ class ProductDetailScreen extends StatelessWidget {
         elevation: 0,
         leading: TextButton.icon(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back, color: AppColors.text, size: 18),
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.text, size: 16),
           label: const Text(
             'Kembali',
-            style: TextStyle(fontFamily: 'Montserrat', color: AppColors.text, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              color: AppColors.text,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         leadingWidth: 110,
@@ -68,34 +74,115 @@ class ProductDetailScreen extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('HARGA', style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: AppColors.mutedText, fontWeight: FontWeight.w400)),
-                              Text('Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}', style: AppTextStyles.h2.copyWith(color: AppColors.primary, fontSize: 21)),
+                              const Text(
+                                'HARGA',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 12,
+                                  color: AppColors.mutedText,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              Text(
+                                'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
+                                style: AppTextStyles.h2.copyWith(
+                                  color: AppColors.primary,
+                                  fontSize: 21,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            const Text('KATEGORI', style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: AppColors.mutedText, fontWeight: FontWeight.w400)),
+                            const Text(
+                              'KATEGORI',
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 12,
+                                color: AppColors.mutedText,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               color: AppColors.primary,
-                              child: const Text('Pupuk', style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+                              child: const Text(
+                                'Pupuk',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const Text('NAMA PRODUK', style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: AppColors.mutedText, fontWeight: FontWeight.w400)),
-                    Text(product.product_name, style: const TextStyle(fontFamily: 'Montserrat', fontSize: 21, fontWeight: FontWeight.w600, color: AppColors.text)),
+                    const Text(
+                      'NAMA PRODUK',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        color: AppColors.mutedText,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    Text(
+                      product.product_name,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 21,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
+                      ),
+                    ),
                     const SizedBox(height: 16),
-                    const Text('DESKRIPSI', style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: AppColors.mutedText, fontWeight: FontWeight.w400)),
+                    const Text(
+                      'DESKRIPSI',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        color: AppColors.mutedText,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(product.description, style: const TextStyle(fontFamily: 'Montserrat', fontSize: 16, color: AppColors.text, height: 1.4)),
+                    Text(
+                      product.description,
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 16,
+                        color: AppColors.text,
+                        height: 1.4,
+                      ),
+                    ),
                     const SizedBox(height: 16),
-                    const Text('STOK', style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: AppColors.mutedText, fontWeight: FontWeight.w400)),
-                    Text('${product.stock} Stok', style: const TextStyle(fontFamily: 'Montserrat', fontSize: 16, color: AppColors.text, fontWeight: FontWeight.w600)),
+                    const Text(
+                      'STOK',
+                      style: TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 12,
+                        color: AppColors.mutedText,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    Text(
+                      '${product.stock} Stok',
+                      style: const TextStyle(
+                        fontFamily: 'Montserrat',
+                        fontSize: 16,
+                        color: AppColors.text,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -107,7 +194,7 @@ class ProductDetailScreen extends StatelessWidget {
                             color: AppColors.text.withOpacity(0.04),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
-                          )
+                          ),
                         ],
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -116,11 +203,30 @@ class ProductDetailScreen extends StatelessWidget {
                         children: [
                           Row(
                             children: const [
-                              Text('4.9', style: TextStyle(fontFamily: 'Montserrat', fontSize: 16, color: AppColors.text, fontWeight: FontWeight.w600)),
+                              Text(
+                                '4.9',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 16,
+                                  color: AppColors.text,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                               SizedBox(width: 4),
-                              Icon(Icons.star, size: 16, color: AppColors.accent),
+                              Icon(
+                                Icons.star,
+                                size: 16,
+                                color: AppColors.accent,
+                              ),
                               SizedBox(width: 8),
-                              Text('Penilaian Produk (300)', style: TextStyle(fontFamily: 'Montserrat', fontSize: 16, color: AppColors.mutedText)),
+                              Text(
+                                'Penilaian Produk (300)',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 16,
+                                  color: AppColors.mutedText,
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -139,17 +245,43 @@ class ProductDetailScreen extends StatelessWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: const [
-                                    Text('Plant Store', style: TextStyle(fontFamily: 'Montserrat', fontSize: 16, color: AppColors.text, fontWeight: FontWeight.w600)),
+                                    Text(
+                                      'Plant Store',
+                                      style: TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        fontSize: 16,
+                                        color: AppColors.text,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                     SizedBox(height: 2),
-                                    Text('SURAKARTA', style: TextStyle(fontFamily: 'Montserrat', fontSize: 11, color: AppColors.mutedText)),
+                                    Text(
+                                      'SURAKARTA',
+                                      style: TextStyle(
+                                        fontFamily: 'Montserrat',
+                                        fontSize: 11,
+                                        color: AppColors.mutedText,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                               Row(
                                 children: const [
-                                  Icon(Icons.circle, size: 8, color: AppColors.primary),
+                                  Icon(
+                                    Icons.circle,
+                                    size: 8,
+                                    color: AppColors.primary,
+                                  ),
                                   SizedBox(width: 4),
-                                  Text('Online', style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: AppColors.text)),
+                                  Text(
+                                    'Online',
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      fontSize: 12,
+                                      color: AppColors.text,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
@@ -179,10 +311,23 @@ class ProductDetailScreen extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           side: const BorderSide(color: AppColors.primary),
-                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: Radius.circular(4))),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.horizontal(
+                              left: Radius.circular(4),
+                            ),
+                          ),
                         ),
-                        onPressed: () {},
-                        child: const Icon(Icons.shopping_cart_outlined, color: AppColors.primary),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const CartScreen(),
+                            ),
+                          );
+                        },
+                        child: const Icon(
+                          Icons.shopping_cart_outlined,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                     Expanded(
@@ -191,11 +336,28 @@ class ProductDetailScreen extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           backgroundColor: AppColors.primary,
-                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(4))),
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.horizontal(
+                              right: Radius.circular(4),
+                            ),
+                          ),
                           elevation: 0,
                         ),
-                        onPressed: () {},
-                        child: const Text('Beli', style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontSize: 16)),
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => CheckoutScreen(product: product),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Beli',
+                          style: TextStyle(
+                            fontFamily: 'Montserrat',
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -208,4 +370,3 @@ class ProductDetailScreen extends StatelessWidget {
     );
   }
 }
-

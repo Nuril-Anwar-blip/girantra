@@ -14,33 +14,36 @@ class CartScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: Row(
-                  children: const [
-                    Icon(Icons.arrow_back_ios_new, color: Colors.black87, size: 18),
-                    SizedBox(width: 6),
-                    Text(
-                      'Kembali',
-                      style: TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500),
-                    ),
-                  ],
-                ),
-              ),
-              const Text(
-                'Keranjang Saya',
-                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w700, fontSize: 16),
-              ),
-            ],
+        centerTitle: false,
+        leadingWidth: 110,
+        leading: TextButton.icon(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.text, size: 16),
+          label: const Text(
+            'Kembali',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              color: AppColors.text,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Text(
+                'Keranjang Saya',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  color: AppColors.text,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          )
+        ],
       ),
       body: Column(
         children: [
@@ -54,7 +57,8 @@ class CartScreen extends StatelessWidget {
                   description: 'Lorem ipsum dolor sit amet, conse ksdjf ...',
                   price: 'Rp 45.000',
                   qty: 3,
-                  imageUrl: 'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                  imageUrl:
+                      'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
                   onAdd: () {},
                   onRemove: () {},
                 ),
@@ -65,7 +69,8 @@ class CartScreen extends StatelessWidget {
                   description: 'Lorem ipsum dolor sit amet, conse ksdjf ...',
                   price: 'Rp 75.000',
                   qty: 1,
-                  imageUrl: 'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                  imageUrl:
+                      'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
                   onAdd: () {},
                   onRemove: () {},
                 ),
@@ -76,7 +81,8 @@ class CartScreen extends StatelessWidget {
                   description: 'Lorem ipsum dolor sit amet, conse ksdjf ...',
                   price: 'Rp 15.000',
                   qty: 7,
-                  imageUrl: 'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+                  imageUrl:
+                      'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
                   onAdd: () {},
                   onRemove: () {},
                 ),
@@ -100,15 +106,21 @@ class CartScreen extends StatelessWidget {
                     children: const [
                       Text(
                         'TOTAL',
-                        style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: AppColors.mutedText, fontWeight: FontWeight.w400),
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 12,
+                          color: AppColors.mutedText,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
                       SizedBox(height: 2),
                       Text(
                         'Rp 315.000',
                         style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18,
-                            color: AppColors.primary),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ],
                   ),
