@@ -191,7 +191,7 @@ class ProductCart extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(12),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Image
           Container(
