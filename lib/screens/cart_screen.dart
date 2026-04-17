@@ -100,11 +100,7 @@ class CartScreen extends StatelessWidget {
                     children: const [
                       Text(
                         'TOTAL',
-                        style: TextStyle(
-                            fontSize: 10,
-                            color: AppColors.mutedText,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5),
+                        style: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: AppColors.mutedText, fontWeight: FontWeight.w400),
                       ),
                       SizedBox(height: 2),
                       Text(
