@@ -32,42 +32,40 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            InkWell(
-              onTap: () => Navigator.pop(context),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  children: const [
-                    Icon(Icons.chevron_left, color: Colors.white),
-                    SizedBox(width: 4),
-                    Text(
-                      'Kembali',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontFamily: 'Montserrat',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+        centerTitle: false,
+        leadingWidth: 110,
+        leading: TextButton.icon(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColors.background,
+            size: 16,
+          ),
+          label: const Text(
+            'Kembali',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              color: AppColors.background,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Text(
+                'Edit Profil',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  color: AppColors.background,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            const Text(
-              'Edit Profil',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                fontFamily: 'Montserrat',
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
       body: Container(
         width: double.infinity,
