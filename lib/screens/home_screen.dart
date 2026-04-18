@@ -137,10 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Location',
-                    style: AppTextStyles.subtitle,
-                  ),
+                  const Text('Location', style: AppTextStyles.subtitle),
                   Row(
                     children: [
                       const Icon(
@@ -152,7 +149,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Text(
                           _userAddress,
-                          style: AppTextStyles.subtitle.copyWith(color: AppColors.text, fontWeight: FontWeight.w600),
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: AppColors.text,
+                            fontWeight: FontWeight.w600,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -176,35 +176,14 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.text),
+            icon: const Icon(
+              Icons.shopping_cart_outlined,
+              color: AppColors.text,
+            ),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const CartScreen()),
               );
-            },
-          ),
-          IconButton(
-            icon: Icon(
-              session == null ? Icons.login : Icons.logout,
-              color: Colors.black87,
-            ),
-            onPressed: () async {
-              if (session == null) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const RegisterScreen(),
-                  ),
-                );
-                return;
-              }
-              await _authService.signOut();
-
-              if (mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
             },
           ),
           const SizedBox(width: 8),
@@ -307,10 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Lihat Produk Favorit',
-                style: AppTextStyles.h2,
-              ),
+              Text('Lihat Produk Favorit', style: AppTextStyles.h2),
               GestureDetector(
                 onTap: () {
                   Navigator.of(context).push(
@@ -356,12 +332,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   final product = products[index];
                   return ProductCard(
                     imageUrl: product.image_url,
-                    tag: product.category_id == 1 ? 'Pupuk' : (product.category_id == 2 ? 'Benih' : 'Produk'),
+                    tag: product.category_id == 1
+                        ? 'Pupuk'
+                        : (product.category_id == 2 ? 'Benih' : 'Produk'),
                     title: product.product_name,
                     location: 'Surakarta',
                     rating: '4.8 (120)',
-                    price: 'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
-                    unit: ' / ${product.unit.length > 1 ? product.unit.substring(0, 1).toUpperCase() + product.unit.substring(1).toLowerCase() : product.unit}',
+                    price:
+                        'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
+                    unit:
+                        ' / ${product.unit.length > 1 ? product.unit.substring(0, 1).toUpperCase() + product.unit.substring(1).toLowerCase() : product.unit}',
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -409,12 +389,15 @@ class _CategoryShortcut extends StatelessWidget {
           children: [
             Icon(icon, color: AppColors.primaryDark, size: 22),
             const SizedBox(height: 6),
-            Text(label, style: AppTextStyles.subtitle.copyWith(color: AppColors.primaryDark)),
+            Text(
+              label,
+              style: AppTextStyles.subtitle.copyWith(
+                color: AppColors.primaryDark,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
-
-
