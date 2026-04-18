@@ -1,0 +1,8 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.anthropic.com",
+    "ANTHROPIC_API_KEY": "",
+    "ANTHROPIC_AUTH_TOKEN": "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",
+    "ANTHROPIC_MODEL": "nvidia/nemotron-3-super-120b-a12b:free"
+  }
+}

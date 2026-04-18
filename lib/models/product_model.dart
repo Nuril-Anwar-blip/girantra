@@ -1,19 +1,18 @@
-
-class ProductModel{
-  final int? product_id;        // int8
-  final int category_id;        // int8
-  final String product_name;    // varchar
-  final String description;     // text
-  final double cost_price;      // numeric
-  final double selling_price;   // numeric
+class ProductModel {
+  final int? product_id; // int8
+  final int category_id; // int8
+  final String product_name; // varchar
+  final String description; // text
+  final double cost_price; // numeric
+  final double selling_price; // numeric
   final double ai_recommendation_price; // numeric
-  final int stock;              // int8
-  final String unit;            // varchar
-  final String image_url;       // varchar
-  final DateTime harvest_date;  // date
-  final String status_product;  // status (Enum)
-  final String seller_id;       // uuid
-  final DateTime? created_at;   // timestamptz
+  final int stock; // int8
+  final String unit; // varchar
+  final String image_url; // varchar
+  final DateTime harvest_date; // date
+  final String status_product; // status (Enum)
+  final String seller_id; // uuid
+  final DateTime? created_at; // timestamptz
 
   ProductModel({
     required this.product_id,
@@ -47,7 +46,9 @@ class ProductModel{
       harvest_date: json['harvest_date'],
       status_product: json['status_product'],
       seller_id: json['seller_id'],
-      created_at: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      created_at: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
     );
   }
 }

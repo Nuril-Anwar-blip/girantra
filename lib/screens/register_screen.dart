@@ -38,7 +38,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordController.text.trim(),
         phone_number: _phoneController.text.trim(),
         address: _addressController.text.trim(),
-        role: 'customer',
+        role: 'buyer',
         account_status: 'active',
       );
 
