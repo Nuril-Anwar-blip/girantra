@@ -212,11 +212,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       children: [
                         const Text(
                           'COD - Cek Dahulu',
-                          style: TextStyle(
-                            fontFamily: 'Montserrat',
-                            color: AppColors.text,
-                            fontSize: 13,
-                          ),
+                          style: AppTextStyles.subtitle,
                         ),
                         Icon(
                           _selectedPaymentMethod == 0
@@ -240,21 +236,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
                               'Transfer Bank',
-                              style: TextStyle(
-                                fontFamily: 'Montserrat',
-                                color: AppColors.text,
-                                fontSize: 13,
-                              ),
+                              style: AppTextStyles.subtitle,
                             ),
                             SizedBox(height: 2),
                             Text(
                               'Bank BRI',
-                              style: TextStyle(
-                                fontFamily: 'Montserrat',
-                                color: AppColors.mutedText,
+                              style: AppTextStyles.subtitle.copyWith(
                                 fontSize: 11,
                               ),
                             ),
@@ -399,11 +389,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontFamily: 'Montserrat',
-            color: AppColors.text,
-            fontSize: 13,
-          ),
+          style: AppTextStyles.subtitle,
         ),
         Text(
           value,

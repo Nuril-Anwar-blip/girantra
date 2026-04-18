@@ -7,6 +7,7 @@ import '../services/auth_service.dart';
 import 'login_screen.dart';
 import 'edit_profile_screen.dart';
 import '../ui/app_colors.dart';
+import '../ui/app_text_styles.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -85,12 +86,9 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: AppTextStyles.h2.copyWith(
         color: AppColors.primary,
-        fontWeight: FontWeight.bold,
-        fontSize: 14,
-        fontFamily: 'Montserrat',
-      ),
+        )
     );
   }
 
@@ -106,12 +104,7 @@ class ProfileScreen extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(
-                  color: AppColors.mutedText,
-                  fontSize: 14,
-                  fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w500,
-                ),
+                style: AppTextStyles.subtitle,
               ),
             ),
             const Icon(Icons.chevron_right, color: AppColors.mutedText),
@@ -141,21 +134,12 @@ class ProfileScreen extends StatelessWidget {
                   children: const [
                     Text(
                       'Username',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: AppColors.text,
-                        fontFamily: 'Montserrat',
-                      ),
+                      style: AppTextStyles.productName,
                     ),
                     SizedBox(height: 4),
                     Text(
                       'username@gmail.com',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: AppColors.mutedText,
-                        fontFamily: 'Montserrat',
-                      ),
+                      style: AppTextStyles.subtitle,
                     ),
                   ],
                 ),
