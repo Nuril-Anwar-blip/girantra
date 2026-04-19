@@ -146,6 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       title,
       style: AppTextStyles.h2.copyWith(
         color: AppColors.primary,
+        fontWeight: FontWeight.w500,
         )
     );
   }
