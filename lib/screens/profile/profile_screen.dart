@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:girantra/screens/buyer/cart_screen.dart';
 import 'package:girantra/screens/buyer/like_screen.dart';
 import 'package:girantra/screens/auth/register_screen.dart';
+import 'package:girantra/screens/seller/register_seller_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/auth_service.dart';
 import '../auth/login_screen.dart';
@@ -47,6 +48,8 @@ class ProfileScreen extends StatelessWidget {
                       _buildHistoryCard(context),
                       const SizedBox(height: 16),
                       _buildActivityCard(context),
+                      const SizedBox(height: 16),
+                      _buildSellerRegister(context),
                       const Spacer(),
                       const SizedBox(height: 32),
                       _buildLogoutButton(context),
@@ -194,6 +197,25 @@ class ProfileScreen extends StatelessWidget {
                 ),
               );
             }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSellerRegister(BuildContext context){
+    return _buildCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle('Daftar Menjadi Penjual'),
+          const SizedBox(height: 12),
+          _buildMenuItem(Icons.storefront, 'Daftar Menjadi Penjual', () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const RegisterSellerScreen(),
+              ),
+            );
+          }),
         ],
       ),
     );
