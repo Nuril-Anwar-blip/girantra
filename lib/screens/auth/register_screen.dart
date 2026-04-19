@@ -47,14 +47,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (user != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Registrasi berhasil! Silakan cek kotak masuk atau spam email Anda untuk melakukan aktivasi.',
+              style: TextStyle(fontFamily: 'Montserrat', color: AppColors.text),
+            ),
+            backgroundColor: AppColors.background,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).size.height - 150,
+              left: 24,
+              right: 24,
+            ),
+          ),
+        );
         Navigator.of(context).pop();
       } else {
-        // Sering terjadi kalau Supabase butuh email verification:
-        // user bisa dibuat tapi session belum aktif.
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Registrasi berhasil. Silakan cek email untuk verifikasi.',
+          SnackBar(
+            content: const Text(
+              'Registrasi berhasil! Silakan cek kotak masuk atau spam email Anda untuk melakukan aktivasi.',
+              style: TextStyle(fontFamily: 'Montserrat', color: AppColors.text),
+            ),
+            backgroundColor: AppColors.background,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).size.height - 150,
+              left: 24,
+              right: 24,
             ),
           ),
         );
