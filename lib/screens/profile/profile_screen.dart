@@ -10,8 +10,32 @@ import 'edit_profile_screen.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  
+  bool _isLoading = true;
+  String? _avatarUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +56,9 @@ class ProfileScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: SafeArea(
-        child: LayoutBuilder(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
@@ -62,6 +88,35 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        final userData = await Supabase.instance.client
+            .from('users')
+            .select()
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        if (userData != null && mounted) {
+          setState(() {
+            _nameController.text = userData['full_name'] ?? '';
+            _emailController.text = userData['email'] ?? '';
+            _avatarUrl = '${Supabase.instance.client.storage.from('avatars').getPublicUrl('${user.id}/profile.jpg')}?t=${DateTime.now().millisecondsSinceEpoch}';
+            _isLoading = false;
+          });
+        } else {
+          if (mounted) setState(() => _isLoading = false);
+        }
+      } else {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Widget _buildCard({required Widget child}) {
@@ -126,22 +181,35 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              const CircleAvatar(
-                radius: 28,
-                backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=11'),
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  shape: BoxShape.circle,
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: _avatarUrl != null && _avatarUrl!.isNotEmpty
+                    ? Image.network(
+                        _avatarUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Icon(Icons.person, size: 28, color: Colors.grey[400]),
+                      )
+                    : Icon(Icons.person, size: 28, color: Colors.grey[400]),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'Username',
+                      _nameController.text.isNotEmpty ? _nameController.text : 'User',
                       style: AppTextStyles.productName,
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'username@gmail.com',
+                      _emailController.text.isNotEmpty ? _emailController.text : 'Belum ada email',
                       style: AppTextStyles.subtitle,
                     ),
                   ],
@@ -150,12 +218,16 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _buildMenuItem(Icons.edit_outlined, 'Edit Profile', () {
-            Navigator.of(context).push(
+          _buildMenuItem(Icons.edit_outlined, 'Edit Profile', () async {
+            await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => const EditProfileScreen(),
               ),
             );
+            setState(() {
+              _isLoading = true;
+            });
+            _fetchUserData();
           }),
         ],
       ),
