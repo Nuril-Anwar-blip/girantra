@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:girantra/screens/cart_screen.dart';
-import 'package:girantra/screens/checkout_screen.dart';
-import 'package:girantra/screens/seller_screen.dart';
+import 'package:girantra/screens/buyer/cart_screen.dart';
+import 'package:girantra/screens/buyer/checkout_screen.dart';
+import 'package:girantra/screens/seller/seller_screen.dart';
 
-import '../models/product_model.dart';
-import '../ui/app_colors.dart';
-import '../ui/app_text_styles.dart';
+import '../../models/product_model.dart';
+import '../../ui/app_colors.dart';
+import '../../ui/app_text_styles.dart';
 // import '../ui/app_widgets.dart';
 
 class ProductDetailScreen extends StatelessWidget {

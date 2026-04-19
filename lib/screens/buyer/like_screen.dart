@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../ui/app_colors.dart';
-import '../models/product_model.dart';
-import '../services/product_service.dart';
-import '../widgets/product_card.dart';
+import '../../ui/app_colors.dart';
+import '../../models/product_model.dart';
+import '../../services/product_service.dart';
+import '../../widgets/product_card.dart';
 import 'product_detail_screen.dart';
 
 class LikeScreen extends StatefulWidget {

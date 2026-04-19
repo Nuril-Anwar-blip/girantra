@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/product_model.dart';
-import '../widgets/product_card.dart';
-import '../ui/app_colors.dart';
-import '../ui/app_text_styles.dart';
+import '../../models/product_model.dart';
+import '../../widgets/product_card.dart';
+import '../../ui/app_colors.dart';
+import '../../ui/app_text_styles.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final ProductModel product;

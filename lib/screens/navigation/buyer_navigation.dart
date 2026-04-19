@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../ui/app_colors.dart';
-import 'home_screen.dart';
-import 'purchase_screen.dart';
-import 'profile_screen.dart';
+import '../../ui/app_colors.dart';
+import '../buyer/home_screen.dart';
+import '../buyer/purchase_screen.dart';
+import '../profile/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});

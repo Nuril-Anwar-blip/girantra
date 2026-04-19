@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:girantra/ui/app_text_styles.dart';
 
-import '../ui/app_colors.dart';
+import '../../ui/app_colors.dart';
 // import '../ui/app_widgets.dart';
-import '../widgets/product_card.dart';
+import '../../widgets/product_card.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});

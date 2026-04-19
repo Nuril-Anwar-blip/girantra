@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:girantra/screens/cart_screen.dart';
-import 'package:girantra/screens/like_screen.dart';
-import 'package:girantra/screens/register_screen.dart';
+import 'package:girantra/screens/buyer/cart_screen.dart';
+import 'package:girantra/screens/buyer/like_screen.dart';
+import 'package:girantra/screens/auth/register_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../services/auth_service.dart';
-import 'login_screen.dart';
+import '../../services/auth_service.dart';
+import '../auth/login_screen.dart';
 import 'edit_profile_screen.dart';
-import '../ui/app_colors.dart';
-import '../ui/app_text_styles.dart';
+import '../../ui/app_colors.dart';
+import '../../ui/app_text_styles.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});

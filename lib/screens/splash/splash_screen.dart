@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:girantra/screens/onboarding_screen.dart';
-import 'package:girantra/screens/auth_gate.dart';
+import 'package:girantra/screens/onboarding/onboarding_screen.dart';
+import 'package:girantra/screens/onboarding/auth_gate.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

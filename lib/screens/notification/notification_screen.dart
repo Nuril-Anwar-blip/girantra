@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:girantra/ui/app_text_styles.dart';
 
-import '../ui/app_colors.dart';
+import '../../ui/app_colors.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});

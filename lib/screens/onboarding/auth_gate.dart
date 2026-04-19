@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth_screen.dart';
-import 'main_navigation.dart';
+import '../navigation/buyer_navigation.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});

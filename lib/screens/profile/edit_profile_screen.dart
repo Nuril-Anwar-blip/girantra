@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../ui/app_colors.dart';
+import '../../ui/app_colors.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
