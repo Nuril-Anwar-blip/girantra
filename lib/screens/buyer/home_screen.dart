@@ -189,9 +189,20 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async {
+          setState(() {
+            _futureProducts = _productService.getProducts();
+          });
+          await _loadUserAddress();
+          try {
+            await _futureProducts;
+          } catch (_) {}
+        },
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
           Container(
             height: 120,
             decoration: BoxDecoration(
@@ -356,6 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ],
+        ),
       ),
     );
   }
