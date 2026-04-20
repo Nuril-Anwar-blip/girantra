@@ -6,6 +6,7 @@ import '../../ui/app_text_styles.dart';
 import '../../ui/app_widgets.dart';
 import 'register_screen.dart';
 import '../navigation/buyer_navigation.dart';
+import '../navigation/seller_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,6 +35,11 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordController.text.trim(),
     );
 
+    String? role;
+    if (user != null) {
+      role = await _authService.getUserRole(user.id);
+    }
+
     setState(() {
       _isLoading = false;
     });
@@ -41,11 +47,17 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (user != null) {
-      // Navigasi ke MainNavigation setelah login sukses
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const MainNavigation()),
-        (route) => false,
-      );
+      if (role == 'seller') {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const SellerNavigation()),
+          (route) => false,
+        );
+      } else {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const MainNavigation()),
+          (route) => false,
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login gagal, periksa email/password.')),

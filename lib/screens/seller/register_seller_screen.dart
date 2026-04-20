@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:girantra/ui/app_text_styles.dart';
 import '../../ui/app_colors.dart';
+import '../navigation/seller_navigation.dart';
 
 class RegisterSellerScreen extends StatefulWidget {
   const RegisterSellerScreen({super.key});
@@ -145,9 +146,20 @@ class _RegisterSellerScreenState extends State<RegisterSellerScreen> {
   }
 
   Future<void> _registerSeller() async {
-    // Implementasi insert ke tabel sellers:
     setState(() => _isSaving = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simulasi
+    
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        await Supabase.instance.client.from('users').update({
+          'role': 'seller',
+          'full_name': _nameController.text,
+        }).eq('user_id', user.id);
+      }
+    } catch (e) {
+      print('Error updating seller role: $e');
+    }
+
     setState(() => _isSaving = false);
 
     if (mounted) {
@@ -166,7 +178,10 @@ class _RegisterSellerScreenState extends State<RegisterSellerScreen> {
           ),
         ),
       );
-      Navigator.of(context).pop();
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const SellerNavigation()),
+        (route) => false,
+      );
     }
   }
 

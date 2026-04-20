@@ -51,7 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           SnackBar(
             content: const Text(
               'Registrasi berhasil! Silakan cek kotak masuk atau spam email Anda untuk melakukan aktivasi.',
-              style: TextStyle(fontFamily: 'Montserrat', color: AppColors.text),
+              style: TextStyle(fontFamily: 'Montserrat', color: AppColors.text ),
             ),
             backgroundColor: AppColors.background,
             behavior: SnackBarBehavior.floating,
