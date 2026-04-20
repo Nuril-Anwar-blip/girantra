@@ -44,7 +44,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
         centerTitle: true,
         title: Text(
           'Produk Saya',
-          style: AppTextStyles.h2.copyWith(color: AppColors.text),
+          style: AppTextStyles.h2.copyWith(color: AppColors.primary),
         ),
       ),
       body: Column(
