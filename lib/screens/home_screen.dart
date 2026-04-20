@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/product_model.dart';
-import '../services/auth_service.dart';
+import '../services/auth_service_fixed.dart';
 import '../services/product_service.dart';
 import '../ui/app_colors.dart';
 import '../ui/app_widgets.dart';
@@ -11,7 +11,7 @@ import 'filter_screen.dart';
 import 'like_screen.dart';
 import 'notification_screen.dart';
 import 'product_detail_screen.dart';
-import 'register_screen.dart';
+import 'register_screen_fixed_v2.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
