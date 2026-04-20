@@ -46,8 +46,6 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
     );
   }
 
-
-
   Widget _buildTotalSaldoCard() {
     return Container(
       width: double.infinity,
@@ -80,14 +78,11 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
               const SizedBox(height: 4),
               Text(
                 'Rp 34.500.000',
-                style: const TextStyle(
-                  fontFamily: 'Montserrat',
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primary,
-                ),
+                style: AppTextStyles.h1.copyWith(color: AppColors.primary),
               ),
-              const SizedBox(height: 24), // Space for button padding if needed, but we use positioned
+              const SizedBox(
+                height: 24,
+              ), // Space for button padding if needed, but we use positioned
             ],
           ),
           Positioned(
@@ -96,7 +91,10 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
             child: GestureDetector(
               onTap: () {},
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
                   borderRadius: BorderRadius.circular(4),
@@ -118,12 +116,12 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
                       Icons.arrow_forward_ios,
                       color: Colors.white,
                       size: 10,
-                    )
+                    ),
                   ],
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -169,7 +167,11 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
           const SizedBox(height: 24),
           Row(
             children: [
-              const Icon(Icons.local_shipping_outlined, size: 20, color: AppColors.mutedText),
+              const Icon(
+                Icons.local_shipping_outlined,
+                size: 20,
+                color: AppColors.mutedText,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -179,9 +181,13 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
                   ),
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, size: 14, color: AppColors.mutedText),
+              const Icon(
+                Icons.arrow_forward_ios,
+                size: 14,
+                color: AppColors.mutedText,
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -192,19 +198,13 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
       children: [
         Text(
           number,
-          style: const TextStyle(
-            fontFamily: 'Montserrat',
-            fontSize: 24,
-            fontWeight: FontWeight.w700,
-            color: AppColors.primary,
-          ),
+          style: AppTextStyles.h2.copyWith(color: AppColors.primary),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: AppTextStyles.subtitle.copyWith(
             color: AppColors.mutedText,
-            fontSize: 12,
           ),
           textAlign: TextAlign.center,
         ),
@@ -243,23 +243,28 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(Icons.show_chart, color: AppColors.text, size: 48), // Large chart icon placeholder 
+              Icon(
+                Icons.show_chart,
+                color: AppColors.text,
+                size: 48,
+              ), // Large chart icon placeholder
               const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.red[100],
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Turun',
-                      style: TextStyle(
-                        fontFamily: 'Montserrat',
+                      style: AppTextStyles.medium.copyWith(
                         color: Colors.red,
-                        fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -272,9 +277,9 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
                     ),
                   ),
                 ],
-              )
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -309,7 +314,7 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
                   style: AppTextStyles.subtitle.copyWith(
                     color: AppColors.text,
                     fontWeight: FontWeight.w600,
-                    fontSize: 11,
+                    fontSize: 12,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -378,7 +383,11 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
     );
   }
 
-  Widget _buildActionButton({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -402,15 +411,18 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
-                  fontFamily: 'Montserrat',
+                style: AppTextStyles.link.copyWith(
                   color: AppColors.primary,
-                  fontSize: 12,
                   fontWeight: FontWeight.w600,
+                  fontSize: 12,
                 ),
               ),
             ),
-            const Icon(Icons.arrow_forward_ios, color: AppColors.primary, size: 12),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: AppColors.primary,
+              size: 12,
+            ),
           ],
         ),
       ),
