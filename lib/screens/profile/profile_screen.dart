@@ -23,6 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   
   bool _isLoading = true;
   String? _avatarUrl;
+  String _role = 'buyer';
 
   @override
   void initState() {
@@ -71,13 +72,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _buildProfileCard(context),
                       const SizedBox(height: 16),
-                      _buildHistoryCard(context),
-                      const SizedBox(height: 16),
+                      if (_role == 'buyer') ...[
+                        _buildHistoryCard(context),
+                        const SizedBox(height: 16),
+                      ],
                       _buildActivityCard(context),
                       const SizedBox(height: 16),
-                      _buildSellerRegister(context),
-                      const Spacer(),
-                      const SizedBox(height: 32),
+                      if (_role == 'buyer') ...[
+                        _buildSellerRegister(context),
+                        const Spacer(),
+                        const SizedBox(height: 32),
+                      ],
+                      if (_role == 'seller') ...[
+                         const SizedBox(height: 32),
+                      ],
                       _buildLogoutButton(context),
                     ],
                   ),
@@ -104,6 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           setState(() {
             _nameController.text = userData['full_name'] ?? '';
             _emailController.text = userData['email'] ?? '';
+            _role = userData['role'] ?? 'buyer';
             _avatarUrl = '${Supabase.instance.client.storage.from('avatars').getPublicUrl('${user.id}/profile.jpg')}?t=${DateTime.now().millisecondsSinceEpoch}';
             _isLoading = false;
           });
@@ -180,44 +189,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           _buildSectionTitle('Profil Singkat'),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  shape: BoxShape.circle,
-                ),
-                clipBehavior: Clip.hardEdge,
-                child: _avatarUrl != null && _avatarUrl!.isNotEmpty
-                    ? Image.network(
-                        _avatarUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Icon(Icons.person, size: 28, color: Colors.grey[400]),
-                      )
-                    : Icon(Icons.person, size: 28, color: Colors.grey[400]),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _nameController.text.isNotEmpty ? _nameController.text : 'User',
-                      style: AppTextStyles.productName,
+          if (_role == 'seller')
+            Center(
+              child: Column(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _emailController.text.isNotEmpty ? _emailController.text : 'Belum ada email',
-                      style: AppTextStyles.subtitle,
+                    clipBehavior: Clip.hardEdge,
+                    child: _avatarUrl != null && _avatarUrl!.isNotEmpty
+                        ? Image.network(
+                            _avatarUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Icon(Icons.person, size: 32, color: Colors.grey[400]),
+                          )
+                        : Icon(Icons.person, size: 32, color: Colors.grey[400]),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
                     ),
-                  ],
-                ),
+                    child: const Text('Penjual', style: TextStyle(color: Colors.blueAccent, fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'Montserrat')),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    _nameController.text.isNotEmpty ? _nameController.text : 'Username',
+                    style: AppTextStyles.productName.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _emailController.text.isNotEmpty ? _emailController.text : 'Belum ada email',
+                    style: AppTextStyles.subtitle.copyWith(
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            )
+          else
+            Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    shape: BoxShape.circle,
+                  ),
+                  clipBehavior: Clip.hardEdge,
+                  child: _avatarUrl != null && _avatarUrl!.isNotEmpty
+                      ? Image.network(
+                          _avatarUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Icon(Icons.person, size: 28, color: Colors.grey[400]),
+                        )
+                      : Icon(Icons.person, size: 28, color: Colors.grey[400]),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _nameController.text.isNotEmpty ? _nameController.text : 'User',
+                        style: AppTextStyles.productName,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _emailController.text.isNotEmpty ? _emailController.text : 'Belum ada email',
+                        style: AppTextStyles.subtitle,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           const SizedBox(height: 16),
           _buildMenuItem(Icons.edit_outlined, 'Edit Profile', () async {
             await Navigator.of(context).push(
@@ -255,21 +310,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           _buildSectionTitle('Aktivitas Saya'),
           const SizedBox(height: 12),
-          _buildMenuItem(Icons.shopping_cart_outlined, 'Keranjang Saya', () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const CartScreen(),
-                ),
-              );
-            }),
-          const SizedBox(height: 8),
-          _buildMenuItem(Icons.favorite, 'Favorit Saya', () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const LikeScreen(),
-                ),
-              );
-            }),
+          if (_role == 'seller') ...[
+            _buildMenuItem(Icons.inventory_2_outlined, 'Produk Saya', () {}),
+            const SizedBox(height: 8),
+            _buildMenuItem(Icons.local_shipping_outlined, 'Status Pengiriman Produk', () {}),
+          ] else ...[
+            _buildMenuItem(Icons.shopping_cart_outlined, 'Keranjang Saya', () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const CartScreen(),
+                  ),
+                );
+              }),
+            const SizedBox(height: 8),
+            _buildMenuItem(Icons.favorite, 'Favorit Saya', () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const LikeScreen(),
+                  ),
+                );
+              }),
+          ]
         ],
       ),
     );
@@ -302,18 +363,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         height: 50,
         child: ElevatedButton(
           onPressed: () async {
-              final session = Supabase.instance.client.auth.currentSession;
               final authService = AuthService();
-
-              if (session == null) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const RegisterScreen(),
-                  ),
-                );
-                return;
+              
+              try {
+                await authService.signOut();
+              } catch (e) {
+                print('Error signing out: $e');
               }
-              await authService.signOut();
 
               if (context.mounted) {
                 Navigator.of(context).pushAndRemoveUntil(
