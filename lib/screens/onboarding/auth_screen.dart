@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../ui/app_colors.dart';
 import 'login_screen.dart';
-import 'register_screen_fixed_v2.dart';
+import 'register_screen.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});

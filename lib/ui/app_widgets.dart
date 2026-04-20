@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:girantra/ui/app_text_styles.dart';
 
 import 'app_colors.dart';
 
@@ -41,7 +42,10 @@ class PrimaryPillButton extends StatelessWidget {
               )
             : Text(
                 text,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+                style: AppTextStyles.subtitle.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
       ),
     );

@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:girantra/ui/app_text_styles.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/product_model.dart';
-import '../services/auth_service_fixed.dart';
+import '../services/auth_service.dart';
 import '../services/product_service.dart';
 import '../ui/app_colors.dart';
 import '../ui/app_widgets.dart';
 import 'cart_screen.dart';
-import 'filter_screen.dart';
+import '../overlay/filter_screen.dart';
 import 'like_screen.dart';
-import 'notification_screen.dart';
+import '../notification/notification_screen.dart';
 import 'product_detail_screen.dart';
-import 'register_screen_fixed_v2.dart';
+import 'register_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,6 +53,24 @@ class _HomeScreenState extends State<HomeScreen> {
         seller_id: 'dummy',
         created_at: DateTime.now(),
       ),
+      ProductModel(
+        product_id: -2,
+        category_id: 2,
+        product_name: 'Bibit Cabai Rawit (Dummy)',
+        description:
+            'Bibit cabai rawit berkualitas tinggi, cocok untuk ditanam di lahan pertanian.',
+        cost_price: 25000,
+        selling_price: 45000,
+        ai_recommendation_price: 45000,
+        stock: 50,
+        unit: 'kg',
+        image_url:
+            'https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&w=1200&q=60',
+        harvest_date: DateTime.now(),
+        status_product: 'available',
+        seller_id: 'dummy',
+        created_at: DateTime.now(),
+      ),
     ];
   }
 
@@ -60,64 +79,50 @@ class _HomeScreenState extends State<HomeScreen> {
     final session = Supabase.instance.client.auth.currentSession;
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'Location',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            Text(
-              'Jl. Jendral Sudirman',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-          ],
-        ),
+      appBar: LocationHeaderAppBar(
+        title: 'Location',
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.black87),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const NotificationScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const NotificationScreen(),
+                ),
               );
             },
           ),
           IconButton(
-            icon: const Icon(Icons.shopping_bag_outlined, color: Colors.black87),
+            icon: const Icon(
+              Icons.shopping_cart_outlined,
+              color: AppColors.text,
+            ),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (context) => const CartScreen()),
               );
             },
           ),
-          IconButton(
-            icon: Icon(
-              session == null ? Icons.login : Icons.logout,
-              color: Colors.black87,
-            ),
-            onPressed: () async {
-              if (session == null) {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                );
-                return;
-              }
-              await _authService.signOut();
-            },
-          ),
           const SizedBox(width: 8),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
+      body: RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: () async {
+          setState(() {
+            _futureProducts = _productService.getProducts();
+          });
+          try {
+            await _futureProducts;
+          } catch (_) {}
+        },
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
           Container(
             height: 120,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(5),
               color: Colors.white,
               image: const DecorationImage(
                 fit: BoxFit.cover,
@@ -135,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   height: 44,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.divider),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -146,7 +151,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: Text(
                           'Cari pupuk atau hasil tani...',
-                          style: TextStyle(fontSize: 12, color: AppColors.mutedText),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.mutedText,
+                          ),
                         ),
                       ),
                     ],
@@ -157,19 +165,20 @@ class _HomeScreenState extends State<HomeScreen> {
               InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const FilterScreen()),
+                  showDialog(
+                    context: context,
+                    builder: (context) => const FilterDialog(),
                   );
                 },
                 child: Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.primaryDark,
+                    borderRadius: BorderRadius.circular(10),
                     border: Border.all(color: AppColors.divider),
                   ),
-                  child: const Icon(Icons.tune, color: AppColors.primaryDark),
+                  child: const Icon(Icons.tune, color: Colors.white),
                 ),
               ),
             ],
@@ -200,23 +209,25 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 25),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Lihat Produk Favorit',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-              ),
+              Text('Lihat Produk Favorit', style: AppTextStyles.h2),
               GestureDetector(
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => const LikeScreen()),
                   );
                 },
-                child: const Text(
+                child: Text(
                   'Lihat Selengkapnya >',
-                  style: TextStyle(fontSize: 11, color: AppColors.mutedText),
+                  style: AppTextStyles.link.copyWith(
+                    color: AppColors.accent,
+                    fontWeight: FontWeight.w400,
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.accent,
+                  ),
                 ),
               ),
             ],
@@ -241,17 +252,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisCount: 2,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.72,
+                  childAspectRatio: 0.55,
                 ),
                 itemCount: products.length,
                 itemBuilder: (context, index) {
                   final product = products[index];
-                  return _ProductCard(
-                    product: product,
+                  return ProductCard(
+                    imageUrl: product.image_url,
+                    tag: product.category_id == 1
+                        ? 'Pupuk'
+                        : (product.category_id == 2 ? 'Benih' : 'Produk'),
+                    title: product.product_name,
+                    location: 'Surakarta',
+                    rating: '4.8 (120)',
+                    price:
+                        'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
+                    unit:
+                        ' / ${product.unit.length > 1 ? product.unit.substring(0, 1).toUpperCase() + product.unit.substring(1).toLowerCase() : product.unit}',
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => ProductDetailScreen(product: product),
+                          builder: (context) =>
+                              ProductDetailScreen(product: product),
                         ),
                       );
                     },
@@ -261,6 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
         ],
+        ),
       ),
     );
   }
@@ -294,99 +317,10 @@ class _CategoryShortcut extends StatelessWidget {
           children: [
             Icon(icon, color: AppColors.primaryDark, size: 22),
             const SizedBox(height: 6),
-            Text(label, style: const TextStyle(fontSize: 11)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProductCard extends StatelessWidget {
-  final ProductModel product;
-  final VoidCallback onTap;
-
-  const _ProductCard({required this.product, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  ChipTag(text: 'Pupuk'),
-                  ChipTag(text: 'Benih', background: Colors.white, foreground: AppColors.mutedText),
-                ],
-              ),
-            ),
-            const SizedBox(height: 6),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: AspectRatio(
-                aspectRatio: 1.15,
-                child: Image.network(
-                  product.image_url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.image_not_supported),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.product_name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: const [
-                      Icon(Icons.location_on_outlined, size: 12, color: AppColors.mutedText),
-                      SizedBox(width: 2),
-                      Text('Surakarta', style: TextStyle(fontSize: 10, color: AppColors.mutedText)),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.star, size: 12, color: Color(0xFFFFC107)),
-                      const SizedBox(width: 2),
-                      const Text('4.9 (200)', style: TextStyle(fontSize: 10, color: AppColors.mutedText)),
-                      const Spacer(),
-                      Text(
-                        'Rp ${product.selling_price.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primaryDark,
-                        ),
-                      ),
-                      const Text(' /kg', style: TextStyle(fontSize: 10, color: AppColors.mutedText)),
-                    ],
-                  ),
-                ],
+            Text(
+              label,
+              style: AppTextStyles.subtitle.copyWith(
+                color: AppColors.primaryDark,
               ),
             ),
           ],
@@ -395,4 +329,3 @@ class _ProductCard extends StatelessWidget {
     );
   }
 }
-

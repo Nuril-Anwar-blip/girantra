@@ -26,21 +26,66 @@ class AuthService {
     required String address,
     required String role,
     required String account_status,
-    }) async {  
-      final response = await supabase.auth.signUp(
-        email: email,
-        password: password,
-        data: {
+  }) async {
+    // 1. Validasi email terlebih dahulu ke tabel users (jika role anon bisa baca)
+    try {
+      final existingUser = await supabase
+          .from('users')
+          .select('email')
+          .eq('email', email)
+          .maybeSingle();
+
+      if (existingUser != null) {
+        throw Exception('Email sudah terdaftar. Silakan gunakan email lain atau login.');
+      }
+    } catch (e) {
+      if (e.toString().contains('Email sudah terdaftar')) {
+        rethrow;
+      }
+      // Pengecualian lain seperti RLS diabaikan agar tetap mencoba auth.signUp()
+    }
+
+    final response = await supabase.auth.signUp(
+      email: email,
+      password: password,
+      data: {
+        'full_name': full_name,
+        'phone_number': phone_number,
+        'address': address,
+        'role': role,
+        'account_status': account_status,
+      },
+    );
+
+    // Proteksi tambahan: jika identities kosong, artinya user sudah ada namun proteksi enumerasi aktif
+    if (response.user != null &&
+        response.user!.identities != null &&
+        response.user!.identities!.isEmpty) {
+      throw Exception('Email sudah terdaftar. Silakan gunakan email lain atau login.');
+    }
+
+    // Memasukkan data tambahan ke tabel 'users' di public schema
+    if (response.user != null) {
+      try {
+        await supabase.from('users').insert({
+          'user_id': response.user!.id,
           'full_name': full_name,
+          'email': email,
           'phone_number': phone_number,
           'address': address,
           'role': role,
           'account_status': account_status,
-        },
-      );
-      // Kalau email confirmation aktif, biasanya session/user bisa null tergantung setting.
-      // Maka UI akan menampilkan pesan yang sesuai saat `user == null`.
-      return response.user;
+        });
+      } catch (e) {
+        print('Gagal memasukkan data ke tabel users: $e');
+        // Error tidak dilempar agar user tetap berhasil terbuat di auth.users
+        // (meskipun disarankan memantaunya lewat log terminal)
+      }
+    }
+
+    // Kalau email confirmation aktif, biasanya session/user bisa null tergantung setting.
+    // Maka UI akan menampilkan pesan yang sesuai saat `user == null`.
+    return response.user;
   }
 
   // Sign Out
@@ -73,13 +118,32 @@ class AuthService {
     }
   }
 
+  // Get user role
+  Future<String> getUserRole(String userId) async {
+    try {
+      final data = await supabase
+          .from('users')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (data != null && data['role'] != null) {
+        return data['role'] as String;
+      }
+      return 'buyer'; // default fallback
+    } catch (e) {
+      print('Error getting user role: $e');
+      return 'buyer';
+    }
+  }
+
   // Update user profile
   Future<void> updateProfile(String name, String email) async {
     try {
-      await supabase.from('users').update({
-        'name': name,
-        'email': email,
-      }).eq('id', supabase.auth.currentUser!.id);
+      await supabase
+          .from('users')
+          .update({'name': name, 'email': email})
+          .eq('id', supabase.auth.currentUser!.id);
       print('✅ Update profile berhasil!');
     } catch (e) {
       print('Error updating profile: $e');

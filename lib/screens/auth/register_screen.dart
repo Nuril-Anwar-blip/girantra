@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../services/auth_service.dart';
-import '../ui/app_colors.dart';
-import '../ui/app_text_styles.dart';
-import '../ui/app_widgets.dart';
+import '../../services/auth_service.dart';
+import '../../ui/app_colors.dart';
+import '../../ui/app_text_styles.dart';
+import '../../ui/app_widgets.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -23,8 +23,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
+  String? _emailErrorMessage;
 
   Future<void> _onRegister() async {
+    setState(() => _emailErrorMessage = null);
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -33,35 +35,66 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final user = await _authService.signUp(
-        full_name: _fullNameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
+        full_name: _fullNameController.text.trim(),
         phone_number: _phoneController.text.trim(),
         address: _addressController.text.trim(),
-        role: 'customer',
+        role: 'buyer',
         account_status: 'active',
       );
 
       if (!mounted) return;
 
       if (user != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Registrasi berhasil! Silakan cek kotak masuk atau spam email Anda untuk melakukan aktivasi.',
+              style: TextStyle(fontFamily: 'Montserrat', color: AppColors.text ),
+            ),
+            backgroundColor: AppColors.background,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).size.height - 150,
+              left: 24,
+              right: 24,
+            ),
+          ),
+        );
         Navigator.of(context).pop();
       } else {
-        // Sering terjadi kalau Supabase butuh email verification:
-        // user bisa dibuat tapi session belum aktif.
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Registrasi berhasil. Silakan cek email untuk verifikasi.',
+          SnackBar(
+            content: const Text(
+              'Registrasi berhasil! Silakan cek kotak masuk atau spam email Anda untuk melakukan aktivasi.',
+              style: TextStyle(fontFamily: 'Montserrat', color: AppColors.text),
+            ),
+            backgroundColor: AppColors.background,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).size.height - 150,
+              left: 24,
+              right: 24,
             ),
           ),
         );
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registrasi gagal: $e')),
-      );
+      String errorMsg = e.toString();
+      if (errorMsg.startsWith('Exception: ')) {
+        errorMsg = errorMsg.substring(11); // Menghapus tulisan "Exception: " agar lebih rapi
+      }
+      
+      if (errorMsg.contains('Email sudah terdaftar')) {
+        setState(() => _emailErrorMessage = errorMsg);
+        _formKey.currentState!.validate(); // Trigger ulang validasi untuk menampilkan error di textbox
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Registrasi gagal: $errorMsg')));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -124,15 +157,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 children: const [
                                   Text('Hello!', style: AppTextStyles.h1),
                                   SizedBox(height: 4),
-                                  Text('welcome to Girantra', style: AppTextStyles.subtitle),
+                                  Text(
+                                    'welcome to Girantra',
+                                    style: AppTextStyles.subtitle,
+                                  ),
                                 ],
                               ),
-                              const Text(
+                              Text(
                                 'Register',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
+                                style: AppTextStyles.subtitle.copyWith(
                                   color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -175,8 +210,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               icon: Icons.email_outlined,
                             ),
                             keyboardType: TextInputType.emailAddress,
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Wajib diisi' : null,
+                            onChanged: (v) {
+                              if (_emailErrorMessage != null) {
+                                setState(() => _emailErrorMessage = null);
+                                _formKey.currentState!.validate();
+                              }
+                            },
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Wajib diisi';
+                              if (!v.contains('@')) return 'Format email tidak valid';
+                              if (_emailErrorMessage != null) return _emailErrorMessage;
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 10),
                           TextFormField(
@@ -186,9 +231,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               icon: Icons.lock_outline,
                             ),
                             obscureText: true,
-                            validator: (v) => v != null && v.length >= 6
-                                ? null
-                                : 'Minimal 6 karakter',
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Wajib diisi';
+                              if (v.length < 6) return 'Minimal 6 karakter';
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 18),
                           PrimaryPillButton(
@@ -200,13 +248,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text(
+                              Text(
                                 'Already have an account? ',
-                                style: TextStyle(fontSize: 11, color: AppColors.mutedText),
+                                style: AppTextStyles.subtitle.copyWith(
+                                  color: AppColors.mutedText,
+                                ),
                               ),
                               GestureDetector(
                                 onTap: () => Navigator.of(context).pop(),
-                                child: const Text('Login', style: AppTextStyles.link),
+                                child: Text(
+                                  'Login',
+                                  style: AppTextStyles.link.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w500,
+                                  )
+                                ),
                               ),
                             ],
                           ),
@@ -223,4 +279,3 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-

@@ -1,10 +1,20 @@
 import 'package:flutter/material.dart';
 
+<<<<<<< HEAD:lib/screens/login_screen.dart
 import '../services/auth_service_fixed.dart';
 import '../ui/app_colors.dart';
 import '../ui/app_text_styles.dart';
 import '../ui/app_widgets.dart';
 import 'register_screen_fixed_v2.dart';
+=======
+import '../../services/auth_service.dart';
+import '../../ui/app_colors.dart';
+import '../../ui/app_text_styles.dart';
+import '../../ui/app_widgets.dart';
+import 'register_screen.dart';
+import '../navigation/buyer_navigation.dart';
+import '../navigation/seller_navigation.dart';
+>>>>>>> bc16c412870141e5260169bac591eb1e80db39b4:lib/screens/auth/login_screen.dart
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -33,13 +43,30 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordController.text.trim(),
     );
 
+    String? role;
+    if (user != null) {
+      role = await _authService.getUserRole(user.id);
+    }
+
     setState(() {
       _isLoading = false;
     });
 
     if (!mounted) return;
 
-    if (user == null) {
+    if (user != null) {
+      if (role == 'seller') {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const SellerNavigation()),
+          (route) => false,
+        );
+      } else {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const MainNavigation()),
+          (route) => false,
+        );
+      }
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Login gagal, periksa email/password.')),
       );
@@ -100,15 +127,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                 children: const [
                                   Text('Hello!', style: AppTextStyles.h1),
                                   SizedBox(height: 4),
-                                  Text('welcome to Girantra', style: AppTextStyles.subtitle),
+                                  Text(
+                                    'Welcome to Girantra',
+                                    style: AppTextStyles.subtitle,
+                                  ),
                                 ],
                               ),
-                              const Text(
+                              Text(
                                 'Login',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
+                                style: AppTextStyles.subtitle.copyWith(
                                   color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
@@ -121,8 +150,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               icon: Icons.email_outlined,
                             ),
                             keyboardType: TextInputType.emailAddress,
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Wajib diisi' : null,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) {
+                                return 'Wajib diisi';
+                              }
+                              if (!v.contains('@')) {
+                                return 'Format email tidak valid';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 12),
                           TextFormField(
@@ -134,9 +170,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             obscureText: true,
                             validator: (v) => v != null && v.length >= 6
                                 ? null
-                                : 'Minimal 6 karakter',
+                                : 'Masukkan Password',
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 2),
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
@@ -145,13 +181,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                 padding: EdgeInsets.zero,
                               ),
                               onPressed: () {},
-                              child: const Text(
+                              child: Text(
                                 'Forgot Password',
-                                style: TextStyle(fontSize: 11),
+                                style: AppTextStyles.link.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w500,
+                                ),  
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 4),
                           PrimaryPillButton(
                             text: 'Login',
                             isLoading: _isLoading,
@@ -161,15 +200,26 @@ class _LoginScreenState extends State<LoginScreen> {
                           Row(
                             children: [
                               Expanded(
-                                child: Container(height: 1, color: AppColors.divider),
+                                child: Container(
+                                  height: 1,
+                                  color: AppColors.divider,
+                                ),
                               ),
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 10),
-                                child: Text('or login with',
-                                    style: TextStyle(fontSize: 11, color: AppColors.mutedText)),
+                                child: Text(
+                                  'or login with',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.mutedText,
+                                  ),
+                                ),
                               ),
                               Expanded(
-                                child: Container(height: 1, color: AppColors.divider),
+                                child: Container(
+                                  height: 1,
+                                  color: AppColors.divider,
+                                ),
                               ),
                             ],
                           ),
@@ -199,19 +249,28 @@ class _LoginScreenState extends State<LoginScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Text(
+                              Text(
                                 'Don\'t have an account? ',
-                                style: TextStyle(fontSize: 11, color: AppColors.mutedText),
+                                style: AppTextStyles.subtitle.copyWith(
+                                  color: AppColors.mutedText,
+                                ),
                               ),
                               GestureDetector(
                                 onTap: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (context) => const RegisterScreen(),
+                                      builder: (context) =>
+                                          const RegisterScreen(),
                                     ),
                                   );
                                 },
-                                child: const Text('Register', style: AppTextStyles.link),
+                                child: Text(
+                                  'Register',
+                                  style: AppTextStyles.link.copyWith(
+                                  color: AppColors.primaryDark,
+                                  fontWeight: FontWeight.w500,
+                                  )
+                                ),
                               ),
                             ],
                           ),
@@ -228,4 +287,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-
