@@ -11,8 +11,12 @@ class SellerProductCard extends StatelessWidget {
   final Color statusColor;
   final int soldCount;
   final double rating;
-  final VoidCallback? onArchive;
-  final VoidCallback? onDetail;
+  final String? secondaryActionText;
+  final VoidCallback? onSecondaryAction;
+  final Color secondaryActionColor;
+  final String primaryActionText;
+  final VoidCallback? onPrimaryAction;
+  final bool showPrimaryActionIcon;
 
   const SellerProductCard({
     super.key,
@@ -24,8 +28,12 @@ class SellerProductCard extends StatelessWidget {
     required this.statusColor,
     required this.soldCount,
     required this.rating,
-    this.onArchive,
-    this.onDetail,
+    this.secondaryActionText,
+    this.onSecondaryAction,
+    this.secondaryActionColor = Colors.orange,
+    this.primaryActionText = 'Detail Produk',
+    this.onPrimaryAction,
+    this.showPrimaryActionIcon = true,
   });
 
   @override
@@ -175,38 +183,41 @@ class SellerProductCard extends StatelessWidget {
           const SizedBox(height: 16),
           // Buttons Row
           Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              // Arsipkan Button
-              Expanded(
-                flex: 1,
-                child: GestureDetector(
-                  onTap: onArchive,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.orange),
-                    ),
-                    child: Text(
-                      'Arsipkan',
-                      style: AppTextStyles.subtitle.copyWith(
-                        color: Colors.orange,
-                        fontWeight: FontWeight.w600,
+              // Secondary Action Button (e.g., Arsipkan)
+              if (secondaryActionText != null) ...[
+                Expanded(
+                  flex: 1,
+                  child: GestureDetector(
+                    onTap: onSecondaryAction,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: secondaryActionColor),
+                      ),
+                      child: Text(
+                        secondaryActionText!,
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: secondaryActionColor,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              // Detail Produk Button
+                const SizedBox(width: 12),
+              ],
+              // Primary Action Button
               Expanded(
-                flex: 2,
+                flex: secondaryActionText != null ? 2 : 0,
                 child: GestureDetector(
-                  onTap: onDetail,
+                  onTap: onPrimaryAction,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    padding: EdgeInsets.symmetric(vertical: 10, horizontal: secondaryActionText == null ? 16 : 0),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: AppColors.primary,
@@ -214,20 +225,23 @@ class SellerProductCard extends StatelessWidget {
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: secondaryActionText == null ? MainAxisSize.min : MainAxisSize.max,
                       children: [
                         Text(
-                          'Detail Produk',
+                          primaryActionText,
                           style: AppTextStyles.subtitle.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.arrow_forward_ios,
-                          color: Colors.white,
-                          size: 12,
-                        ),
+                        if (showPrimaryActionIcon) ...[
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                        ],
                       ],
                     ),
                   ),

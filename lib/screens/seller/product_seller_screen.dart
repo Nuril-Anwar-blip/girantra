@@ -61,6 +61,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                   count: '2',
                   index: 1,
                   isSelected: _tabController.index == 1,
+                  activeColor: Colors.red,
                 ),
                 const SizedBox(width: 8),
                 _buildCustomTab(
@@ -68,6 +69,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                   count: '4',
                   index: 2,
                   isSelected: _tabController.index == 2,
+                  activeColor: Colors.orange,
                 ),
               ],
             ),
@@ -93,7 +95,9 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
     required String count,
     required int index,
     required bool isSelected,
+    Color? activeColor,
   }) {
+    final color = activeColor ?? AppColors.primary;
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -102,10 +106,10 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
         child: Container(
           height: 48,
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary.withOpacity(0.15) : Colors.transparent,
+            color: isSelected ? color.withOpacity(0.15) : Colors.transparent,
             border: Border(
               bottom: BorderSide(
-                color: isSelected ? AppColors.primary : Colors.grey.shade400,
+                color: isSelected ? color : Colors.grey.shade400,
                 width: 2,
               ),
             ),
@@ -117,18 +121,18 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
               Text(
                 label,
                 style: AppTextStyles.subtitle.copyWith(
-                  color: isSelected ? AppColors.primary : Colors.grey.shade500,
+                  color: isSelected ? color : Colors.grey.shade500,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w600,
                   fontSize: 14,
                 ),
               ),
               Positioned(
                 top: 6,
-                right: 8, // adjusted to match the badge position
+                right: 8,
                 child: Container(
                   padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.grey.shade500,
+                    color: isSelected ? color : Colors.grey.shade500,
                     shape: BoxShape.circle,
                   ),
                   child: Text(
@@ -210,8 +214,9 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
               statusColor: AppColors.primary,
               soldCount: 120,
               rating: 4.8,
-              onArchive: () {},
-              onDetail: () {},
+              secondaryActionText: 'Arsipkan',
+              onSecondaryAction: () {},
+              onPrimaryAction: () {},
             ),
             SellerProductCard(
               imageUrl: '', // leave empty for grey box
@@ -222,8 +227,9 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
               statusColor: AppColors.primary,
               soldCount: 120,
               rating: 4.8,
-              onArchive: () {},
-              onDetail: () {},
+              secondaryActionText: 'Arsipkan',
+              onSecondaryAction: () {},
+              onPrimaryAction: () {},
             ),
           ],
         ),
@@ -232,22 +238,70 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
   }
 
   Widget _buildHabisTab() {
-    return Center(
-      child: Text(
-        'Belum ada produk habis.',
-        style: AppTextStyles.subtitle.copyWith(
-          color: AppColors.mutedText,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Produk Habis',
+              style: AppTextStyles.h2.copyWith(
+                color: AppColors.text,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SellerProductCard(
+              imageUrl: '', 
+              title: 'Bibit Padi Unggul',
+              stock: 0,
+              priceFormatted: 'Rp 255.000',
+              statusText: 'Habis',
+              statusColor: Colors.red,
+              soldCount: 120,
+              rating: 4.8,
+              primaryActionText: 'Stok Ulang',
+              onPrimaryAction: () {},
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildArsipTab() {
-    return Center(
-      child: Text(
-        'Belum ada produk yang diarsipkan.',
-        style: AppTextStyles.subtitle.copyWith(
-          color: AppColors.mutedText,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Produk Arsip',
+              style: AppTextStyles.h2.copyWith(
+                color: AppColors.text,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SellerProductCard(
+              imageUrl: '', 
+              title: 'Bibit Padi Unggul',
+              stock: 0,
+              priceFormatted: 'Rp 255.000',
+              statusText: 'Arsip',
+              statusColor: Colors.orange,
+              soldCount: 120,
+              rating: 4.8,
+              secondaryActionText: 'Hapus',
+              secondaryActionColor: Colors.red,
+              primaryActionText: 'Aktifkan',
+              showPrimaryActionIcon: false,
+              onSecondaryAction: () {},
+              onPrimaryAction: () {},
+            ),
+          ],
         ),
       ),
     );
