@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:girantra/ui/app_text_styles.dart';
 
 import '../../ui/app_colors.dart';
-// import '../ui/app_widgets.dart';
 
 class FilterDialog extends StatefulWidget {
   const FilterDialog({super.key});

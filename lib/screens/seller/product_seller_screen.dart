@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 import '../../widgets/seller_product_card.dart';
+import '../overlay/delete_product_dialog.dart';
+import '../overlay/archive_product_dialog.dart';
+import '../overlay/activate_product_dialog.dart';
+import '../overlay/edit_stock_dialog.dart';
+import '../overlay/edit_product_dialog.dart';
 
 class ProductSellerScreen extends StatefulWidget {
   const ProductSellerScreen({super.key});
@@ -215,8 +220,17 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
               soldCount: 120,
               rating: 4.8,
               secondaryActionText: 'Arsipkan',
-              onSecondaryAction: () {},
-              onPrimaryAction: () {},
+              onSecondaryAction: () {
+                showDialog(context: context, builder: (_) => const ArchiveProductDialog(productName: 'Bibit Padi Unggul'));
+              },
+              onPrimaryAction: () {
+                showDialog(context: context, builder: (_) => const EditProductDialog(
+                  productName: 'Bibit Padi Unggul',
+                  description: 'Lorem ipsum dolor sit amet, consectetur a...',
+                  category: 'Pupuk',
+                  stock: 50,
+                ));
+              },
             ),
             SellerProductCard(
               imageUrl: '', // leave empty for grey box
@@ -228,8 +242,17 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
               soldCount: 120,
               rating: 4.8,
               secondaryActionText: 'Arsipkan',
-              onSecondaryAction: () {},
-              onPrimaryAction: () {},
+              onSecondaryAction: () {
+                showDialog(context: context, builder: (_) => const ArchiveProductDialog(productName: 'Bibit Padi Unggul'));
+              },
+              onPrimaryAction: () {
+                showDialog(context: context, builder: (_) => const EditProductDialog(
+                  productName: 'Bibit Padi Unggul',
+                  description: 'Lorem ipsum dolor sit amet, consectetur a...',
+                  category: 'Pupuk',
+                  stock: 50,
+                ));
+              },
             ),
           ],
         ),
@@ -262,7 +285,9 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
               soldCount: 120,
               rating: 4.8,
               primaryActionText: 'Stok Ulang',
-              onPrimaryAction: () {},
+              onPrimaryAction: () {
+                showDialog(context: context, builder: (_) => const EditStockDialog(productId: 'Prdct002399', productName: 'Bibit Padi Unggul', initialStock: 50));
+              },
             ),
           ],
         ),
@@ -298,8 +323,12 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
               secondaryActionColor: Colors.red,
               primaryActionText: 'Aktifkan',
               showPrimaryActionIcon: false,
-              onSecondaryAction: () {},
-              onPrimaryAction: () {},
+              onSecondaryAction: () {
+                showDialog(context: context, builder: (_) => const DeleteProductDialog(productName: 'Bibit Padi Unggul'));
+              },
+              onPrimaryAction: () {
+                showDialog(context: context, builder: (_) => const ActivateProductDialog(productName: 'Bibit Padi Unggul'));
+              },
             ),
           ],
         ),
