@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
+import '../../widgets/header_section.dart';
 
 class DashboardSellerScreen extends StatefulWidget {
   const DashboardSellerScreen({super.key});
@@ -11,65 +12,18 @@ class DashboardSellerScreen extends StatefulWidget {
 }
 
 class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
-
-  String _userAddress = 'Memuat...';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserAddress();
-  }
-
-  Future<void> _loadUserAddress() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
-      try {
-        final data = await Supabase.instance.client
-            .from('users')
-            .select('address')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-        if (data != null && data['address'] != null) {
-          if (mounted) {
-            setState(() {
-              _userAddress = data['address'];
-            });
-          }
-        } else {
-          if (mounted) {
-            setState(() {
-              _userAddress = 'Alamat tidak diatur';
-            });
-          }
-        }
-      } catch (e) {
-        print('Error fetching address: $e');
-        if (mounted) {
-          setState(() {
-            _userAddress = 'Gagal memuat alamat';
-          });
-        }
-      }
-    } else {
-      if (mounted) {
-        setState(() {
-          _userAddress = 'Belum login';
-        });
-      }
-    }
-  }
   // Use Scaffold so it plays nicely, although the parent has Scaffold as well.
   // We can just use a Container for the body, but Scaffold gives us safe area and app bar.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      appBar: const LocationHeaderAppBar(title: 'Lokasi Toko'),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              _buildHeader(),
+              const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
@@ -92,63 +46,7 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Image.asset(
-            'assets/images/logo_girantra.png', // Assuming this logo exists and is close
-            width: 50,
-            height: 50,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                width: 50,
-                height: 50,
-                color: Colors.grey[300],
-                child: const Icon(Icons.image, color: Colors.grey),
-              );
-            },
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Lokasi Toko',
-                  style: AppTextStyles.subtitle,
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on,
-                      color: AppColors.accent,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        _userAddress,
-                        style: AppTextStyles.subtitle.copyWith(
-                          color: AppColors.text,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildTotalSaldoCard() {
     return Container(

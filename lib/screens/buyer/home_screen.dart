@@ -14,6 +14,7 @@ import 'product_detail_screen.dart';
 import '../auth/register_screen.dart';
 import '../auth/login_screen.dart';
 import '../../widgets/product_card.dart';
+import '../../widgets/header_section.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,53 +28,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final _authService = AuthService();
 
   late Future<List<ProductModel>> _futureProducts;
-  String _userAddress = 'Memuat...';
 
   @override
   void initState() {
     super.initState();
     _futureProducts = _productService.getProducts();
-    _loadUserAddress();
-  }
-
-  Future<void> _loadUserAddress() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user != null) {
-      try {
-        final data = await Supabase.instance.client
-            .from('users')
-            .select('address')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-        if (data != null && data['address'] != null) {
-          if (mounted) {
-            setState(() {
-              _userAddress = data['address'];
-            });
-          }
-        } else {
-          if (mounted) {
-            setState(() {
-              _userAddress = 'Alamat tidak diatur';
-            });
-          }
-        }
-      } catch (e) {
-        print('Error fetching address: $e');
-        if (mounted) {
-          setState(() {
-            _userAddress = 'Gagal memuat alamat';
-          });
-        }
-      }
-    } else {
-      if (mounted) {
-        setState(() {
-          _userAddress = 'Belum login';
-        });
-      }
-    }
   }
 
   List<ProductModel> _dummyProducts() {
@@ -122,48 +81,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final session = Supabase.instance.client.auth.currentSession;
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/images/logo_girantra.png',
-              width: 40,
-              height: 40,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Location', style: AppTextStyles.subtitle),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: AppColors.accent,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          _userAddress,
-                          style: AppTextStyles.subtitle.copyWith(
-                            color: AppColors.text,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      appBar: LocationHeaderAppBar(
+        title: 'Location',
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.black87),
@@ -195,7 +114,6 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _futureProducts = _productService.getProducts();
           });
-          await _loadUserAddress();
           try {
             await _futureProducts;
           } catch (_) {}
