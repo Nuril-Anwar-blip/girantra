@@ -17,23 +17,35 @@ class SellerProductCard extends StatelessWidget {
   final String primaryActionText;
   final VoidCallback? onPrimaryAction;
   final bool showPrimaryActionIcon;
+  
+  // Custom fields for reusability (e.g. in Delivery Screen)
+  final bool showProductStats;
+  final bool showButtons;
+  final String? customQuantityText;
+  final String? topLabel;
+  final Widget? extraContent;
 
   const SellerProductCard({
     super.key,
     required this.imageUrl,
     required this.title,
-    required this.stock,
+    this.stock = 0,
     required this.priceFormatted,
     required this.statusText,
     required this.statusColor,
-    required this.soldCount,
-    required this.rating,
+    this.soldCount = 0,
+    this.rating = 0.0,
     this.secondaryActionText,
     this.onSecondaryAction,
     this.secondaryActionColor = Colors.orange,
     this.primaryActionText = 'Detail Produk',
     this.onPrimaryAction,
     this.showPrimaryActionIcon = true,
+    this.showProductStats = true,
+    this.showButtons = true,
+    this.customQuantityText,
+    this.topLabel,
+    this.extraContent,
   });
 
   @override
@@ -56,6 +68,16 @@ class SellerProductCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (topLabel != null) ...[
+            Text(
+              topLabel!,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           // Top Row: Image, Title, Status, Stock, Price
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,7 +130,7 @@ class SellerProductCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Sisa Stok: $stock',
+                      customQuantityText ?? 'Sisa Stok: $stock',
                       style: AppTextStyles.subtitle.copyWith(
                         color: Colors.grey.shade600,
                         fontSize: 12,
@@ -127,11 +149,12 @@ class SellerProductCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Info Row: Sold & Rating
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+          if (showProductStats) ...[
+            const SizedBox(height: 16),
+            // Info Row: Sold & Rating
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -180,9 +203,15 @@ class SellerProductCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          // Buttons Row
-          Row(
+          ],
+          if (extraContent != null) ...[
+            const SizedBox(height: 16),
+            extraContent!,
+          ],
+          if (showButtons) ...[
+            const SizedBox(height: 16),
+            // Buttons Row
+            Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               // Secondary Action Button (e.g., Arsipkan)
@@ -249,6 +278,7 @@ class SellerProductCard extends StatelessWidget {
               ),
             ],
           ),
+          ],
         ],
       ),
     );

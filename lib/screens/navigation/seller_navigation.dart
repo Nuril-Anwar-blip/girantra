@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../ui/app_colors.dart';
 import '../seller/dashboard_seller_screen.dart';
 import '../seller/product_seller_screen.dart';
+import '../seller/delivery_seller_screen.dart';
 import '../profile/profile_screen.dart';
 
 class SellerNavigation extends StatefulWidget {
@@ -18,7 +19,7 @@ class _SellerNavigationState extends State<SellerNavigation> {
   final List<Widget> _pages = const [
     DashboardSellerScreen(),
     ProductSellerScreen(),
-    Center(child: Text('Halaman Pengiriman (Segera Hadir)', style: TextStyle(fontFamily: 'Montserrat'))),
+    DeliverySellerScreen(),
     ProfileScreen(), // Reuse profile screen
   ];
 
