@@ -7,6 +7,7 @@ import '../overlay/archive_product_dialog.dart';
 import '../overlay/activate_product_dialog.dart';
 import '../overlay/edit_stock_dialog.dart';
 import '../overlay/edit_product_dialog.dart';
+import 'add_product_screen.dart';
 
 class ProductSellerScreen extends StatefulWidget {
   const ProductSellerScreen({super.key});
@@ -178,7 +179,12 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                 ),
                 GestureDetector(
                   onTap: () {
-                    // Navigate to add product
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AddProductScreen(),
+                      ),
+                    );
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

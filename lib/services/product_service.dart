@@ -19,7 +19,11 @@ class ProductService {
   // Get product by ID
   Future<ProductModel?> getProductById(int productId) async {
     try {
-      final response = await supabase.from('products').select().eq('product_id', productId).single();
+      final response = await supabase
+          .from('products')
+          .select()
+          .eq('product_id', productId)
+          .single();
       return ProductModel.fromJson(response);
     } catch (e) {
       print('Error getting product by ID: $e');
@@ -30,7 +34,10 @@ class ProductService {
   // Get product by category
   Future<List<ProductModel>> getProductsByCategory(int categoryId) async {
     try {
-      final response = await supabase.from('products').select().eq('category_id', categoryId);
+      final response = await supabase
+          .from('products')
+          .select()
+          .eq('category_id', categoryId);
       return response.map((json) => ProductModel.fromJson(json)).toList();
     } catch (e) {
       print('Error getting products by category: $e');
@@ -51,41 +58,49 @@ class ProductService {
     required File image_file,
     required DateTime harvest_date,
     required String status_product, // Enum (available, out_of_stock)
-    }) async {
-      try {
-          // Take seller ID from logged in user
-          final String sellerId = supabase.auth.currentUser!.id;
+  }) async {
+    try {
+      await supabase.auth.refreshSession();
+      // Take seller ID from logged in user
+      final String seller_id = supabase.auth.currentUser!.id;
 
-          // Upload image to storage
-          final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-          final String path = '$sellerId/$fileName';
+      // Upload image to storage
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final String path = '$seller_id/$fileName';
 
-          await supabase.storage.from('product-image').upload(path, image_file);
+      await supabase.storage.from('product-image').upload(path, image_file);
 
-          // Get public URL
-          final String imageUrl = supabase.storage.from('product-image').getPublicUrl(path);
+      // Get public URL
+      final String imageUrl = supabase.storage
+          .from('product-image')
+          .getPublicUrl(path);
 
-          // Insert product data
-        await supabase.from('products').insert({
-          'seller_id' : sellerId,
-          'category_id' : category_id,
-          'product_name' : product_name,
-          'description' : description,
-          'cost_price' : cost_price,
-          'selling_price' : selling_price,
-          'ai_recommendation_price' : ai_recommendation_price,
-          'stock' : stock,
-          'unit' : unit,
-          'image_url' : imageUrl,
-          'harvest_date' : harvest_date,
-          'status_product' : status_product,
-        });
-        print('✅ Produk berhasil ditambahkan!');
-        return true;
-      } catch (e) {
-        print('Error adding product: $e');
-        return false;
-      }
+      print('--- DEBUG RLS ---');
+      print('User ID: ${supabase.auth.currentUser?.id}');
+      print('User Metadata: ${supabase.auth.currentUser?.userMetadata}');
+      print('App Metadata: ${supabase.auth.currentUser?.appMetadata}');
+      print('-----------------');
+
+      // Insert product data
+      await supabase.from('products').insert({
+        'seller_id': seller_id,
+        'category_id': category_id,
+        'product_name': product_name,
+        'description': description,
+        'cost_price': cost_price,
+        'selling_price': selling_price,
+        'stock': stock,
+        'unit': unit,
+        'image_url': imageUrl,
+        'harvest_date': harvest_date.toIso8601String().split('T')[0],
+        'status_product': status_product,
+      });
+      print('✅ Produk berhasil ditambahkan!');
+      return true;
+    } catch (e) {
+      print('Error adding product: $e');
+      throw Exception(e.toString());
+    }
   }
 
   // Update product
@@ -96,47 +111,50 @@ class ProductService {
     required String description,
     required double cost_price,
     required double selling_price,
-    required double ai_recommendation_price,
     required int stock,
     required String unit, // kg, pcs, liter, dll
     required File image_file,
     required DateTime harvest_date,
     required String status_product, // Enum (available, out_of_stock)
-    }) async {
-      try {
-        // Take seller ID from logged in user
-        final String sellerId = supabase.auth.currentUser!.id;
+  }) async {
+    try {
+      // Take seller ID from logged in user
+      final String sellerId = supabase.auth.currentUser!.id;
 
-        // Upload image to storage
-        final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final String path = '$sellerId/$fileName';
+      // Upload image to storage
+      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final String path = '$sellerId/$fileName';
 
-        await supabase.storage.from('product-image').upload(path, image_file);
+      await supabase.storage.from('product-image').upload(path, image_file);
 
-        // Get public URL
-        final String imageUrl = supabase.storage.from('product-image').getPublicUrl(path);
+      // Get public URL
+      final String imageUrl = supabase.storage
+          .from('product-image')
+          .getPublicUrl(path);
 
-        // Update product data
-        await supabase.from('products').update({
-          'seller_id' : sellerId,
-          'category_id' : category_id,
-          'product_name' : product_name,
-          'description' : description,
-          'cost_price' : cost_price,
-          'selling_price' : selling_price,
-          'ai_recommendation_price' : ai_recommendation_price,
-          'stock' : stock,
-          'unit' : unit,
-          'image_url' : imageUrl,
-          'harvest_date' : harvest_date,
-          'status_product' : status_product,
-        }).eq('product_id', product_id);
-        print('✅ Produk berhasil diupdate!');
-        return true;
-      } catch (e) {
-        print('Error updating product: $e');
-        return false;
-      }
+      // Update product data
+      await supabase
+          .from('products')
+          .update({
+            'seller_id': sellerId,
+            'category_id': category_id,
+            'product_name': product_name,
+            'description': description,
+            'cost_price': cost_price,
+            'selling_price': selling_price,
+            'stock': stock,
+            'unit': unit,
+            'image_url': imageUrl,
+            'harvest_date': harvest_date,
+            'status_product': status_product,
+          })
+          .eq('product_id', product_id);
+      print('✅ Produk berhasil diupdate!');
+      return true;
+    } catch (e) {
+      print('Error updating product: $e');
+      return false;
+    }
   }
 
   // Delete product
@@ -150,8 +168,6 @@ class ProductService {
       return false;
     }
   }
-
-  
 }
 
 class StorageService {
@@ -162,10 +178,10 @@ class StorageService {
       final userId = supabase.auth.currentUser!.id;
       // Membuat path unik: user_id/timestamp.jpg
       final path = '$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      
+
       // Mengunggah ke bucket 'product-image'
       await supabase.storage.from('product-image').upload(path, imageFile);
-      
+
       // Mengambil URL publik untuk disimpan ke tabel 'products'
       return supabase.storage.from('product-image').getPublicUrl(path);
     } catch (e) {

@@ -147,41 +147,62 @@ class _RegisterSellerScreenState extends State<RegisterSellerScreen> {
 
   Future<void> _registerSeller() async {
     setState(() => _isSaving = true);
-    
+
     try {
       final user = Supabase.instance.client.auth.currentUser;
-      if (user != null) {
-        await Supabase.instance.client.from('users').update({
-          'role': 'seller',
-          'full_name': _nameController.text,
-        }).eq('user_id', user.id);
+      if (user == null) {
+        setState(() => _isSaving = false);
+        return;
       }
-    } catch (e) {
-      print('Error updating seller role: $e');
-    }
 
-    setState(() => _isSaving = false);
+      // 1. Update Tabel Public Users (Data untuk tampilan profil)
+      await Supabase.instance.client.from('users').update({
+        'role': 'seller',
+        'full_name': _nameController.text,
+      }).eq('user_id', user.id);
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Pendaftaran berhasil!',
-            style: TextStyle(fontFamily: 'Montserrat'),
-          ),
-          backgroundColor: AppColors.primary,
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.only(
-            bottom: MediaQuery.of(context).size.height - 150,
-            left: 24,
-            right: 24,
-          ),
+      // 2. UPDATE AUTH METADATA (Kunci utama untuk RLS)
+      // Supaya "KTP" digital user berubah jadi Seller seketika
+      await Supabase.instance.client.auth.updateUser(
+        UserAttributes(
+          data: {'role': 'seller'},
         ),
       );
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const SellerNavigation()),
-        (route) => false,
-      );
+
+      setState(() => _isSaving = false);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Pendaftaran berhasil!',
+              style: TextStyle(fontFamily: 'Montserrat'),
+            ),
+            backgroundColor: AppColors.primary,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.only(
+              bottom: MediaQuery.of(context).size.height - 150,
+              left: 24,
+              right: 24,
+            ),
+          ),
+        );
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const SellerNavigation()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('Error upgrading to seller: $e');
+      setState(() => _isSaving = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal mendaftar: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
