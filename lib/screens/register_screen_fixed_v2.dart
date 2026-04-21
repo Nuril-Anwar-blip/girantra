@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:girantra/screens/onboarding/auth_gate.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/auth_service_fixed.dart';
 import '../ui/app_colors.dart';
 import '../ui/app_text_styles.dart';
 import '../ui/app_widgets.dart';
-import 'auth_gate.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

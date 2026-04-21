@@ -128,6 +128,25 @@ class AuthService {
     }
   }
 
+  /// Get user role
+  Future<String> getUserRole(String userId) async {
+    try {
+      final data = await supabase
+          .from('users')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (data != null && data['role'] != null) {
+        return data['role'] as String;
+      }
+      return 'buyer'; // default fallback
+    } catch (e) {
+      print('❌ Error getting user role: $e');
+      return 'buyer';
+    }
+  }
+
   /// Update user profile (email & password bukan bisa diubah di sini)
   Future<bool> updateUserProfile({
     required String full_name,

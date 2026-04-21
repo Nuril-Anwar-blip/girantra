@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:girantra/models/product_model.dart';
+import 'package:girantra/services/auth_service_fixed.dart';
+import 'package:girantra/services/product_service.dart';
+import 'package:girantra/ui/app_colors.dart';
 import 'package:girantra/ui/app_text_styles.dart';
+import 'package:girantra/widgets/header_section.dart';
+import 'package:girantra/widgets/product_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/product_model.dart';
-import '../services/auth_service.dart';
-import '../services/product_service.dart';
-import '../ui/app_colors.dart';
-import '../ui/app_widgets.dart';
 import 'cart_screen.dart';
 import '../overlay/filter_screen.dart';
 import 'like_screen.dart';
 import '../notification/notification_screen.dart';
 import 'product_detail_screen.dart';
-import 'register_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +23,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _productService = ProductService();
-  final _authService = AuthService();
+  // final _authService = AuthService();
 
   late Future<List<ProductModel>> _futureProducts;
 
@@ -76,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final session = Supabase.instance.client.auth.currentSession;
+    // final session = Supabase.instance.client.auth.currentSession;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: LocationHeaderAppBar(

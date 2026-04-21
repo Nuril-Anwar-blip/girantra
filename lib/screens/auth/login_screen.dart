@@ -1,20 +1,12 @@
 import 'package:flutter/material.dart';
 
-<<<<<<< HEAD:lib/screens/login_screen.dart
-import '../services/auth_service_fixed.dart';
-import '../ui/app_colors.dart';
-import '../ui/app_text_styles.dart';
-import '../ui/app_widgets.dart';
-import 'register_screen_fixed_v2.dart';
-=======
-import '../../services/auth_service.dart';
+import '../../services/auth_service_fixed.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 import '../../ui/app_widgets.dart';
-import 'register_screen.dart';
-import '../navigation/buyer_navigation.dart';
+import '../register_screen_fixed_v2.dart';
+import '../navigation/buyer_navigation.dart'; 
 import '../navigation/seller_navigation.dart';
->>>>>>> bc16c412870141e5260169bac591eb1e80db39b4:lib/screens/auth/login_screen.dart
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
