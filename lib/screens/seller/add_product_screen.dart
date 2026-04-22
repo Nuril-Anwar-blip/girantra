@@ -176,27 +176,38 @@ class _AddProductScreenState extends State<AddProductScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text(
-          'Tambah Produk',
-          style: TextStyle(
-            color: Colors.black87,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-          ),
-        ),
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Row(
-            children: const [
-              SizedBox(width: 8),
-              Icon(Icons.arrow_back_ios, color: Colors.black87, size: 16),
-              Text('Kembali', style: TextStyle(color: Colors.black87, fontSize: 14)),
-            ],
-          ),
-        ),
-        leadingWidth: 100,
-        backgroundColor: Colors.grey.shade50,
+        backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: false,
+        leadingWidth: 110,
+        leading: TextButton.icon(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.text, size: 16),
+          label: const Text(
+            'Kembali',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              color: AppColors.text,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Text(
+                'Tambah Produk',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  color: AppColors.text,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          )
+        ],
       ),
       body: Stack(
         children: [

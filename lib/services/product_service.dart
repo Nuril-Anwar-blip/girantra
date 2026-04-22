@@ -190,16 +190,32 @@ class ProductService {
   Future<List<ProductModel>> getSellerProductsByStatus(String status) async {
     try {
       final sellerId = supabase.auth.currentUser?.id;
-      if (sellerId == null) return [];
+      if (sellerId == null) {
+        print('⚠️ getSellerProductsByStatus("$status"): user tidak login');
+        return [];
+      }
       final response = await supabase
           .from('products')
           .select()
           .eq('seller_id', sellerId)
           .eq('status_product', status)
           .order('created_at', ascending: false);
-      return response.map((json) => ProductModel.fromJson(json)).toList();
+
+      print('📦 Status "$status": ${response.length} produk ditemukan');
+
+      // Parse satu per satu agar error terlihat jelas
+      final List<ProductModel> result = [];
+      for (final json in response) {
+        try {
+          result.add(ProductModel.fromJson(json));
+        } catch (parseErr) {
+          print('❌ Parse error untuk produk ${json["product_id"]}: $parseErr');
+          print('   Raw data: $json');
+        }
+      }
+      return result;
     } catch (e) {
-      print('Error getting seller products by status: $e');
+      print('❌ Error getSellerProductsByStatus("$status"): $e');
       return [];
     }
   }

@@ -33,21 +33,41 @@ class ProductModel{
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    // Helper: safe parse double dari berbagai tipe (String, int, double, null)
+    double safeDouble(dynamic val) {
+      if (val == null) return 0.0;
+      if (val is double) return val;
+      if (val is int) return val.toDouble();
+      return double.tryParse(val.toString()) ?? 0.0;
+    }
+
+    // Helper: safe parse int dari berbagai tipe
+    int safeInt(dynamic val) {
+      if (val == null) return 0;
+      if (val is int) return val;
+      if (val is double) return val.toInt();
+      return int.tryParse(val.toString()) ?? 0;
+    }
+
     return ProductModel(
-      product_id: json['product_id'],
-      category_id: json['category_id'],
-      product_name: json['product_name'],
-      description: json['description'],
-      cost_price: json['cost_price'],
-      selling_price: json['selling_price'] != null ? double.parse(json['selling_price'].toString()) : 0.0,
-      ai_recommendation_price: json['ai_recommendation_price'] != null ? double.parse(json['ai_recommendation_price'].toString()) : 0.0,
-      stock: json['stock'],
-      unit: json['unit'],
-      image_url: json['image_url'],
-      harvest_date: json['harvest_date'] != null ? DateTime.parse(json['harvest_date'].toString()) : DateTime.now(),
-      status_product: json['status_product'],
-      seller_id: json['seller_id'],
-      created_at: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      product_id: json['product_id'] != null ? safeInt(json['product_id']) : null,
+      category_id: safeInt(json['category_id']),
+      product_name: json['product_name']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      cost_price: safeDouble(json['cost_price']),
+      selling_price: safeDouble(json['selling_price']),
+      ai_recommendation_price: safeDouble(json['ai_recommendation_price']),
+      stock: safeInt(json['stock']),
+      unit: json['unit']?.toString() ?? '',
+      image_url: json['image_url']?.toString() ?? '',
+      harvest_date: json['harvest_date'] != null
+          ? DateTime.parse(json['harvest_date'].toString())
+          : DateTime.now(),
+      status_product: json['status_product']?.toString() ?? 'available',
+      seller_id: json['seller_id']?.toString() ?? '',
+      created_at: json['created_at'] != null
+          ? DateTime.parse(json['created_at'].toString())
+          : null,
     );
   }
-}
+}

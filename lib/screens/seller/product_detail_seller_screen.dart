@@ -115,13 +115,11 @@ class _ProductDetailSellerScreenState
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        centerTitle: false,
+        leadingWidth: 110,
         leading: TextButton.icon(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: AppColors.text,
-            size: 16,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.text, size: 16),
           label: const Text(
             'Kembali',
             style: TextStyle(
@@ -131,15 +129,22 @@ class _ProductDetailSellerScreenState
             ),
           ),
         ),
-        leadingWidth: 110,
-        centerTitle: true,
-        title: Text(
-          'Detail Produk',
-          style: AppTextStyles.h2.copyWith(
-            color: AppColors.text,
-            fontSize: 16,
-          ),
-        ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Text(
+                'Detail Produk',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  color: AppColors.text,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          )
+        ],
       ),
       body: Stack(
         children: [
