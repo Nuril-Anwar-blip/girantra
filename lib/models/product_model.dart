@@ -44,7 +44,7 @@ class ProductModel{
       stock: json['stock'],
       unit: json['unit'],
       image_url: json['image_url'],
-      harvest_date: json['harvest_date'],
+      harvest_date: json['harvest_date'] != null ? DateTime.parse(json['harvest_date'].toString()) : DateTime.now(),
       status_product: json['status_product'],
       seller_id: json['seller_id'],
       created_at: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,

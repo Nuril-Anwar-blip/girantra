@@ -79,7 +79,7 @@ class ProductService {
       print('User ID: ${supabase.auth.currentUser?.id}');
       print('User Metadata: ${supabase.auth.currentUser?.userMetadata}');
       print('App Metadata: ${supabase.auth.currentUser?.appMetadata}');
-      print('-----------------');
+      print('-----------------'); 
 
       // Insert product data
       await supabase.from('products').insert({
@@ -165,6 +165,72 @@ class ProductService {
       return true;
     } catch (e) {
       print('Error deleting product: $e');
+      return false;
+    }
+  }
+
+  // Get all products milik seller yang sedang login
+  Future<List<ProductModel>> getSellerProducts() async {
+    try {
+      final sellerId = supabase.auth.currentUser?.id;
+      if (sellerId == null) return [];
+      final response = await supabase
+          .from('products')
+          .select()
+          .eq('seller_id', sellerId)
+          .order('created_at', ascending: false);
+      return response.map((json) => ProductModel.fromJson(json)).toList();
+    } catch (e) {
+      print('Error getting seller products: $e');
+      return [];
+    }
+  }
+
+  // Get produk seller berdasarkan status (available, out_of_stock, archived)
+  Future<List<ProductModel>> getSellerProductsByStatus(String status) async {
+    try {
+      final sellerId = supabase.auth.currentUser?.id;
+      if (sellerId == null) return [];
+      final response = await supabase
+          .from('products')
+          .select()
+          .eq('seller_id', sellerId)
+          .eq('status_product', status)
+          .order('created_at', ascending: false);
+      return response.map((json) => ProductModel.fromJson(json)).toList();
+    } catch (e) {
+      print('Error getting seller products by status: $e');
+      return [];
+    }
+  }
+
+  // Update status produk (available, out_of_stock, archived)
+  Future<bool> updateProductStatus(int productId, String status) async {
+    try {
+      await supabase
+          .from('products')
+          .update({'status_product': status})
+          .eq('product_id', productId);
+      print('✅ Status produk berhasil diupdate ke $status!');
+      return true;
+    } catch (e) {
+      print('Error updating product status: $e');
+      return false;
+    }
+  }
+
+  // Update stok produk saja, otomatis set status available jika stok > 0
+  Future<bool> updateProductStock(int productId, int newStock) async {
+    try {
+      final newStatus = newStock > 0 ? 'available' : 'out_of_stock';
+      await supabase
+          .from('products')
+          .update({'stock': newStock, 'status_product': newStatus})
+          .eq('product_id', productId);
+      print('✅ Stok produk berhasil diupdate ke $newStock!');
+      return true;
+    } catch (e) {
+      print('Error updating product stock: $e');
       return false;
     }
   }

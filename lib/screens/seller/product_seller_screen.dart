@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../models/product_model.dart';
+import '../../services/product_service.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 import '../../widgets/seller_product_card.dart';
@@ -19,6 +22,15 @@ class ProductSellerScreen extends StatefulWidget {
 class _ProductSellerScreenState extends State<ProductSellerScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final ProductService _productService = ProductService();
+
+  // Data lists per tab
+  List<ProductModel> _aktifProducts = [];
+  List<ProductModel> _habisProducts = [];
+  List<ProductModel> _arsipProducts = [];
+
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -27,6 +39,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
     _tabController.addListener(() {
       setState(() {});
     });
+    _loadProducts();
   }
 
   @override
@@ -35,12 +48,48 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
     super.dispose();
   }
 
+  Future<void> _loadProducts() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final results = await Future.wait([
+        _productService.getSellerProductsByStatus('available'),
+        _productService.getSellerProductsByStatus('out_of_stock'),
+        _productService.getSellerProductsByStatus('archived'),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _aktifProducts = results[0];
+        _habisProducts = results[1];
+        _arsipProducts = results[2];
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Gagal memuat produk. Coba lagi.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _formatPrice(double price) {
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
+    return formatter.format(price);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.background, // Match with background based on image (looks like slightly off-white like background)
+        backgroundColor: AppColors.background,
         elevation: 0,
         centerTitle: true,
         title: Text(
@@ -57,14 +106,14 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
               children: [
                 _buildCustomTab(
                   label: 'Aktif',
-                  count: '7',
+                  count: _aktifProducts.length.toString(),
                   index: 0,
                   isSelected: _tabController.index == 0,
                 ),
                 const SizedBox(width: 8),
                 _buildCustomTab(
                   label: 'Habis',
-                  count: '2',
+                  count: _habisProducts.length.toString(),
                   index: 1,
                   isSelected: _tabController.index == 1,
                   activeColor: Colors.red,
@@ -72,7 +121,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                 const SizedBox(width: 8),
                 _buildCustomTab(
                   label: 'Arsip',
-                  count: '4',
+                  count: _arsipProducts.length.toString(),
                   index: 2,
                   isSelected: _tabController.index == 2,
                   activeColor: Colors.orange,
@@ -80,16 +129,52 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
               ],
             ),
           ),
-          
+
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildAktifTab(),
-                _buildHabisTab(),
-                _buildArsipTab(),
-              ],
+            child: _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                    ),
+                  )
+                : _errorMessage != null
+                    ? _buildErrorState()
+                    : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildAktifTab(),
+                          _buildHabisTab(),
+                          _buildArsipTab(),
+                        ],
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.grey.shade400),
+          const SizedBox(height: 16),
+          Text(
+            _errorMessage!,
+            style: AppTextStyles.subtitle.copyWith(color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _loadProducts,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
+            child: const Text('Coba Lagi'),
           ),
         ],
       ),
@@ -125,10 +210,10 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
             clipBehavior: Clip.none,
             children: [
               Text(
-                label,
+                label.toUpperCase(),
                 style: AppTextStyles.subtitle.copyWith(
                   color: isSelected ? color : Colors.grey.shade500,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w600,
+                  fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
               ),
@@ -160,181 +245,332 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
     );
   }
 
+  // ─── Tab: Aktif ───────────────────────────────────────────────────────────
   Widget _buildAktifTab() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Produk Aktif',
-                  style: AppTextStyles.h2.copyWith(
-                    color: AppColors.text,
-                    fontSize: 16,
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: _loadProducts,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Produk Aktif',
+                    style: AppTextStyles.h2.copyWith(
+                      color: AppColors.text,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AddProductScreen(),
+                  GestureDetector(
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddProductScreen(),
+                        ),
+                      );
+                      // Refresh setelah kembali dari AddProductScreen
+                      _loadProducts();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.add_circle_outline,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Tambah Produk',
-                          style: AppTextStyles.subtitle.copyWith(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.add_circle_outline,
                             color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
+                            size: 16,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 4),
+                          Text(
+                            'Tambah Produk',
+                            style: AppTextStyles.subtitle.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SellerProductCard(
-              imageUrl: '', // leave empty for grey box
-              title: 'Bibit Padi Unggul',
-              stock: 6,
-              priceFormatted: 'Rp 255.000',
-              statusText: 'Aktif',
-              statusColor: AppColors.primary,
-              soldCount: 120,
-              rating: 4.8,
-              secondaryActionText: 'Arsipkan',
-              onSecondaryAction: () {
-                showDialog(context: context, builder: (_) => const ArchiveProductDialog(productName: 'Bibit Padi Unggul'));
-              },
-              onPrimaryAction: () {
-                showDialog(context: context, builder: (_) => const EditProductDialog(
-                  productName: 'Bibit Padi Unggul',
-                  description: 'Lorem ipsum dolor sit amet, consectetur a...',
-                  category: 'Pupuk',
-                  stock: 50,
-                ));
-              },
-            ),
-            SellerProductCard(
-              imageUrl: '', // leave empty for grey box
-              title: 'Bibit Padi Unggul',
-              stock: 6,
-              priceFormatted: 'Rp 255.000',
-              statusText: 'Aktif',
-              statusColor: AppColors.primary,
-              soldCount: 120,
-              rating: 4.8,
-              secondaryActionText: 'Arsipkan',
-              onSecondaryAction: () {
-                showDialog(context: context, builder: (_) => const ArchiveProductDialog(productName: 'Bibit Padi Unggul'));
-              },
-              onPrimaryAction: () {
-                showDialog(context: context, builder: (_) => const EditProductDialog(
-                  productName: 'Bibit Padi Unggul',
-                  description: 'Lorem ipsum dolor sit amet, consectetur a...',
-                  category: 'Pupuk',
-                  stock: 50,
-                ));
-              },
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (_aktifProducts.isEmpty)
+                _buildEmptyState(
+                  icon: Icons.inventory_2_outlined,
+                  message: 'Belum ada produk aktif',
+                  subMessage: 'Tap "Tambah Produk" untuk menambahkan produk baru',
+                )
+              else
+                ...List.generate(_aktifProducts.length, (i) {
+                  final product = _aktifProducts[i];
+                  return SellerProductCard(
+                    imageUrl: product.image_url,
+                    title: product.product_name,
+                    stock: product.stock,
+                    priceFormatted: _formatPrice(product.selling_price),
+                    statusText: 'Aktif',
+                    statusColor: AppColors.primary,
+                    soldCount: 0,
+                    rating: 0.0,
+                    secondaryActionText: 'Arsipkan',
+                    onSecondaryAction: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => ArchiveProductDialog(
+                          productName: product.product_name,
+                        ),
+                      );
+                      if (confirmed == true && product.product_id != null) {
+                        final ok = await _productService.updateProductStatus(
+                          product.product_id!,
+                          'archived',
+                        );
+                        if (ok && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Produk berhasil diarsipkan'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                          _loadProducts();
+                        }
+                      }
+                    },
+                    onPrimaryAction: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) => EditProductDialog(
+                          productName: product.product_name,
+                          description: product.description,
+                          category: product.category_id.toString(),
+                          stock: product.stock,
+                        ),
+                      ).then((_) => _loadProducts());
+                    },
+                  );
+                }),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  // ─── Tab: Habis ───────────────────────────────────────────────────────────
   Widget _buildHabisTab() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Produk Habis',
-              style: AppTextStyles.h2.copyWith(
-                color: AppColors.text,
-                fontSize: 16,
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: _loadProducts,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Produk Habis',
+                style: AppTextStyles.h2.copyWith(
+                  color: AppColors.text,
+                  fontSize: 16,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            SellerProductCard(
-              imageUrl: '', 
-              title: 'Bibit Padi Unggul',
-              stock: 0,
-              priceFormatted: 'Rp 255.000',
-              statusText: 'Habis',
-              statusColor: Colors.red,
-              soldCount: 120,
-              rating: 4.8,
-              primaryActionText: 'Stok Ulang',
-              onPrimaryAction: () {
-                showDialog(context: context, builder: (_) => const EditStockDialog(productId: 'Prdct002399', productName: 'Bibit Padi Unggul', initialStock: 50));
-              },
-            ),
-          ],
+              const SizedBox(height: 16),
+              if (_habisProducts.isEmpty)
+                _buildEmptyState(
+                  icon: Icons.check_circle_outline,
+                  message: 'Tidak ada produk yang habis',
+                  subMessage: 'Semua produk Anda masih tersedia',
+                  iconColor: Colors.green,
+                )
+              else
+                ...List.generate(_habisProducts.length, (i) {
+                  final product = _habisProducts[i];
+                  return SellerProductCard(
+                    imageUrl: product.image_url,
+                    title: product.product_name,
+                    stock: product.stock,
+                    priceFormatted: _formatPrice(product.selling_price),
+                    statusText: 'Habis',
+                    statusColor: Colors.red,
+                    soldCount: 0,
+                    rating: 0.0,
+                    primaryActionText: 'Stok Ulang',
+                    onPrimaryAction: () async {
+                      final newStock = await showDialog<int>(
+                        context: context,
+                        builder: (_) => EditStockDialog(
+                          productId: product.product_id?.toString() ?? '-',
+                          productName: product.product_name,
+                          initialStock: product.stock,
+                        ),
+                      );
+                      if (newStock != null && product.product_id != null) {
+                        final ok = await _productService.updateProductStock(
+                          product.product_id!,
+                          newStock,
+                        );
+                        if (ok && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Stok diperbarui menjadi $newStock'),
+                              backgroundColor: AppColors.primary,
+                            ),
+                          );
+                          _loadProducts();
+                        }
+                      }
+                    },
+                  );
+                }),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  // ─── Tab: Arsip ───────────────────────────────────────────────────────────
   Widget _buildArsipTab() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+    return RefreshIndicator(
+      color: AppColors.primary,
+      onRefresh: _loadProducts,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Produk Arsip',
+                style: AppTextStyles.h2.copyWith(
+                  color: AppColors.text,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (_arsipProducts.isEmpty)
+                _buildEmptyState(
+                  icon: Icons.archive_outlined,
+                  message: 'Tidak ada produk yang diarsipkan',
+                  subMessage: 'Produk yang diarsipkan akan muncul di sini',
+                  iconColor: Colors.orange,
+                )
+              else
+                ...List.generate(_arsipProducts.length, (i) {
+                  final product = _arsipProducts[i];
+                  return SellerProductCard(
+                    imageUrl: product.image_url,
+                    title: product.product_name,
+                    stock: product.stock,
+                    priceFormatted: _formatPrice(product.selling_price),
+                    statusText: 'Arsip',
+                    statusColor: Colors.orange,
+                    soldCount: 0,
+                    rating: 0.0,
+                    secondaryActionText: 'Hapus',
+                    secondaryActionColor: Colors.red,
+                    primaryActionText: 'Aktifkan',
+                    showPrimaryActionIcon: false,
+                    onSecondaryAction: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => DeleteProductDialog(
+                          productName: product.product_name,
+                        ),
+                      );
+                      if (confirmed == true && product.product_id != null) {
+                        final ok = await _productService.deleteProduct(
+                          product.product_id!,
+                        );
+                        if (ok && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Produk berhasil dihapus'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          _loadProducts();
+                        }
+                      }
+                    },
+                    onPrimaryAction: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (_) => ActivateProductDialog(
+                          productName: product.product_name,
+                        ),
+                      );
+                      if (confirmed == true && product.product_id != null) {
+                        final ok = await _productService.updateProductStatus(
+                          product.product_id!,
+                          'available',
+                        );
+                        if (ok && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Produk berhasil diaktifkan'),
+                              backgroundColor: AppColors.primary,
+                            ),
+                          );
+                          _loadProducts();
+                        }
+                      }
+                    },
+                  );
+                }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String message,
+    required String subMessage,
+    Color? iconColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 48.0),
+      child: Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Icon(icon, size: 72, color: iconColor ?? Colors.grey.shade300),
+            const SizedBox(height: 16),
             Text(
-              'Produk Arsip',
+              message,
               style: AppTextStyles.h2.copyWith(
-                color: AppColors.text,
-                fontSize: 16,
+                color: Colors.grey.shade600,
+                fontSize: 15,
               ),
             ),
-            const SizedBox(height: 16),
-            SellerProductCard(
-              imageUrl: '', 
-              title: 'Bibit Padi Unggul',
-              stock: 0,
-              priceFormatted: 'Rp 255.000',
-              statusText: 'Arsip',
-              statusColor: Colors.orange,
-              soldCount: 120,
-              rating: 4.8,
-              secondaryActionText: 'Hapus',
-              secondaryActionColor: Colors.red,
-              primaryActionText: 'Aktifkan',
-              showPrimaryActionIcon: false,
-              onSecondaryAction: () {
-                showDialog(context: context, builder: (_) => const DeleteProductDialog(productName: 'Bibit Padi Unggul'));
-              },
-              onPrimaryAction: () {
-                showDialog(context: context, builder: (_) => const ActivateProductDialog(productName: 'Bibit Padi Unggul'));
-              },
+            const SizedBox(height: 8),
+            Text(
+              subMessage,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.subtitle.copyWith(
+                color: Colors.grey.shade400,
+                fontSize: 13,
+              ),
             ),
           ],
         ),
