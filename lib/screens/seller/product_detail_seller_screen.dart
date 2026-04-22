@@ -34,24 +34,43 @@ class _ProductDetailSellerScreenState
 
   Future<void> _fetchCategoryName() async {
     try {
+      // Ambil semua kategori lalu filter manual — agar tidak tergantung nama kolom PK
       final response = await Supabase.instance.client
           .from('categories')
-          .select()
-          .eq('id', widget.product.category_id)
-          .maybeSingle();
+          .select();
+
+      print('📂 Semua kategori dari DB: $response');
+
+      if (response.isEmpty) {
+        if (mounted) setState(() { _categoryName = 'Tidak ada kategori'; _isFetchingCategory = false; });
+        return;
+      }
+
+      // Cari kategori yang cocok dengan category_id produk
+      Map<String, dynamic>? matched;
+      for (final cat in response) {
+        final catId = cat['id'] ?? cat['category_id'];
+        if (catId != null && catId.toString() == widget.product.category_id.toString()) {
+          matched = cat;
+          break;
+        }
+      }
+
+      print('🔍 Mencari category_id=${widget.product.category_id} → matched: $matched');
 
       if (mounted) {
         setState(() {
-          _categoryName = response?['name'] ??
-              response?['category_name'] ??
-              'Kategori ${widget.product.category_id}';
+          _categoryName = matched?['name']?.toString() ??
+              matched?['category_name']?.toString() ??
+              'Kategori tidak ditemukan';
           _isFetchingCategory = false;
         });
       }
     } catch (e) {
+      print('❌ Error fetch kategori: $e');
       if (mounted) {
         setState(() {
-          _categoryName = 'Kategori ${widget.product.category_id}';
+          _categoryName = 'Kategori tidak tersedia';
           _isFetchingCategory = false;
         });
       }

@@ -102,6 +102,54 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
     return formatter.format(price);
   }
 
+  /// Tampilkan loading overlay yang tidak bisa di-dismiss
+  void _showLoadingDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => PopScope(
+        canPop: false,
+        child: Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: AppTextStyles.subtitle.copyWith(
+                      fontSize: 14,
+                      color: AppColors.text,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Tutup loading overlay
+  void _hideLoadingDialog() {
+    if (mounted && Navigator.canPop(context)) {
+      Navigator.of(context, rootNavigator: true).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -354,11 +402,13 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                         ),
                       );
                       if (confirmed == true && product.product_id != null) {
+                        _showLoadingDialog('Mengarsipkan produk...');
                         try {
                           await _productService.updateProductStatus(
                             product.product_id!,
                             'archived',
                           );
+                          _hideLoadingDialog();
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -369,6 +419,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                             _loadProducts();
                           }
                         } catch (e) {
+                          _hideLoadingDialog();
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -451,18 +502,32 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                         ),
                       );
                       if (newStock != null && product.product_id != null) {
-                        final ok = await _productService.updateProductStock(
-                          product.product_id!,
-                          newStock,
-                        );
-                        if (ok && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Stok diperbarui menjadi $newStock'),
-                              backgroundColor: AppColors.primary,
-                            ),
+                        _showLoadingDialog('Memperbarui stok...');
+                        try {
+                          final ok = await _productService.updateProductStock(
+                            product.product_id!,
+                            newStock,
                           );
-                          _loadProducts();
+                          _hideLoadingDialog();
+                          if (ok && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Stok diperbarui menjadi $newStock'),
+                                backgroundColor: AppColors.primary,
+                              ),
+                            );
+                            _loadProducts();
+                          }
+                        } catch (e) {
+                          _hideLoadingDialog();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Gagal update stok: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         }
                       }
                     },
@@ -526,17 +591,31 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                         ),
                       );
                       if (confirmed == true && product.product_id != null) {
-                        final ok = await _productService.deleteProduct(
-                          product.product_id!,
-                        );
-                        if (ok && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Produk berhasil dihapus'),
-                              backgroundColor: Colors.red,
-                            ),
+                        _showLoadingDialog('Menghapus produk...');
+                        try {
+                          final ok = await _productService.deleteProduct(
+                            product.product_id!,
                           );
-                          _loadProducts();
+                          _hideLoadingDialog();
+                          if (ok && mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Produk berhasil dihapus'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            _loadProducts();
+                          }
+                        } catch (e) {
+                          _hideLoadingDialog();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Gagal hapus produk: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         }
                       }
                     },
@@ -548,18 +627,32 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                         ),
                       );
                       if (confirmed == true && product.product_id != null) {
-                        final ok = await _productService.updateProductStatus(
-                          product.product_id!,
-                          'available',
-                        );
-                        if (ok && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Produk berhasil diaktifkan'),
-                              backgroundColor: AppColors.primary,
-                            ),
+                        _showLoadingDialog('Mengaktifkan produk...');
+                        try {
+                          await _productService.updateProductStatus(
+                            product.product_id!,
+                            'available',
                           );
-                          _loadProducts();
+                          _hideLoadingDialog();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Produk berhasil diaktifkan'),
+                                backgroundColor: AppColors.primary,
+                              ),
+                            );
+                            _loadProducts();
+                          }
+                        } catch (e) {
+                          _hideLoadingDialog();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Gagal aktifkan produk: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         }
                       }
                     },
