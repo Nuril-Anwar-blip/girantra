@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/product_model.dart';
 import '../../services/product_service.dart';
 import '../../ui/app_colors.dart';
@@ -11,6 +12,7 @@ import '../overlay/activate_product_dialog.dart';
 import '../overlay/edit_stock_dialog.dart';
 import '../overlay/edit_product_dialog.dart';
 import 'add_product_screen.dart';
+import 'product_detail_seller_screen.dart';
 
 class ProductSellerScreen extends StatefulWidget {
   const ProductSellerScreen({super.key});
@@ -49,6 +51,22 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
   }
 
   Future<void> _loadProducts() async {
+    // ── DEBUG: lihat semua nilai status_product yg ada di DB ─────────────
+    try {
+      final supabase = Supabase.instance.client;
+      final sellerId = supabase.auth.currentUser?.id;
+      final debug = await supabase
+          .from('products')
+          .select('product_id, product_name, status_product')
+          .eq('seller_id', sellerId ?? '');
+      print('📋 DEBUG semua produk seller:');
+      for (final row in debug) {
+        print('  ID:${row["product_id"]} | "${row["status_product"]}" | ${row["product_name"]}');
+      }
+    } catch (e) {
+      print('❌ DEBUG error: $e');
+    }
+    // ─────────────────────────────────────────────────────────────────────
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -336,31 +354,43 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                         ),
                       );
                       if (confirmed == true && product.product_id != null) {
-                        final ok = await _productService.updateProductStatus(
-                          product.product_id!,
-                          'archived',
-                        );
-                        if (ok && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Produk berhasil diarsipkan'),
-                              backgroundColor: Colors.orange,
-                            ),
+                        try {
+                          await _productService.updateProductStatus(
+                            product.product_id!,
+                            'archived',
                           );
-                          _loadProducts();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Produk berhasil diarsipkan'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            _loadProducts();
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Gagal arsipkan: $e'),
+                                backgroundColor: Colors.red,
+                                duration: const Duration(seconds: 6),
+                              ),
+                            );
+                          }
                         }
                       }
                     },
-                    onPrimaryAction: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => EditProductDialog(
-                          productName: product.product_name,
-                          description: product.description,
-                          category: product.category_id.toString(),
-                          stock: product.stock,
+                    onPrimaryAction: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProductDetailSellerScreen(
+                            product: product,
+                          ),
                         ),
-                      ).then((_) => _loadProducts());
+                      );
+                      if (result == true) _loadProducts();
                     },
                   );
                 }),

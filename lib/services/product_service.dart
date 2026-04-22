@@ -207,15 +207,31 @@ class ProductService {
   // Update status produk (available, out_of_stock, archived)
   Future<bool> updateProductStatus(int productId, String status) async {
     try {
-      await supabase
+      await supabase.auth.refreshSession();
+      print('🔄 Updating product $productId status to: "$status"');
+      print('👤 Current user: ${supabase.auth.currentUser?.id}');
+
+      final result = await supabase
           .from('products')
           .update({'status_product': status})
-          .eq('product_id', productId);
-      print('✅ Status produk berhasil diupdate ke $status!');
+          .eq('product_id', productId)
+          .select();
+
+      print('✅ Update result (${result.length} rows): $result');
+
+      if (result.isEmpty) {
+        // Silent failure: RLS memblokir UPDATE atau product_id tidak ditemukan
+        throw Exception(
+          'Update tidak berhasil (0 baris diubah).\n'
+          'Kemungkinan penyebab: RLS Policy di Supabase tidak mengizinkan UPDATE.\n'
+          'Solusi: Buka Supabase Dashboard → Table Editor → products → Policies → '
+          'tambah policy UPDATE untuk authenticated user.',
+        );
+      }
       return true;
     } catch (e) {
-      print('Error updating product status: $e');
-      return false;
+      print('❌ Error updating status to "$status": $e');
+      rethrow;
     }
   }
 
