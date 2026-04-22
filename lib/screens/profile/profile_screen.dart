@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:girantra/screens/buyer/cart_screen.dart';
 import 'package:girantra/screens/buyer/like_screen.dart';
 import 'package:girantra/screens/auth/register_screen.dart';
+import 'package:girantra/screens/seller/delivery_seller_screen.dart';
+import 'package:girantra/screens/seller/product_seller_screen.dart';
 import 'package:girantra/screens/seller/register_seller_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/auth_service.dart';
@@ -311,9 +313,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildSectionTitle('Aktivitas Saya'),
           const SizedBox(height: 12),
           if (_role == 'seller') ...[
-            _buildMenuItem(Icons.inventory_2_outlined, 'Produk Saya', () {}),
+            _buildMenuItem(Icons.inventory_2_outlined, 'Produk Saya', () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const ProductSellerScreen(),
+                ),
+              );
+            }),
             const SizedBox(height: 8),
-            _buildMenuItem(Icons.local_shipping_outlined, 'Status Pengiriman Produk', () {}),
+            _buildMenuItem(Icons.local_shipping_outlined, 'Status Pengiriman Produk', () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const DeliverySellerScreen(),
+                ),
+              );
+            }),
           ] else ...[
             _buildMenuItem(Icons.shopping_cart_outlined, 'Keranjang Saya', () {
                 Navigator.of(context).push(
