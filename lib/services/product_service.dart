@@ -103,7 +103,7 @@ class ProductService {
     }
   }
 
-  // Update product
+  // Update product — image_file opsional, jika null pakai existingImageUrl
   Future<bool> updateProduct({
     required int product_id,
     required int category_id,
@@ -112,31 +112,29 @@ class ProductService {
     required double cost_price,
     required double selling_price,
     required int stock,
-    required String unit, // kg, pcs, liter, dll
-    required File image_file,
+    required String unit,
+    File? image_file,              // opsional
+    String existingImageUrl = '', // URL gambar lama jika tidak ganti gambar
     required DateTime harvest_date,
-    required String status_product, // Enum (available, out_of_stock)
+    required String status_product,
   }) async {
     try {
-      // Take seller ID from logged in user
+      await supabase.auth.refreshSession();
       final String sellerId = supabase.auth.currentUser!.id;
 
-      // Upload image to storage
-      final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final String path = '$sellerId/$fileName';
+      String imageUrl = existingImageUrl;
 
-      await supabase.storage.from('product-image').upload(path, image_file);
+      // Upload gambar baru hanya jika disediakan
+      if (image_file != null) {
+        final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final String path = '$sellerId/$fileName';
+        await supabase.storage.from('product-image').upload(path, image_file);
+        imageUrl = supabase.storage.from('product-image').getPublicUrl(path);
+      }
 
-      // Get public URL
-      final String imageUrl = supabase.storage
-          .from('product-image')
-          .getPublicUrl(path);
-
-      // Update product data
-      await supabase
+      final result = await supabase
           .from('products')
           .update({
-            'seller_id': sellerId,
             'category_id': category_id,
             'product_name': product_name,
             'description': description,
@@ -144,16 +142,22 @@ class ProductService {
             'selling_price': selling_price,
             'stock': stock,
             'unit': unit,
-            'image_url': imageUrl,
-            'harvest_date': harvest_date,
+            if (imageUrl.isNotEmpty) 'image_url': imageUrl,
+            'harvest_date': harvest_date.toIso8601String().split('T')[0],
             'status_product': status_product,
           })
-          .eq('product_id', product_id);
-      print('✅ Produk berhasil diupdate!');
+          .eq('product_id', product_id)
+          .eq('seller_id', sellerId)
+          .select();
+
+      if (result.isEmpty) {
+        throw Exception('Update gagal (0 baris diubah). Periksa RLS policy.');
+      }
+      print('✅ Produk berhasil diupdate! Result: $result');
       return true;
     } catch (e) {
-      print('Error updating product: $e');
-      return false;
+      print('❌ Error updating product: $e');
+      rethrow;
     }
   }
 

@@ -113,14 +113,11 @@ class _ProductDetailSellerScreenState
     final result = await showDialog(
       context: context,
       builder: (_) => EditProductDialog(
-        productName: widget.product.product_name,
-        description: widget.product.description,
-        category: _categoryName,
-        stock: widget.product.stock,
+        product: widget.product,
       ),
     );
     // Refresh jika ada perubahan
-    if (result != null && mounted) {
+    if (result == true && mounted) {
       Navigator.of(context).pop(true);
     }
   }
