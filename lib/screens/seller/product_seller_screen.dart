@@ -392,7 +392,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                     statusText: 'Aktif',
                     statusColor: AppColors.primary,
                     soldCount: 0,
-                    rating: 0.0,
+                    rating: product.rating,
                     secondaryActionText: 'Arsipkan',
                     onSecondaryAction: () async {
                       final confirmed = await showDialog<bool>(
@@ -490,7 +490,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                     statusText: 'Habis',
                     statusColor: Colors.red,
                     soldCount: 0,
-                    rating: 0.0,
+                    rating: product.rating,
                     primaryActionText: 'Stok Ulang',
                     onPrimaryAction: () async {
                       final newStock = await showDialog<int>(
@@ -578,7 +578,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                     statusText: 'Arsip',
                     statusColor: Colors.orange,
                     soldCount: 0,
-                    rating: 0.0,
+                    rating: product.rating,
                     secondaryActionText: 'Hapus',
                     secondaryActionColor: Colors.red,
                     primaryActionText: 'Aktifkan',

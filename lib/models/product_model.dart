@@ -13,7 +13,8 @@ class ProductModel{
   final DateTime harvest_date;  // date
   final String status_product;  // status (Enum)
   final String seller_id;       // uuid
-  final DateTime? created_at;   // timestamptz
+  final DateTime? created_at;   // timestamptz 
+  final double rating;          // numeric
 
   ProductModel({
     required this.product_id,
@@ -30,6 +31,7 @@ class ProductModel{
     required this.status_product,
     required this.seller_id,
     required this.created_at,
+    this.rating = 0.0,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -68,6 +70,7 @@ class ProductModel{
       created_at: json['created_at'] != null
           ? DateTime.parse(json['created_at'].toString())
           : null,
+      rating: safeDouble(json['rating']),
     );
   }
-}
+}
