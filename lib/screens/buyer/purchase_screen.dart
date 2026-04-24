@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 import '../../widgets/seller_product_card.dart';
+import 'payment_screen.dart';
 
 class PurchaseScreen extends StatefulWidget {
   const PurchaseScreen({super.key});
@@ -208,12 +209,27 @@ class _PurchaseScreenState extends State<PurchaseScreen>
                     statusLabel = 'Belum Bayar';
                     statusColor = Colors.orange;
                   }
-                  return _buildOrderCard(
-                    order: order,
-                    statusText: statusLabel,
-                    statusColor: statusColor,
-                    extraContent: null,
-                    showButtons: false,
+                  return GestureDetector(
+                    onTap: () {
+                      final transactionId = order['transaction_code']?.toString() ?? order['transaction_id']?.toString() ?? order['id']?.toString() ?? '';
+                      final amount = order['total_amount'] ?? order['total_price'] ?? 0;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PaymentScreen(
+                            transactionId: transactionId,
+                            amount: amount,
+                          ),
+                        ),
+                      );
+                    },
+                    child: _buildOrderCard(
+                      order: order,
+                      statusText: statusLabel,
+                      statusColor: statusColor,
+                      extraContent: null,
+                      showButtons: false,
+                    ),
                   );
                 }).toList(),
               ),
@@ -334,14 +350,14 @@ class _PurchaseScreenState extends State<PurchaseScreen>
     required bool showButtons,
     Widget? extraContent,
   }) {
-    final product = order['products'] as Map<String, dynamic>?;
-    final productName = product?['product_name']?.toString() ?? 'Produk';
-    final imageUrl    = product?['image_url']?.toString() ?? '';
-    final price       = _formatPrice(product?['selling_price'] ?? order['total_price'] ?? 0);
-    final quantity    = order['quantity'] ?? order['qty'] ?? 0;
-    final address     = order['delivery_address']?.toString() ??
+    final product      = order['products'] as Map<String, dynamic>?;
+    final productName  = product?['product_name']?.toString() ?? 'Produk';
+    final imageUrl     = product?['image_url']?.toString() ?? '';
+    final price        = _formatPrice(product?['selling_price'] ?? order['total_price'] ?? 0);
+    final quantity     = order['quantity'] ?? order['qty'] ?? 0;
+    final shippingAddress      = order['shipping_address']?.toString() ??
                         order['address']?.toString() ?? '-';
-    final orderId     = _formatOrderId(order['order_id'] ?? order['id']);
+    final transactionCode = _formatOrderId(order['transaction_code'] ?? order['id']);
 
     return SellerProductCard(
       imageUrl: imageUrl,
@@ -352,7 +368,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
       showProductStats: false,
       showButtons: showButtons,
       customQuantityText: 'Jumlah: $quantity',
-      topLabel: 'ID: $orderId',
+      topLabel: 'ID: $transactionCode',
 
       // Extra content: alamat + info tambahan per tab
       extraContent: Column(
@@ -377,7 +393,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
                       ),
                     ),
                     Text(
-                      address,
+                      shippingAddress,
                       style: const TextStyle(
                         fontFamily: 'Montserrat',
                         fontSize: 12,

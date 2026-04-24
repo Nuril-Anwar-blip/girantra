@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:girantra/services/auth_service_fixed.dart'; // Sesuaikan package name
+import 'package:girantra/services/auth_service.dart';
 
 void main() {
   // 1. Inisialisasi Supabase khusus untuk testing

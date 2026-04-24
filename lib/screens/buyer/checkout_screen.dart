@@ -4,6 +4,7 @@ import '../../models/product_model.dart';
 import '../../widgets/product_card.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
+import 'payment_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final ProductModel product;
@@ -21,6 +22,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String _phoneNumber = '';
   String _address = '';
   bool _isLoadingUser = true;
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -424,10 +426,60 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   elevation: 0,
                 ),
-                onPressed: () {
-                  // Handle order creation
+                onPressed: _isProcessing ? null : () async {
+                  final user = Supabase.instance.client.auth.currentUser;
+                  if (user == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Harap login')));
+                    return;
+                  }
+
+                  setState(() => _isProcessing = true);
+
+                  try {
+                    // Masukkan ke tabel transactions
+                    final response = await Supabase.instance.client.from('transactions').insert({
+                      'transaction_code' : "TRX-"+DateTime.now().millisecondsSinceEpoch.toString(),
+                      'buyer_id': user.id,
+                      'product_id': widget.product.product_id,
+                      'seller_id': widget.product.seller_id,
+                      'quantity' : 1,
+                      'price_at_purchase': widget.product.selling_price,
+                      'sub_total' : widget.product.selling_price*1,
+                      'shipping_cost' : shippingFee+serviceFee,
+                      'total_amount': totalPrice,
+                      'shipping_address': _address,
+                      'payment_status': 'pending', 
+                      // Jika schema butuh field lain, tambahkan di sini
+                    }).select().single();
+
+                    // Generate UUID transaction_id
+                    final transactionId = response['transaction_id']?.toString() ?? response['id']?.toString() ?? 'TRX-${DateTime.now().millisecondsSinceEpoch}';
+
+                    if (!mounted) return;
+                    
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => PaymentScreen(
+                          transactionId: transactionId,
+                          amount: totalPrice,
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal checkout: $e')));
+                    }
+                  } finally {
+                    if (mounted) setState(() => _isProcessing = false);
+                  }
                 },
-                child: Text(
+                child: _isProcessing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : Text(
                   'Buat Pemesanan',
                   style: AppTextStyles.link.copyWith(
                     color: AppColors.background,
