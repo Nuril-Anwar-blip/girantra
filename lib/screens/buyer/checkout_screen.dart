@@ -453,7 +453,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     }).select().single();
 
                     // Generate UUID transaction_id
-                    final transactionId = response['transaction_id']?.toString() ?? response['id']?.toString() ?? 'TRX-${DateTime.now().millisecondsSinceEpoch}';
+                    final transactionId = response['transaction_code']?.toString() ?? response['transaction_id']?.toString() ?? response['id']?.toString() ?? 'TRX-${DateTime.now().millisecondsSinceEpoch}';
 
                     if (!mounted) return;
                     

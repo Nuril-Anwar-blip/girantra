@@ -79,10 +79,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
       
       // Karena kita gak tau nama primary key pastinya (transaction_id atau id), kita coba asumsi
       await _supabase.from('transactions').update({
-        'status': 'paid',
-        // Jika namanya transaction_status
-        'transaction_status': 'paid',
-      }).eq('transaction_id', widget.transactionId); // Coba dengan transaction_id
+        'payment_status': 'paid',
+      }).eq('transaction_code', widget.transactionId); // Coba dengan transaction_code
       
     } catch (e) {
       // Mengabaikan error jika kolom tidak ada (seperti transaction_status jika gak ada di skema), 
