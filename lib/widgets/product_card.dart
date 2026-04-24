@@ -169,6 +169,7 @@ class ProductCart extends StatelessWidget {
   final int qty;
   final VoidCallback onAdd;
   final VoidCallback onRemove;
+  final VoidCallback? onDelete;
 
   const ProductCart({
     Key? key,
@@ -180,6 +181,7 @@ class ProductCart extends StatelessWidget {
     required this.qty,
     required this.onAdd,
     required this.onRemove,
+    this.onDelete,
   }) : super(key: key);
 
   @override
@@ -198,119 +200,144 @@ class ProductCart extends StatelessWidget {
         ],
       ),
       padding: const EdgeInsets.all(12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image
-          Container(
-            width: 100,
-            height: 100,
-            color: Colors.grey[200],
-            child: imageUrl.isNotEmpty
-                ? Image.network(
-                    imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.image_not_supported, color: Colors.grey),
-                  )
-                : const Icon(Icons.image_outlined, color: Colors.grey),
-          ),
-          const SizedBox(width: 16),
-          // Content
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Tag
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  color: AppColors.primary,
-                  child: Text(
-                    tag,
-                    style: AppTextStyles.subtitle.copyWith(color: AppColors.background, fontWeight: FontWeight.w600, fontSize: 12),
+          // Tag and Delete Button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                color: const Color(0xFF358C36),
+                child: Text(
+                  tag,
+                  style: const TextStyle(
+                    fontFamily: 'Montserrat',
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
                   ),
                 ),
-                const SizedBox(height: 8),
-                // Title
-                Text(
-                  title,
-                  style: AppTextStyles.productName,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+              ),
+              if (onDelete != null)
+                InkWell(
+                  onTap: onDelete,
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.grey,
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(height: 4),
-                // Description
-                Text(
-                  description,
-                  style: AppTextStyles.subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 12),
-                // Bottom Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image
+              Container(
+                width: 80,
+                height: 80,
+                color: Colors.grey[200],
+                child: imageUrl.isNotEmpty
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.image_not_supported, color: Colors.grey),
+                      )
+                    : const Icon(Icons.image_outlined, color: Colors.grey),
+              ),
+              const SizedBox(width: 12),
+              // Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Title
+                    Text(
+                      title,
+                      style: AppTextStyles.productName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    // Description
+                    Text(
+                      description,
+                      style: AppTextStyles.subtitle.copyWith(fontSize: 11),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    // Price
                     Text(
                       price,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontFamily: 'Montserrat',
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.primary,
+                        color: Color(0xFF358C36),
                       ),
                     ),
+                    const SizedBox(height: 8),
                     // Qty Control
-                    Container(
-                      height: 28,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          InkWell(
-                            onTap: onRemove,
-                            child: Container(
-                              width: 26,
-                              alignment: Alignment.center,
-                              child: const Icon(Icons.remove, size: 16, color: AppColors.primary),
-                            ),
-                          ),
-                          Container(
-                            width: 32,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withOpacity(0.15),
-                              border: Border(
-                                left: BorderSide(color: Colors.grey.shade400),
-                                right: BorderSide(color: Colors.grey.shade400),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Container(
+                        height: 28,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFF358C36)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            InkWell(
+                              onTap: onRemove,
+                              child: Container(
+                                width: 28,
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.remove, size: 16, color: Color(0xFF358C36)),
                               ),
                             ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              qty.toString(),
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.primary,
+                            Container(
+                              width: 32,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF358C36).withOpacity(0.15),
+                                border: const Border(
+                                  left: BorderSide(color: Color(0xFF358C36)),
+                                  right: BorderSide(color: Color(0xFF358C36)),
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                qty.toString(),
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF358C36),
+                                ),
                               ),
                             ),
-                          ),
-                          InkWell(
-                            onTap: onAdd,
-                            child: Container(
-                              width: 26,
-                              alignment: Alignment.center,
-                              child: const Icon(Icons.add, size: 16, color: AppColors.primary),
+                            InkWell(
+                              onTap: onAdd,
+                              child: Container(
+                                width: 28,
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.add, size: 16, color: Color(0xFF358C36)),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),

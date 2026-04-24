@@ -355,12 +355,52 @@ class ProductDetailScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const CartScreen(),
-                            ),
-                          );
+                        onPressed: () async {
+                          final user = Supabase.instance.client.auth.currentUser;
+                          if (user == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Harap login terlebih dahulu')),
+                            );
+                            return;
+                          }
+                          try {
+                            // Check if item exists
+                            final existing = await Supabase.instance.client
+                                .from('carts')
+                                .select()
+                                .eq('buyer_id', user.id)
+                                .eq('product_id', product.product_id as Object)
+                                .maybeSingle();
+
+                            if (existing != null) {
+                              final currentQty = existing['quantity'] as int? ?? 0;
+                              final cartIdField = existing.containsKey('card_id') ? 'card_id' : 'cart_id';
+                              await Supabase.instance.client.from('carts').update({
+                                'quantity': currentQty + 1,
+                              }).eq(cartIdField, existing[cartIdField]);
+                            } else {
+                              await Supabase.instance.client.from('carts').insert({
+                                'buyer_id': user.id,
+                                'product_id': product.product_id,
+                                'quantity': 1,
+                              });
+                            }
+                            
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Berhasil ditambahkan ke keranjang')),
+                            );
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const CartScreen(),
+                              ),
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Gagal: $e')),
+                            );
+                          }
                         },
                         child: const Icon(
                           Icons.shopping_cart_outlined,
