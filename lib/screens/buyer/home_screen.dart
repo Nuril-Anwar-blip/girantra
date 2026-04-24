@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:girantra/models/product_model.dart';
-import 'package:girantra/services/auth_service_fixed.dart';
+import 'package:girantra/services/auth_service.dart';
 import 'package:girantra/services/product_service.dart';
 import 'package:girantra/ui/app_colors.dart';
 import 'package:girantra/ui/app_text_styles.dart';
