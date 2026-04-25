@@ -57,7 +57,7 @@ class _RegisterSellerScreenState extends State<RegisterSellerScreen> {
             _phoneController.text = userData['phone_number'] ?? '';
             _addressController.text = userData['address'] ?? '';
             _avatarUrl =
-                '${Supabase.instance.client.storage.from('avatars').getPublicUrl('${user.id}/profile.jpg')}?t=${DateTime.now().millisecondsSinceEpoch}';
+                "${Supabase.instance.client.storage.from('avatars').getPublicUrl('${user.id}/profile.jpg')}?t=${DateTime.now().millisecondsSinceEpoch}";
             _isLoading = false;
           });
         } else {
@@ -156,17 +156,15 @@ class _RegisterSellerScreenState extends State<RegisterSellerScreen> {
       }
 
       // 1. Update Tabel Public Users (Data untuk tampilan profil)
-      await Supabase.instance.client.from('users').update({
-        'role': 'seller',
-        'full_name': _nameController.text,
-      }).eq('user_id', user.id);
+      await Supabase.instance.client
+          .from('users')
+          .update({'role': 'seller', 'full_name': _nameController.text})
+          .eq('user_id', user.id);
 
       // 2. UPDATE AUTH METADATA (Kunci utama untuk RLS)
       // Supaya "KTP" digital user berubah jadi Seller seketika
       await Supabase.instance.client.auth.updateUser(
-        UserAttributes(
-          data: {'role': 'seller'},
-        ),
+        UserAttributes(data: {'role': 'seller'}),
       );
 
       setState(() => _isSaving = false);
@@ -305,7 +303,10 @@ class _RegisterSellerScreenState extends State<RegisterSellerScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: AppTextStyles.h2.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500),
+      style: AppTextStyles.h2.copyWith(
+        color: AppColors.primary,
+        fontWeight: FontWeight.w500,
+      ),
     );
   }
 
