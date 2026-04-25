@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/product_model.dart';
 import '../../widgets/product_card.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
+import 'payment_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final ProductModel product;
@@ -15,6 +17,54 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   int _selectedPaymentMethod = 0; // 0 for COD, 1 for Transfer Bank
+  
+  String _fullName = '';
+  String _phoneNumber = '';
+  String _address = '';
+  bool _isLoadingUser = true;
+  bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserData();
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        // Langkah 2: Query ke database Supabase
+        final userData = await Supabase.instance.client
+            .from('users')
+            .select('full_name, phone_number, address')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        // Langkah 3: Update state dengan data yang didapat
+        if (userData != null && mounted) {
+          setState(() {
+            _fullName = userData['full_name'] ?? 'Pengguna';
+            _phoneNumber = userData['phone_number'] ?? 'Belum ada nomor telepon';
+            _address = userData['address'] ?? 'Belum ada alamat, silakan isi di profil Anda';
+            _isLoadingUser = false;
+          });
+        } else {
+          if (mounted) setState(() => _isLoadingUser = false);
+        }
+      } else {
+        if (mounted) setState(() => _isLoadingUser = false);
+      }
+    } catch (e) {
+      print('Error fetching user data: $e');
+      if (mounted) setState(() => _isLoadingUser = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   String formatCurrency(num amount) {
     return 'Rp${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
@@ -94,30 +144,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      RichText(
-                        text: TextSpan(
-                          text: 'John Doe ',
-                          style: AppTextStyles.link.copyWith(
-                            color: AppColors.text,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: '+23 1234567890',
-                              style: AppTextStyles.subtitle,
+                      _isLoadingUser 
+                        ? const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 4),
+                            child: SizedBox(
+                              height: 16, width: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                             ),
-                          ],
-                        ),
-                      ),
+                          )
+                        : RichText(
+                            text: TextSpan(
+                              text: '$_fullName ',
+                              style: AppTextStyles.link.copyWith(
+                                color: AppColors.text,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: _phoneNumber,
+                                  style: AppTextStyles.subtitle,
+                                ),
+                              ],
+                            ),
+                          ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Jalan Jendral Sudirman Blok Q, no 45. Babarsari, Kec. Laweyan, Kita Surakarta',
-                        style: TextStyle(
-                          fontFamily: 'Montserrat',
-                          color: AppColors.mutedText,
-                          fontSize: 12,
-                          height: 1.4,
-                        ),
-                      ),
+                      _isLoadingUser 
+                        ? const SizedBox.shrink()
+                        : Text(
+                            _address,
+                            style: const TextStyle(
+                              fontFamily: 'Montserrat',
+                              color: AppColors.mutedText,
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
+                          ),
                     ],
                   ),
                 ),
@@ -366,10 +426,60 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   elevation: 0,
                 ),
-                onPressed: () {
-                  // Handle order creation
+                onPressed: _isProcessing ? null : () async {
+                  final user = Supabase.instance.client.auth.currentUser;
+                  if (user == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Harap login')));
+                    return;
+                  }
+
+                  setState(() => _isProcessing = true);
+
+                  try {
+                    // Masukkan ke tabel transactions
+                    final response = await Supabase.instance.client.from('transactions').insert({
+                      'transaction_code' : "TRX-"+DateTime.now().millisecondsSinceEpoch.toString(),
+                      'buyer_id': user.id,
+                      'product_id': widget.product.product_id,
+                      'seller_id': widget.product.seller_id,
+                      'quantity' : 1,
+                      'price_at_purchase': widget.product.selling_price,
+                      'sub_total' : widget.product.selling_price*1,
+                      'shipping_cost' : shippingFee+serviceFee,
+                      'total_amount': totalPrice,
+                      'shipping_address': _address,
+                      'payment_status': 'pending', 
+                      // Jika schema butuh field lain, tambahkan di sini
+                    }).select().single();
+
+                    // Generate UUID transaction_id
+                    final transactionId = response['transaction_code']?.toString() ?? response['transaction_id']?.toString() ?? response['id']?.toString() ?? 'TRX-${DateTime.now().millisecondsSinceEpoch}';
+
+                    if (!mounted) return;
+                    
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => PaymentScreen(
+                          transactionId: transactionId,
+                          amount: totalPrice,
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal checkout: $e')));
+                    }
+                  } finally {
+                    if (mounted) setState(() => _isProcessing = false);
+                  }
                 },
-                child: Text(
+                child: _isProcessing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      )
+                    : Text(
                   'Buat Pemesanan',
                   style: AppTextStyles.link.copyWith(
                     color: AppColors.background,

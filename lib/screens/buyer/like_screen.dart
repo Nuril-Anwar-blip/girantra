@@ -119,7 +119,7 @@ class _LikeScreenState extends State<LikeScreen> {
                     : (product.category_id == 2 ? 'Benih' : 'Produk'),
                 title: product.product_name,
                 location: 'Surakarta',
-                rating: '4.8 (120)',
+                rating: product.rating > 0 ? '${product.rating}' : 'Baru',
                 price:
                     'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
                 unit:

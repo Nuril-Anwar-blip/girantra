@@ -3,6 +3,8 @@ import 'package:girantra/screens/buyer/cart_screen.dart';
 import 'package:girantra/screens/buyer/checkout_screen.dart';
 import 'package:girantra/screens/seller/seller_screen.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../models/product_model.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
@@ -203,9 +205,9 @@ class ProductDetailScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
-                            children: const [
+                            children: [
                               Text(
-                                '4.9',
+                                product.rating > 0 ? '${product.rating}' : 'Baru',
                                 style: TextStyle(
                                   fontFamily: 'Montserrat',
                                   fontSize: 16,
@@ -231,70 +233,96 @@ class ProductDetailScreen extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const SellerScreen(),
-                                ),
-                              );
-                            },
-                            child: Row(
-                              children: [
-                                ClipOval(
-                                  child: Image.network(
-                                    'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=100&q=60',
-                                    width: 48,
-                                    height: 48,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: const [
-                                      Text(
-                                        'Plant Store',
-                                        style: TextStyle(
-                                          fontFamily: 'Montserrat',
-                                          fontSize: 16,
-                                          color: AppColors.text,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      SizedBox(height: 2),
-                                      Text(
-                                        'SURAKARTA',
-                                        style: TextStyle(
-                                          fontFamily: 'Montserrat',
-                                          fontSize: 11,
-                                          color: AppColors.mutedText,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Row(
-                                  children: const [
-                                    Icon(
-                                      Icons.circle,
-                                      size: 8,
-                                      color: AppColors.primary,
+                          FutureBuilder<Map<String, dynamic>?>(
+                            future: Supabase.instance.client
+                                .from('users')
+                                .select('full_name, address')
+                                .eq('user_id', product.seller_id)
+                                .maybeSingle(),
+                            builder: (context, snapshot) {
+                              final sellerName = snapshot.data?['full_name']?.toString() ?? 'Penjual';
+                              final sellerAddress = snapshot.data?['address']?.toString() ?? '-';
+                              final avatarUrl = Supabase.instance.client.storage
+                                  .from('avatars')
+                                  .getPublicUrl('${product.seller_id}/profile.jpg');
+
+                              return InkWell(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => const SellerScreen(),
                                     ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Online',
-                                      style: TextStyle(
-                                        fontFamily: 'Montserrat',
-                                        fontSize: 12,
-                                        color: AppColors.text,
+                                  );
+                                },
+                                child: Row(
+                                  children: [
+                                    ClipOval(
+                                      child: Image.network(
+                                        avatarUrl,
+                                        width: 48,
+                                        height: 48,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            Container(
+                                              width: 48,
+                                              height: 48,
+                                              color: Colors.grey[200],
+                                              child: const Icon(Icons.person, color: Colors.grey),
+                                            ),
                                       ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            sellerName,
+                                            style: const TextStyle(
+                                              fontFamily: 'Montserrat',
+                                              fontSize: 16,
+                                              color: AppColors.text,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            sellerAddress.toUpperCase(),
+                                            style: const TextStyle(
+                                              fontFamily: 'Montserrat',
+                                              fontSize: 11,
+                                              color: AppColors.mutedText,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Row(
+                                      children: const [
+                                        Icon(
+                                          Icons.circle,
+                                          size: 8,
+                                          color: AppColors.primary,
+                                        ),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Online',
+                                          style: TextStyle(
+                                            fontFamily: 'Montserrat',
+                                            fontSize: 12,
+                                            color: AppColors.text,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -327,12 +355,52 @@ class ProductDetailScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const CartScreen(),
-                            ),
-                          );
+                        onPressed: () async {
+                          final user = Supabase.instance.client.auth.currentUser;
+                          if (user == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Harap login terlebih dahulu')),
+                            );
+                            return;
+                          }
+                          try {
+                            // Check if item exists
+                            final existing = await Supabase.instance.client
+                                .from('carts')
+                                .select()
+                                .eq('buyer_id', user.id)
+                                .eq('product_id', product.product_id as Object)
+                                .maybeSingle();
+
+                            if (existing != null) {
+                              final currentQty = existing['quantity'] as int? ?? 0;
+                              final cartIdField = existing.containsKey('card_id') ? 'card_id' : 'cart_id';
+                              await Supabase.instance.client.from('carts').update({
+                                'quantity': currentQty + 1,
+                              }).eq(cartIdField, existing[cartIdField]);
+                            } else {
+                              await Supabase.instance.client.from('carts').insert({
+                                'buyer_id': user.id,
+                                'product_id': product.product_id,
+                                'quantity': 1,
+                              });
+                            }
+                            
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Berhasil ditambahkan ke keranjang')),
+                            );
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const CartScreen(),
+                              ),
+                            );
+                          } catch (e) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Gagal: $e')),
+                            );
+                          }
                         },
                         child: const Icon(
                           Icons.shopping_cart_outlined,

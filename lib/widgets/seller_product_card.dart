@@ -69,12 +69,25 @@ class SellerProductCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (topLabel != null) ...[
-            Text(
-              topLabel!,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  topLabel!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                Text(
+                  statusText,
+                  style: AppTextStyles.subtitle.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
           ],
@@ -117,15 +130,17 @@ class SellerProductCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          statusText,
-                          style: AppTextStyles.subtitle.copyWith(
-                            color: statusColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
+                        if (topLabel == null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            statusText,
+                            style: AppTextStyles.subtitle.copyWith(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 2),

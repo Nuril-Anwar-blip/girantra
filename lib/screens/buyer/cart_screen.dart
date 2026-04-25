@@ -4,9 +4,100 @@ import 'package:girantra/ui/app_text_styles.dart';
 import '../../ui/app_colors.dart';
 // import '../ui/app_widgets.dart';
 import '../../widgets/product_card.dart';
+import '../../services/cart_service.dart';
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
+
+  @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  final _cartService = CartService();
+  List<Map<String, dynamic>> _cartItems = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCarts();
+  }
+
+  Future<void> _loadCarts() async {
+    setState(() => _isLoading = true);
+    try {
+      final items = await _cartService.getCarts();
+      setState(() {
+        _cartItems = items;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat keranjang: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _updateQty(int index, int newQty) async {
+    if (newQty < 1) return;
+    
+    final item = _cartItems[index];
+    final cartIdField = item.containsKey('card_id') ? 'card_id' : 'cart_id';
+    
+    setState(() {
+      _cartItems[index]['quantity'] = newQty;
+    });
+
+    try {
+      await _cartService.updateQuantity(item[cartIdField], newQty);
+    } catch (e) {
+      // Revert on error
+      setState(() {
+        _cartItems[index]['quantity'] = item['quantity'];
+      });
+    }
+  }
+
+  Future<void> _deleteItem(int index) async {
+    final item = _cartItems[index];
+    final cartIdField = item.containsKey('card_id') ? 'card_id' : 'cart_id';
+    
+    try {
+      await _cartService.removeFromCart(item[cartIdField]);
+      setState(() {
+        _cartItems.removeAt(index);
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menghapus: $e')),
+        );
+      }
+    }
+  }
+
+  int get _totalPrice {
+    int total = 0;
+    for (var item in _cartItems) {
+      final product = item['products'];
+      if (product != null) {
+        final price = (product['selling_price'] as num?)?.toInt() ?? 0;
+        final qty = item['quantity'] as int? ?? 1;
+        total += price * qty;
+      }
+    }
+    return total;
+  }
+
+  String _formatCurrency(int amount) {
+    return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -46,50 +137,40 @@ class CartScreen extends StatelessWidget {
           )
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : Column(
               children: [
-                ProductCart(
-                  tag: 'Pupuk',
-                  title: 'Pupuk Kompos Organik',
-                  description: 'Lorem ipsum dolor sit amet, conse ksdjf ...',
-                  price: 'Rp 45.000',
-                  qty: 3,
-                  imageUrl:
-                      'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-                  onAdd: () {},
-                  onRemove: () {},
+                Expanded(
+                  child: _cartItems.isEmpty
+                      ? const Center(child: Text('Keranjang kosong'))
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: _cartItems.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final item = _cartItems[index];
+                            final product = item['products'] ?? {};
+                            
+                            final categoryId = product['category_id'] as int? ?? 0;
+                            final tag = categoryId == 1 ? 'Pupuk' : (categoryId == 2 ? 'Benih' : 'Produk');
+                            final price = (product['selling_price'] as num?)?.toInt() ?? 0;
+                            final qty = item['quantity'] as int? ?? 1;
+
+                            return ProductCart(
+                              tag: tag,
+                              title: product['product_name']?.toString() ?? 'Produk',
+                              description: product['description']?.toString() ?? '',
+                              price: _formatCurrency(price),
+                              qty: qty,
+                              imageUrl: product['image_url']?.toString() ?? '',
+                              onAdd: () => _updateQty(index, qty + 1),
+                              onRemove: () => _updateQty(index, qty - 1),
+                              onDelete: () => _deleteItem(index),
+                            );
+                          },
+                        ),
                 ),
-                const SizedBox(height: 12),
-                ProductCart(
-                  tag: 'Benih',
-                  title: 'Bibit Padi Unggul Ciherang',
-                  description: 'Lorem ipsum dolor sit amet, conse ksdjf ...',
-                  price: 'Rp 75.000',
-                  qty: 1,
-                  imageUrl:
-                      'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-                  onAdd: () {},
-                  onRemove: () {},
-                ),
-                const SizedBox(height: 12),
-                ProductCart(
-                  tag: 'Sayuran',
-                  title: 'Tomat Cherry Segar Hydro',
-                  description: 'Lorem ipsum dolor sit amet, conse ksdjf ...',
-                  price: 'Rp 15.000',
-                  qty: 7,
-                  imageUrl:
-                      'https://images.unsplash.com/photo-1592424041794-069afab91136?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-                  onAdd: () {},
-                  onRemove: () {},
-                ),
-              ],
-            ),
-          ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             decoration: BoxDecoration(
@@ -104,14 +185,14 @@ class CartScreen extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text(
+                    children: [
+                      const Text(
                         'TOTAL',
                         style: AppTextStyles.subtitle,
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'Rp 315.000',
+                        _formatCurrency(_totalPrice),
                         style: AppTextStyles.finalPrice,
                       ),
                     ],
@@ -129,7 +210,7 @@ class CartScreen extends StatelessWidget {
                       ),
                       onPressed: () {},
                       child: Text(
-                        'Checkout (3)',
+                        'Checkout (${_cartItems.length})',
                         style: AppTextStyles.link.copyWith(
                           color: AppColors.background,
                         ),
