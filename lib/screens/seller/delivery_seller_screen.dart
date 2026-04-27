@@ -313,7 +313,7 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
             final product = order['products'] as Map<String, dynamic>?;
             final productName = product?['product_name']?.toString() ?? 'Produk';
             final imageUrl = product?['image_url']?.toString() ?? '';
-            final price = _formatPrice(order['total_amount'] ?? order['total_price'] ?? 0);
+            final price = _formatPrice(order['sub_total'] ?? order['total_price'] ?? 0);
             final amount = order['quantity'] ?? order['qty'] ?? 1;
             final address = order['shipping_address']?.toString() ?? order['address']?.toString() ?? '-';
             final id = _formatOrderId(order['transaction_code'] ?? order['transaction_id']);

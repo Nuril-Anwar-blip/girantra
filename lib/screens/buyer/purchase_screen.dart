@@ -267,7 +267,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
                 children: _dikemas.map((order) => _buildOrderCard(
                   order: order,
                   statusText: 'Diproses',
-                  statusColor: AppColors.primary,
+                  statusColor: AppColors.accent,
                   showButtons: false,
                   extraContent: _buildStatusRow(
                     label: 'Status',
@@ -369,7 +369,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
     final product      = order['products'] as Map<String, dynamic>?;
     final productName  = product?['product_name']?.toString() ?? 'Produk';
     final imageUrl     = product?['image_url']?.toString() ?? '';
-    final price        = _formatPrice(product?['selling_price'] ?? order['total_price'] ?? 0);
+    final price        = _formatPrice(order['total_amount'] ?? order['total_price'] ?? 0);
     final quantity     = order['quantity'] ?? order['qty'] ?? 0;
     final shippingAddress      = order['shipping_address']?.toString() ??
                         order['address']?.toString() ?? '-';
