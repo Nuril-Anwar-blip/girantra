@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 import '../../widgets/seller_product_card.dart';
@@ -15,6 +17,14 @@ class DeliverySellerScreen extends StatefulWidget {
 class _DeliverySellerScreenState extends State<DeliverySellerScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final _supabase = Supabase.instance.client;
+
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  List<Map<String, dynamic>> _baru = [];
+  List<Map<String, dynamic>> _proses = [];
+  List<Map<String, dynamic>> _dikirim = [];
 
   @override
   void initState() {
@@ -23,12 +33,91 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
     _tabController.addListener(() {
       setState(() {});
     });
+    _loadOrders();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadOrders() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final sellerId = _supabase.auth.currentUser?.id;
+      if (sellerId == null) throw Exception('Tidak ada user yang login');
+
+      final response = await _supabase
+          .from('transactions')
+          .select('''
+            *,
+            products (
+              product_name,
+              image_url,
+              selling_price
+            ),
+            logistics (
+              current_status
+            )
+          ''')
+          .eq('seller_id', sellerId)
+          .eq('payment_status', 'paid')
+          .order('transaction_date', ascending: false);
+
+      if (!mounted) return;
+      setState(() {
+        _baru = [];
+        _proses = [];
+        _dikirim = [];
+
+        for (final o in response) {
+          final logisticsData = o['logistics'];
+          String? currentStatus;
+          
+          if (logisticsData != null) {
+            if (logisticsData is List && logisticsData.isNotEmpty) {
+              // Asumsi ambil data logistik terbaru jika ada lebih dari 1
+              currentStatus = logisticsData.last['current_status']?.toString();
+            } else if (logisticsData is Map) {
+              currentStatus = logisticsData['current_status']?.toString();
+            }
+          }
+
+          if (currentStatus == null || currentStatus == 'pending') {
+            _baru.add(o);
+          } else if (currentStatus == 'processing' || currentStatus == 'packed') {
+            _proses.add(o);
+          } else if (currentStatus == 'shipped' || currentStatus == 'on_delivery' || currentStatus == 'delivered') {
+            _dikirim.add(o);
+          }
+        }
+
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('❌ Error loading seller orders: $e');
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = 'Gagal memuat pesanan: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  String _formatPrice(dynamic price) {
+    final p = price is double ? price : double.tryParse(price?.toString() ?? '0') ?? 0;
+    return NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(p);
+  }
+
+  String _formatOrderId(dynamic id) {
+    if (id == null) return '#TRX-UNKNOWN';
+    final str = id.toString();
+    if (str.startsWith('TRX-') || str.startsWith('#')) return str;
+    return '#TRX-$str';
   }
 
   Widget _buildCustomTab({
@@ -108,105 +197,142 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
         backgroundColor: AppColors.background,
         elevation: 0,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              children: [
-                _buildCustomTab(
-                  label: 'Baru',
-                  count: '7',
-                  index: 0,
-                  isSelected: _tabController.index == 0,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : _errorMessage != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(_errorMessage!),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadOrders,
+                        child: const Text('Coba Lagi'),
+                      )
+                    ],
+                  ),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        children: [
+                          _buildCustomTab(
+                            label: 'Baru',
+                            count: _baru.length.toString(),
+                            index: 0,
+                            isSelected: _tabController.index == 0,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildCustomTab(
+                            label: 'Proses',
+                            count: _proses.length.toString(),
+                            index: 1,
+                            isSelected: _tabController.index == 1,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildCustomTab(
+                            label: 'Dikirim',
+                            count: _dikirim.length.toString(),
+                            index: 2,
+                            isSelected: _tabController.index == 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          // TAB 1: Baru
+                          _buildTabContent(
+                            title: 'Pesanan Baru',
+                            items: _baru,
+                            tabState: _TabState.baru,
+                          ),
+                          // TAB 2: Proses
+                          _buildTabContent(
+                            title: 'Pesanan Diproses',
+                            items: _proses,
+                            tabState: _TabState.proses,
+                          ),
+                          // TAB 3: Dikirim
+                          _buildTabContent(
+                            title: 'Pesanan Dikirim',
+                            items: _dikirim,
+                            tabState: _TabState.dikirim,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                _buildCustomTab(
-                  label: 'Proses',
-                  count: '2',
-                  index: 1,
-                  isSelected: _tabController.index == 1,
-                ),
-                const SizedBox(width: 8),
-                _buildCustomTab(
-                  label: 'Dikirim',
-                  count: '4',
-                  index: 2,
-                  isSelected: _tabController.index == 2,
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // TAB 1: Baru
-                _buildTabContent(
-                  title: 'Pesanan Baru',
-                  itemCount: 2,
-                  tabState: _TabState.baru,
-                ),
-                // TAB 2: Proses
-                _buildTabContent(
-                  title: 'Pesanan Diproses',
-                  itemCount: 1,
-                  tabState: _TabState.proses,
-                ),
-                // TAB 3: Dikirim
-                _buildTabContent(
-                  title: 'Pesanan Dikirim',
-                  itemCount: 1,
-                  tabState: _TabState.dikirim,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildTabContent({
     required String title,
-    required int itemCount,
+    required List<Map<String, dynamic>> items,
     required _TabState tabState,
   }) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.black87,
-          ),
+    if (items.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _loadOrders,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.5,
+              child: const Center(
+                child: Text('Belum ada pesanan'),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 12),
-        ...List.generate(itemCount, (index) {
-          if (tabState == _TabState.baru && index == 1) {
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _loadOrders,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...items.map((order) {
+            final product = order['products'] as Map<String, dynamic>?;
+            final productName = product?['product_name']?.toString() ?? 'Produk';
+            final imageUrl = product?['image_url']?.toString() ?? '';
+            final price = _formatPrice(order['total_amount'] ?? order['total_price'] ?? 0);
+            final amount = order['quantity'] ?? order['qty'] ?? 1;
+            final address = order['shipping_address']?.toString() ?? order['address']?.toString() ?? '-';
+            final id = _formatOrderId(order['transaction_code'] ?? order['transaction_id']);
+            final transactionIdDb = order['transaction_id'];
+
             return _DeliveryCard(
-              id: '#TRX-20260419034',
-              title: 'Pupuk Kompos Organik',
-              amount: 1,
-              price: 'Rp 45.000',
-              address: 'Jl. Adi Sucipto no. 44, Laweyan, Kota Surakarta',
+              id: id,
+              transactionIdDb: transactionIdDb,
+              title: productName,
+              amount: amount,
+              price: price,
+              address: address,
               tabState: tabState,
+              imageUrl: imageUrl,
+              onRefresh: _loadOrders,
             );
-          }
-          return _DeliveryCard(
-            id: '#TRX-20260419001',
-            title: 'Bibit Padi Unggul',
-            amount: 6,
-            price: 'Rp 255.000',
-            address:
-                'Jl. Jendral Sudirman no.34, Jakarta Selatan, Indonesia...',
-            tabState: tabState,
-          );
-        }),
-      ],
+          }),
+        ],
+      ),
     );
   }
 }
@@ -220,6 +346,9 @@ class _DeliveryCard extends StatelessWidget {
   final String price;
   final String address;
   final _TabState tabState;
+  final String imageUrl;
+  final dynamic transactionIdDb;
+  final VoidCallback onRefresh;
 
   const _DeliveryCard({
     required this.id,
@@ -228,6 +357,9 @@ class _DeliveryCard extends StatelessWidget {
     required this.price,
     required this.address,
     required this.tabState,
+    required this.imageUrl,
+    required this.transactionIdDb,
+    required this.onRefresh,
   });
 
   @override
@@ -251,7 +383,7 @@ class _DeliveryCard extends StatelessWidget {
     }
 
     return SellerProductCard(
-      imageUrl: '', // default placeholder
+      imageUrl: imageUrl,
       title: title,
       priceFormatted: price,
       statusText: statusText,
@@ -262,21 +394,51 @@ class _DeliveryCard extends StatelessWidget {
       showButtons: tabState == _TabState.baru,
       secondaryActionText: tabState == _TabState.baru ? 'Tolak' : null,
       secondaryActionColor: Colors.red,
-      primaryActionText: tabState == _TabState.baru 
-          ? 'Terima' 
-          : '',
+      primaryActionText: tabState == _TabState.baru ? 'Terima' : '',
       showPrimaryActionIcon: false,
-      onPrimaryAction: () {
-        showDialog(
+      onPrimaryAction: tabState == _TabState.baru ? () async {
+        final courierName = await showDialog<String>(
           context: context,
-          builder: (_) => ArrangeDeliveryDialog(orderId: id),
+          builder: (_) => ArrangeDeliveryDialog(
+            orderId: id,
+            productName: title,
+            quantity: amount,
+            destinationAddress: address,
+          ),
         );
-      },
-      onSecondaryAction: tabState == _TabState.baru ? () {
-        showDialog(
+        
+        if (courierName != null) {
+          try {
+            final supabase = Supabase.instance.client;
+            
+            if (transactionIdDb != null) {
+              await supabase.from('logistics').insert({
+                'transaction_id': transactionIdDb,
+                'current_status': 'processing', 
+                'courier_name': courierName,
+                'tracking_number': 'DELIV-${DateTime.now().millisecondsSinceEpoch}',
+                'created_at': DateTime.now().toUtc().toIso8601String(),
+              });
+            } else {
+              throw Exception('ID Transaksi tidak ditemukan');
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pesanan berhasil diterima dan masuk ke Proses')));
+            onRefresh();
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal terima pesanan: $e')));
+          }
+        }
+      } : null,
+      onSecondaryAction: tabState == _TabState.baru ? () async {
+        final result = await showDialog(
           context: context,
           builder: (_) => RejectOrderDialog(orderId: id),
         );
+        // Jika dialog mereturn true/berhasil tolak, kita refresh
+        if (result == true) {
+          onRefresh();
+        }
       } : null,
       extraContent: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -373,11 +535,24 @@ class _DeliveryCard extends StatelessWidget {
                 ),
                 if (tabState == _TabState.proses)
                   ElevatedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => ArrangeDeliveryDialog(orderId: id),
-                      );
+                    onPressed: () async {
+                      // Langsung update status ke shipped
+                      try {
+                        final supabase = Supabase.instance.client;
+                        
+                        if (transactionIdDb != null) {
+                          await supabase.from('logistics').update({
+                            'current_status': 'shipped'
+                          }).eq('transaction_id', transactionIdDb);
+                        } else {
+                            throw Exception('ID Transaksi tidak ditemukan');
+                        }
+              
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pesanan berhasil diatur pengirimannya (Dikirim)')));
+                        onRefresh();
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal atur kirim: $e')));
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
@@ -389,7 +564,7 @@ class _DeliveryCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       minimumSize: const Size(0, 36),
                     ),
-                    child: const Text('Atur Kirim', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                    child: const Text('Kirim Pesanan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                   ),
               ],
             ),

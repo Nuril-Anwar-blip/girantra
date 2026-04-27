@@ -64,35 +64,51 @@ class _PurchaseScreenState extends State<PurchaseScreen>
               product_name,
               image_url,
               selling_price
+            ),
+            logistics (
+              current_status
             )
           ''')
           .eq('buyer_id', buyerId)
           .order('transaction_date', ascending: false);
 
-      print('📦 Total transactions: ${response.length}');
-      for (final o in response) {
-        final st = o['payment_status'] ?? o['status'] ?? o['transaction_status'];
-        print('  Trx: ${o["transaction_code"] ?? o["transaction_id"]} | status: $st | product: ${o["products"]?["product_name"]}');
-      }
-
       if (!mounted) return;
       setState(() {
-        _belumBayar = response.where((o) {
-          final st = (o['payment_status'] ?? o['status'] ?? o['transaction_status'])?.toString();
-          return _statusBelumBayar.contains(st);
-        }).toList();
-        _dikemas = response.where((o) {
-          final st = (o['payment_status'] ?? o['status'] ?? o['transaction_status'])?.toString();
-          return _statusDikemas.contains(st);
-        }).toList();
-        _dikirim = response.where((o) {
-          final st = (o['payment_status'] ?? o['status'] ?? o['transaction_status'])?.toString();
-          return _statusDikirim.contains(st);
-        }).toList();
-        _diterima = response.where((o) {
-          final st = (o['payment_status'] ?? o['status'] ?? o['transaction_status'])?.toString();
-          return _statusDiterima.contains(st);
-        }).toList();
+        _belumBayar = [];
+        _dikemas = [];
+        _dikirim = [];
+        _diterima = [];
+
+        for (final o in response) {
+          final paymentStatus = (o['payment_status'] ?? o['status'] ?? o['transaction_status'])?.toString();
+          
+          final logisticsData = o['logistics'];
+          String? currentStatus;
+          if (logisticsData != null) {
+            if (logisticsData is List && logisticsData.isNotEmpty) {
+              currentStatus = logisticsData.last['current_status']?.toString();
+            } else if (logisticsData is Map) {
+              currentStatus = logisticsData['current_status']?.toString();
+            }
+          }
+
+          if (paymentStatus == 'pending' || paymentStatus == 'failed' || paymentStatus == 'rejected' || paymentStatus == null) {
+            _belumBayar.add(o);
+          } else if (paymentStatus == 'paid') {
+            if (currentStatus == null || currentStatus == 'pending') {
+              _belumBayar.add(o); // Menunggu seller klik Terima
+            } else if (currentStatus == 'processing' || currentStatus == 'packed') {
+              _dikemas.add(o);
+            } else if (currentStatus == 'shipped' || currentStatus == 'on_delivery') {
+              _dikirim.add(o);
+            } else if (currentStatus == 'delivered' || currentStatus == 'completed') {
+              _diterima.add(o);
+            } else {
+              _belumBayar.add(o);
+            }
+          }
+        }
+
         _isLoading  = false;
       });
     } catch (e) {

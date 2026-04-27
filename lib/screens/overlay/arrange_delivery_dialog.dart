@@ -4,8 +4,17 @@ import '../../ui/app_text_styles.dart';
 
 class ArrangeDeliveryDialog extends StatefulWidget {
   final String orderId;
+  final String productName;
+  final int quantity;
+  final String destinationAddress;
 
-  const ArrangeDeliveryDialog({super.key, required this.orderId});
+  const ArrangeDeliveryDialog({
+    super.key, 
+    required this.orderId,
+    required this.productName,
+    required this.quantity,
+    required this.destinationAddress,
+  });
 
   @override
   State<ArrangeDeliveryDialog> createState() => _ArrangeDeliveryDialogState();
@@ -44,14 +53,14 @@ class _ArrangeDeliveryDialogState extends State<ArrangeDeliveryDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'No Resi:',
+                  'ID Pemesanan:',
                   style: AppTextStyles.h2.copyWith(fontSize: 12),
                 ),
                 Text(
-                  'JNE1234567890',
+                  widget.orderId,
                   style: AppTextStyles.subtitle.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                    color: Colors.grey.shade500,
                     fontSize: 12,
                   ),
                 ),
@@ -62,15 +71,63 @@ class _ArrangeDeliveryDialogState extends State<ArrangeDeliveryDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'ID Pemesanan:',
+                  'Produk:',
+                  style: AppTextStyles.h2.copyWith(fontSize: 12),
+                ),
+                Expanded(
+                  child: Text(
+                    widget.productName,
+                    textAlign: TextAlign.right,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.subtitle.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade500,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Jumlah:',
                   style: AppTextStyles.h2.copyWith(fontSize: 12),
                 ),
                 Text(
-                  widget.orderId,
+                  '${widget.quantity} Item',
                   style: AppTextStyles.subtitle.copyWith(
                     fontWeight: FontWeight.w600,
                     color: Colors.grey.shade500,
                     fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Alamat:',
+                  style: AppTextStyles.h2.copyWith(fontSize: 12),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    widget.destinationAddress,
+                    textAlign: TextAlign.right,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.subtitle.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade500,
+                      fontSize: 12,
+                    ),
                   ),
                 ),
               ],
@@ -114,7 +171,7 @@ class _ArrangeDeliveryDialogState extends State<ArrangeDeliveryDialog> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'JNE / JNT / Pos',
+                          'JNE',
                           style: AppTextStyles.subtitle.copyWith(fontSize: 12, color: Colors.black87),
                         ),
                         Icon(
@@ -141,9 +198,9 @@ class _ArrangeDeliveryDialogState extends State<ArrangeDeliveryDialog> {
                 ),
                 onPressed: () {
                   // Perform arrange delivery
-                  Navigator.pop(context, true);
+                  Navigator.pop(context, _selectedCourier == 1 ? 'Pengiriman Mandiri (Anda)' : 'JNE');
                 },
-                child: Text('Proses Sekarang', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white)),
+                child: const Text('Atur Kirim', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.white)),
               ),
             ),
           ],
