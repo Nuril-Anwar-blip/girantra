@@ -4,7 +4,7 @@ import '../../services/auth_service.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 import '../../ui/app_widgets.dart';
-import '../register_screen_fixed_v2.dart';
+import 'register_screen.dart';
 import '../navigation/buyer_navigation.dart'; 
 import '../navigation/seller_navigation.dart';
 
