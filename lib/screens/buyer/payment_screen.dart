@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 
 import '../../ui/app_colors.dart';
-import '../../ui/app_text_styles.dart';
+// import '../../ui/app_text_styles.dart';
 import 'purchase_screen.dart';
 
 class PaymentScreen extends StatefulWidget {

@@ -44,10 +44,10 @@ class _PurchaseScreenState extends State<PurchaseScreen>
 
   // ── Mapping status DB ke tab ──────────────────────────────────────────────
   // Sesuaikan nilai ini dengan enum/status yang ada di database Anda
-  static const _statusBelumBayar = ['pending', 'paid', 'rejected'];
-  static const _statusDikemas    = ['processing', 'packed'];
-  static const _statusDikirim    = ['shipped', 'on_delivery'];
-  static const _statusDiterima   = ['delivered', 'completed'];
+  // static const _statusBelumBayar = ['pending', 'paid', 'rejected'];
+  // static const _statusDikemas    = ['processing', 'packed'];
+  // static const _statusDikirim    = ['shipped', 'on_delivery'];
+  // static const _statusDiterima   = ['delivered', 'completed'];
 
   Future<void> _loadOrders() async {
     setState(() { _isLoading = true; _errorMessage = null; });

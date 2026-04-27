@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:girantra/screens/onboarding/auth_gate.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+// import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../services/auth_service.dart';
 import '../ui/app_colors.dart';

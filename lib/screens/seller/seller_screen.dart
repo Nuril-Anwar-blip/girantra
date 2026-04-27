@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 import '../../widgets/product_card.dart';
-import '../buyer/product_detail_screen.dart'; // Just in case routing is needed for the grid items
-import '../../models/product_model.dart'; // To create dummy products here
+// import '../buyer/product_detail_screen.dart'; // Just in case routing is needed for the grid items
+// import '../../models/product_model.dart'; // To create dummy products here
 
 class SellerScreen extends StatefulWidget {
   const SellerScreen({super.key});

@@ -10,7 +10,7 @@ import '../overlay/delete_product_dialog.dart';
 import '../overlay/archive_product_dialog.dart';
 import '../overlay/activate_product_dialog.dart';
 import '../overlay/edit_stock_dialog.dart';
-import '../overlay/edit_product_dialog.dart';
+// import '../overlay/edit_product_dialog.dart';
 import 'add_product_screen.dart';
 import 'product_detail_seller_screen.dart';
 

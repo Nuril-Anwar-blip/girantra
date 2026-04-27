@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:girantra/screens/buyer/cart_screen.dart';
 import 'package:girantra/screens/buyer/like_screen.dart';
-import 'package:girantra/screens/auth/register_screen.dart';
+// import 'package:girantra/screens/auth/register_screen.dart';
 import 'package:girantra/screens/seller/delivery_seller_screen.dart';
 import 'package:girantra/screens/seller/product_seller_screen.dart';
 import 'package:girantra/screens/seller/register_seller_screen.dart';
