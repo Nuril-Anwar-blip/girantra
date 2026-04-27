@@ -210,7 +210,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
                     statusColor = Colors.orange;
                   }
                   return GestureDetector(
-                    onTap: () {
+                    onTap: status == 'paid' ? null : () {
                       final transactionId = order['transaction_code']?.toString() ?? order['transaction_id']?.toString() ?? order['id']?.toString() ?? '';
                       final amount = order['total_amount'] ?? order['total_price'] ?? 0;
                       Navigator.push(
