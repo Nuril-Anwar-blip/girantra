@@ -6,6 +6,7 @@ import '../../ui/app_text_styles.dart';
 import '../../widgets/seller_product_card.dart';
 import '../overlay/reject_order_dialog.dart';
 import '../overlay/arrange_delivery_dialog.dart';
+import '../overlay/kirim_pesanan_dialog.dart';
 
 class DeliverySellerScreen extends StatefulWidget {
   const DeliverySellerScreen({super.key});
@@ -61,7 +62,9 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
               selling_price
             ),
             logistics (
-              current_status
+              current_status,
+              tracking_number,
+              courier_name
             )
           ''')
           .eq('seller_id', sellerId)
@@ -77,13 +80,29 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
         for (final o in response) {
           final logisticsData = o['logistics'];
           String? currentStatus;
+          String? arrivalDateStr;
           
           if (logisticsData != null) {
             if (logisticsData is List && logisticsData.isNotEmpty) {
               // Asumsi ambil data logistik terbaru jika ada lebih dari 1
               currentStatus = logisticsData.last['current_status']?.toString();
+              arrivalDateStr = logisticsData.last['arrival_date']?.toString();
             } else if (logisticsData is Map) {
               currentStatus = logisticsData['current_status']?.toString();
+              arrivalDateStr = logisticsData['arrival_date']?.toString();
+            }
+          }
+
+          if (currentStatus == 'delivery' && arrivalDateStr != null) {
+            final arrivalDate = DateTime.tryParse(arrivalDateStr);
+            // Cek apakah tanggal saat ini sudah melewati hari kedatangan
+            if (arrivalDate != null && DateTime.now().isAfter(arrivalDate.add(const Duration(days: 1)))) {
+              currentStatus = 'received';
+              final txId = o['transaction_code'] ?? o['transaction_id'] ?? o['id'];
+              if (txId != null) {
+                // Update ke database di background
+                _supabase.from('logistics').update({'current_status': 'received'}).eq('transaction_id', txId).catchError((_) => null);
+              }
             }
           }
 
@@ -91,7 +110,7 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
             _baru.add(o);
           } else if (currentStatus == 'processing' || currentStatus == 'packed') {
             _proses.add(o);
-          } else if (currentStatus == 'shipped' || currentStatus == 'on_delivery' || currentStatus == 'delivered') {
+          } else if (currentStatus == 'delivery' || currentStatus == 'on_delivery' || currentStatus == 'delivered') {
             _dikirim.add(o);
           }
         }
@@ -319,9 +338,20 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
             final id = _formatOrderId(order['transaction_code'] ?? order['transaction_id']);
             final transactionIdDb = order['transaction_id'];
 
+            String trackingNumber = '';
+            if (order['logistics'] != null) {
+              final logData = order['logistics'];
+              if (logData is List && logData.isNotEmpty) {
+                trackingNumber = logData.last['tracking_number']?.toString() ?? '';
+              } else if (logData is Map) {
+                trackingNumber = logData['tracking_number']?.toString() ?? '';
+              }
+            }
+
             return _DeliveryCard(
               id: id,
               transactionIdDb: transactionIdDb,
+              trackingNumber: trackingNumber,
               title: productName,
               amount: amount,
               price: price,
@@ -348,6 +378,7 @@ class _DeliveryCard extends StatelessWidget {
   final _TabState tabState;
   final String imageUrl;
   final dynamic transactionIdDb;
+  final String trackingNumber;
   final VoidCallback onRefresh;
 
   const _DeliveryCard({
@@ -359,6 +390,7 @@ class _DeliveryCard extends StatelessWidget {
     required this.tabState,
     required this.imageUrl,
     required this.transactionIdDb,
+    required this.trackingNumber,
     required this.onRefresh,
   });
 
@@ -536,22 +568,33 @@ class _DeliveryCard extends StatelessWidget {
                 if (tabState == _TabState.proses)
                   ElevatedButton(
                     onPressed: () async {
-                      // Langsung update status ke shipped
-                      try {
-                        final supabase = Supabase.instance.client;
-                        
-                        if (transactionIdDb != null) {
-                          await supabase.from('logistics').update({
-                            'current_status': 'shipped'
-                          }).eq('transaction_id', transactionIdDb);
-                        } else {
-                            throw Exception('ID Transaksi tidak ditemukan');
+                      final arrivalDate = await showDialog<DateTime>(
+                        context: context,
+                        builder: (_) => KirimPesananDialog(
+                          orderId: id,
+                          trackingNumber: trackingNumber,
+                        ),
+                      );
+                      
+                      if (arrivalDate != null) {
+                        try {
+                          final supabase = Supabase.instance.client;
+                          
+                          if (transactionIdDb != null) {
+                            await supabase.from('logistics').update({
+                              'current_status': 'delivery',
+                              'shipping_date': DateTime.now().toUtc().toIso8601String(),
+                              'arrival_date': arrivalDate.toUtc().toIso8601String(),
+                            }).eq('transaction_id', transactionIdDb);
+                          } else {
+                              throw Exception('ID Transaksi tidak ditemukan');
+                          }
+                
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pesanan berhasil diatur pengirimannya (Dikirim)')));
+                          onRefresh();
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal atur kirim: $e')));
                         }
-              
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pesanan berhasil diatur pengirimannya (Dikirim)')));
-                        onRefresh();
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal atur kirim: $e')));
                       }
                     },
                     style: ElevatedButton.styleFrom(

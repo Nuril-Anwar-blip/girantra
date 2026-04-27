@@ -66,7 +66,10 @@ class _PurchaseScreenState extends State<PurchaseScreen>
               selling_price
             ),
             logistics (
-              current_status
+              current_status,
+              tracking_number,
+              courier_name,
+              arrival_date
             )
           ''')
           .eq('buyer_id', buyerId)
@@ -84,11 +87,27 @@ class _PurchaseScreenState extends State<PurchaseScreen>
           
           final logisticsData = o['logistics'];
           String? currentStatus;
+          String? arrivalDateStr;
           if (logisticsData != null) {
             if (logisticsData is List && logisticsData.isNotEmpty) {
               currentStatus = logisticsData.last['current_status']?.toString();
+              arrivalDateStr = logisticsData.last['arrival_date']?.toString();
             } else if (logisticsData is Map) {
               currentStatus = logisticsData['current_status']?.toString();
+              arrivalDateStr = logisticsData['arrival_date']?.toString();
+            }
+          }
+
+          if (currentStatus == 'delivery' && arrivalDateStr != null) {
+            final arrivalDate = DateTime.tryParse(arrivalDateStr);
+            // Cek apakah tanggal saat ini sudah melewati hari kedatangan
+            if (arrivalDate != null && DateTime.now().isAfter(arrivalDate.add(const Duration(days: 1)))) {
+              currentStatus = 'received';
+              final txId = o['transaction_code'] ?? o['transaction_id'] ?? o['id'];
+              if (txId != null) {
+                // Update ke database di background
+                _supabase.from('logistics').update({'current_status': 'received'}).eq('transaction_id', txId).catchError((_) => null);
+              }
             }
           }
 
@@ -99,7 +118,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
               _belumBayar.add(o); // Menunggu seller klik Terima
             } else if (currentStatus == 'processing' || currentStatus == 'packed') {
               _dikemas.add(o);
-            } else if (currentStatus == 'shipped' || currentStatus == 'on_delivery') {
+            } else if (currentStatus == 'delivery' || currentStatus == 'on_delivery') {
               _dikirim.add(o);
             } else if (currentStatus == 'delivered' || currentStatus == 'completed') {
               _diterima.add(o);
@@ -291,29 +310,89 @@ class _PurchaseScreenState extends State<PurchaseScreen>
         child: _dikirim.isEmpty
             ? _buildEmptyState(Icons.local_shipping_outlined, 'Tidak ada pesanan yang sedang dikirim')
             : Column(
-                children: _dikirim.map((order) => _buildOrderCard(
-                  order: order,
-                  statusText: 'Dikirim',
-                  statusColor: AppColors.primary,
-                  showButtons: false,
-                  extraContent: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildStatusRow(
-                        label: 'Kurir',
-                        value: order['courier_name']?.toString() ?? 'Pengiriman Mandiri (Anda)',
-                        valueColor: AppColors.text,
-                        valueBold: true,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildStatusRow(
-                        label: 'Status',
-                        value: 'Sedang Menuju Ke Lokasi',
-                        valueColor: AppColors.primary,
-                      ),
-                    ],
-                  ),
-                )).toList(),
+                children: _dikirim.map((order) {
+                  final logistics = order['logistics'];
+                  Map<String, dynamic>? logData;
+                  if (logistics is List && logistics.isNotEmpty) {
+                    logData = logistics.last;
+                  } else if (logistics is Map) {
+                    logData = logistics as Map<String, dynamic>;
+                  }
+                  
+                  final courier = logData?['courier_name']?.toString() ?? 'Pengiriman Mandiri (Anda)';
+                  final trackingNumber = logData?['tracking_number']?.toString() ?? '-';
+                  final arrivalDateStr = logData?['arrival_date']?.toString();
+                  String estimasi = '-';
+                  if (arrivalDateStr != null) {
+                    final date = DateTime.tryParse(arrivalDateStr);
+                    if (date != null) {
+                      estimasi = DateFormat('dd MMMM yyyy').format(date);
+                    }
+                  }
+
+                  return _buildOrderCard(
+                    order: order,
+                    statusText: '', // Sembunyikan status text default agar tidak double
+                    statusColor: Colors.transparent,
+                    showButtons: false,
+                    extraContent: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Kurir', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  const SizedBox(height: 2),
+                                  Text(courier, style: AppTextStyles.subtitle.copyWith(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.text)),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('No Resi', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  const SizedBox(height: 2),
+                                  Text(trackingNumber, style: AppTextStyles.subtitle.copyWith(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.text)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Status', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  const SizedBox(height: 2),
+                                  Text('Sedang dalam Pengiriman', style: AppTextStyles.subtitle.copyWith(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Estimasi Sampai', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  const SizedBox(height: 2),
+                                  Text(estimasi, style: AppTextStyles.subtitle.copyWith(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.text)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
       ),
     );
