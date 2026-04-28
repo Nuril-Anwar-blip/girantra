@@ -114,9 +114,11 @@ class ProductDetailScreen extends StatelessWidget {
                                 vertical: 4,
                               ),
                               color: AppColors.primary,
-                              child: const Text(
-                                'Pupuk',
-                                style: TextStyle(
+                              child: Text(
+                                product.category_name ?? (product.category_id == 1
+                                    ? 'Pupuk'
+                                    : (product.category_id == 2 ? 'Benih' : 'Produk')),
+                                style: const TextStyle(
                                   fontFamily: 'Montserrat',
                                   color: Colors.white,
                                   fontSize: 14,
@@ -146,6 +148,31 @@ class ProductDetailScreen extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: AppColors.text,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: AppColors.mutedText,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            product.seller_address != null && product.seller_address!.isNotEmpty
+                                ? product.seller_address!
+                                : 'Surakarta',
+                            style: const TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 14,
+                              color: AppColors.mutedText,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -185,6 +212,61 @@ class ProductDetailScreen extends StatelessWidget {
                         color: AppColors.text,
                         fontWeight: FontWeight.w600,
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'SATUAN',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 12,
+                                  color: AppColors.mutedText,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              Text(
+                                product.unit.isNotEmpty ? product.unit : '-',
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 16,
+                                  color: AppColors.text,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'TANGGAL PANEN',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 12,
+                                  color: AppColors.mutedText,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              Text(
+                                '${product.harvest_date.day} ${['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][product.harvest_date.month - 1]} ${product.harvest_date.year}',
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 16,
+                                  color: AppColors.text,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
                     Container(
