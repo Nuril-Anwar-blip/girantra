@@ -106,9 +106,13 @@ class ProductCard extends StatelessWidget {
                         color: Colors.grey,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        location,
-                        style: AppTextStyles.subtitle,
+                      Expanded(
+                        child: Text(
+                          location,
+                          style: AppTextStyles.subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),

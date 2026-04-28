@@ -217,11 +217,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   final product = products[index];
                   return ProductCard(
                     imageUrl: product.image_url,
-                    tag: product.category_id == 1
+                    tag: product.category_name ?? (product.category_id == 1
                         ? 'Pupuk'
-                        : (product.category_id == 2 ? 'Benih' : 'Produk'),
+                        : (product.category_id == 2 ? 'Benih' : 'Produk')),
                     title: product.product_name,
-                    location: 'Surakarta',
+                    location: product.seller_address != null && product.seller_address!.isNotEmpty ? product.seller_address! : 'Surakarta',
                     rating: product.rating > 0 ? '${product.rating}' : 'Baru',
                     price:
                         'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',

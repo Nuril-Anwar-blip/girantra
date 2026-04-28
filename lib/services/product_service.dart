@@ -8,7 +8,11 @@ class ProductService {
   // Get all products
   Future<List<ProductModel>> getProducts() async {
     try {
-      final response = await supabase.from('products').select();
+      final response = await supabase.from('products').select('''
+        *,
+        categories ( category_name ),
+        users ( address )
+      ''');
       return response.map((json) => ProductModel.fromJson(json)).toList();
     } catch (e) {
       print('Error getting products: $e');
@@ -36,7 +40,11 @@ class ProductService {
     try {
       final response = await supabase
           .from('products')
-          .select()
+          .select('''
+            *,
+            categories ( category_name ),
+            users ( address )
+          ''')
           .eq('category_id', categoryId);
       return response.map((json) => ProductModel.fromJson(json)).toList();
     } catch (e) {
@@ -180,7 +188,10 @@ class ProductService {
       if (sellerId == null) return [];
       final response = await supabase
           .from('products')
-          .select()
+          .select('''
+            *,
+            categories ( category_name )
+          ''')
           .eq('seller_id', sellerId)
           .order('created_at', ascending: false);
       return response.map((json) => ProductModel.fromJson(json)).toList();
@@ -200,7 +211,10 @@ class ProductService {
       }
       final response = await supabase
           .from('products')
-          .select()
+          .select('''
+            *,
+            categories ( category_name )
+          ''')
           .eq('seller_id', sellerId)
           .eq('status_product', status)
           .order('created_at', ascending: false);
