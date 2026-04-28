@@ -59,7 +59,8 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
             products (
               product_name,
               image_url,
-              selling_price
+              selling_price,
+              stock
             ),
             logistics (
               current_status,
@@ -337,6 +338,8 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
             final address = order['shipping_address']?.toString() ?? order['address']?.toString() ?? '-';
             final id = _formatOrderId(order['transaction_code'] ?? order['transaction_id']);
             final transactionIdDb = order['transaction_id'];
+            final productId = order['product_id'];
+            final currentStock = product?['stock'] is int ? product!['stock'] as int : int.tryParse(product?['stock']?.toString() ?? '0') ?? 0;
 
             String trackingNumber = '';
             if (order['logistics'] != null) {
@@ -358,6 +361,8 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
               address: address,
               tabState: tabState,
               imageUrl: imageUrl,
+              productId: productId,
+              currentStock: currentStock,
               onRefresh: _loadOrders,
             );
           }),
@@ -380,6 +385,8 @@ class _DeliveryCard extends StatelessWidget {
   final dynamic transactionIdDb;
   final String trackingNumber;
   final VoidCallback onRefresh;
+  final dynamic productId;
+  final int currentStock;
 
   const _DeliveryCard({
     required this.id,
@@ -391,6 +398,8 @@ class _DeliveryCard extends StatelessWidget {
     required this.imageUrl,
     required this.transactionIdDb,
     required this.trackingNumber,
+    required this.productId,
+    required this.currentStock,
     required this.onRefresh,
   });
 
@@ -451,6 +460,15 @@ class _DeliveryCard extends StatelessWidget {
                 'tracking_number': 'DELIV-${DateTime.now().millisecondsSinceEpoch}',
                 'created_at': DateTime.now().toUtc().toIso8601String(),
               });
+
+              if (productId != null) {
+                final newStock = (currentStock - amount) < 0 ? 0 : (currentStock - amount);
+                final newStatus = newStock > 0 ? 'available' : 'out_of_stock';
+                await supabase.from('products').update({
+                  'stock': newStock,
+                  'status_product': newStatus
+                }).eq('product_id', productId);
+              }
             } else {
               throw Exception('ID Transaksi tidak ditemukan');
             }
