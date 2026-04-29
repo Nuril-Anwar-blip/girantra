@@ -58,12 +58,28 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
 
         final logisticsData = item['logistics'];
         String? currentStatus;
+        String? arrivalDateStr;
         
         if (logisticsData != null) {
           if (logisticsData is List && logisticsData.isNotEmpty) {
             currentStatus = logisticsData.last['current_status']?.toString();
+            arrivalDateStr = logisticsData.last['arrival_date']?.toString();
           } else if (logisticsData is Map) {
             currentStatus = logisticsData['current_status']?.toString();
+            arrivalDateStr = logisticsData['arrival_date']?.toString();
+          }
+        }
+
+        if (currentStatus == 'delivery' && arrivalDateStr != null) {
+          final arrivalDate = DateTime.tryParse(arrivalDateStr);
+          // Cek apakah tanggal saat ini sudah melewati hari kedatangan + 1 hari
+          if (arrivalDate != null && DateTime.now().isAfter(arrivalDate.add(const Duration(days: 1)))) {
+            currentStatus = 'received';
+            final txId = item['transaction_code'] ?? item['transaction_id'] ?? item['id'];
+            if (txId != null) {
+              // Update ke database di background agar sinkron
+              supabase.from('logistics').update({'current_status': 'received'}).eq('transaction_id', txId).catchError((_) => null);
+            }
           }
         }
 
@@ -76,26 +92,6 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
         }
       }
 
-      // Check and update wallets table
-      final walletResponse = await supabase
-          .from('wallets')
-          .select('wallet_id')
-          .eq('seller_id', user.id)
-          .maybeSingle();
-
-      if (walletResponse != null) {
-        await supabase.from('wallets').update({
-          'balance': total,
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        }).eq('seller_id', user.id);
-      } else {
-        await supabase.from('wallets').insert({
-          'seller_id': user.id,
-          'balance': total,
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        });
-      }
-
       if (mounted) {
         setState(() {
           _totalSaldo = total;
@@ -104,6 +100,31 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
           _pesananDikirim = dikirim;
           _isLoadingSaldo = false;
         });
+      }
+
+      // Check and update wallets table
+      try {
+        final walletResponse = await supabase
+            .from('wallets')
+            .select('wallet_id')
+            .eq('seller_id', user.id)
+            .maybeSingle();
+
+        if (walletResponse != null) {
+          await supabase.from('wallets').update({
+            'balance': total,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          }).eq('seller_id', user.id);
+        } else {
+          await supabase.from('wallets').insert({
+            'seller_id': user.id,
+            'balance': total,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          });
+        }
+      } catch (e) {
+        print('Error updating wallets table: $e');
+        // Kita tidak melemparkan error ini ke UI agar saldo tetap tampil di Dashboard
       }
     } catch (e) {
       print('Error loading dashboard data: $e');

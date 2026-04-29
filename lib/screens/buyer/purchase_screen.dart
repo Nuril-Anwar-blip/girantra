@@ -314,7 +314,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
                     logData = logistics as Map<String, dynamic>;
                   }
                   
-                  final courier = logData?['courier_name']?.toString() ?? 'Pengiriman Mandiri (Anda)';
+                  final courier = logData?['courier_name']?.toString() ?? 'Pengiriman Mandiri';
                   final trackingNumber = logData?['tracking_number']?.toString() ?? '-';
                   final arrivalDateStr = logData?['arrival_date']?.toString();
                   String estimasi = '-';
@@ -414,7 +414,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
                     children: [
                       _buildStatusRow(
                         label: 'Kurir',
-                        value: order['courier_name']?.toString() ?? 'Pengiriman Mandiri (Anda)',
+                        value: order['courier_name']?.toString() ?? 'Pengiriman Mandiri',
                         valueColor: AppColors.text,
                         valueBold: true,
                       ),
