@@ -213,7 +213,8 @@ class ProductService {
           .from('products')
           .select('''
             *,
-            categories ( category_name )
+            categories ( category_name ),
+            transactions ( * )
           ''')
           .eq('seller_id', sellerId)
           .eq('status_product', status)
@@ -225,6 +226,17 @@ class ProductService {
       final List<ProductModel> result = [];
       for (final json in response) {
         try {
+          int soldCount = 0;
+          if (json['transactions'] != null && json['transactions'] is List) {
+            for (var trx in json['transactions']) {
+              if (trx['payment_status'] == 'paid') {
+                final qty = trx['quantity'] ?? trx['qty'] ?? 0;
+                soldCount += (qty is int ? qty : int.tryParse(qty.toString()) ?? 0);
+              }
+            }
+          }
+          json['sold_count'] = soldCount;
+
           result.add(ProductModel.fromJson(json));
         } catch (parseErr) {
           print('❌ Parse error untuk produk ${json["product_id"]}: $parseErr');

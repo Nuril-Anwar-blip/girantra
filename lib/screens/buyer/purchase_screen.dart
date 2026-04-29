@@ -115,7 +115,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
               _dikemas.add(o);
             } else if (currentStatus == 'delivery' || currentStatus == 'on_delivery') {
               _dikirim.add(o);
-            } else if (currentStatus == 'delivered' || currentStatus == 'completed') {
+            } else if (currentStatus == 'delivered' || currentStatus == 'completed' || currentStatus == 'received') {
               _diterima.add(o);
             } else {
               _belumBayar.add(o);
@@ -327,8 +327,8 @@ class _PurchaseScreenState extends State<PurchaseScreen>
 
                   return _buildOrderCard(
                     order: order,
-                    statusText: '', // Sembunyikan status text default agar tidak double
-                    statusColor: Colors.transparent,
+                    statusText: 'Dikirim', 
+                    statusColor: AppColors.primaryDark,
                     showButtons: false,
                     extraContent: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

@@ -17,6 +17,7 @@ class ProductModel{
   final double rating;          // numeric
   final String? category_name;
   final String? seller_address;
+  final int sold_count;
 
   ProductModel({
     required this.product_id,
@@ -36,6 +37,7 @@ class ProductModel{
     this.rating = 0.0,
     this.category_name,
     this.seller_address,
+    this.sold_count = 0,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -77,6 +79,7 @@ class ProductModel{
       rating: safeDouble(json['rating']),
       category_name: json['categories'] != null ? json['categories']['category_name']?.toString() : null,
       seller_address: json['users'] != null ? json['users']['address']?.toString() : null,
+      sold_count: json['sold_count'] ?? 0,
     );
   }
 }

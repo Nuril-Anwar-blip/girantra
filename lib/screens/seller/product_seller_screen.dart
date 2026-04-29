@@ -391,7 +391,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                     priceFormatted: _formatPrice(product.selling_price),
                     statusText: 'Aktif',
                     statusColor: AppColors.primary,
-                    soldCount: 0,
+                    soldCount: product.sold_count,
                     rating: product.rating,
                     secondaryActionText: 'Arsipkan',
                     onSecondaryAction: () async {
@@ -489,7 +489,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                     priceFormatted: _formatPrice(product.selling_price),
                     statusText: 'Habis',
                     statusColor: Colors.red,
-                    soldCount: 0,
+                    soldCount: product.sold_count,
                     rating: product.rating,
                     primaryActionText: 'Stok Ulang',
                     onPrimaryAction: () async {
@@ -577,7 +577,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                     priceFormatted: _formatPrice(product.selling_price),
                     statusText: 'Arsip',
                     statusColor: Colors.orange,
-                    soldCount: 0,
+                    soldCount: product.sold_count,
                     rating: product.rating,
                     secondaryActionText: 'Hapus',
                     secondaryActionColor: Colors.red,
