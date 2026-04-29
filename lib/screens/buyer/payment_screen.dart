@@ -5,7 +5,7 @@ import 'dart:async';
 
 import '../../ui/app_colors.dart';
 // import '../../ui/app_text_styles.dart';
-import 'purchase_screen.dart';
+import '../navigation/buyer_navigation.dart';
 
 class PaymentScreen extends StatefulWidget {
   final String transactionId;
@@ -93,8 +93,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     // Navigasi ke PurchaseScreen
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const PurchaseScreen()),
-      (route) => route.isFirst,
+      MaterialPageRoute(builder: (context) => const MainNavigation(initialIndex: 1)),
+      (route) => false,
     );
   }
 

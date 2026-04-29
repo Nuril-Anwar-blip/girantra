@@ -5,6 +5,7 @@ import '../../ui/app_colors.dart';
 // import '../ui/app_widgets.dart';
 import '../../widgets/product_card.dart';
 import '../../services/cart_service.dart';
+import '../navigation/buyer_navigation.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -82,6 +83,31 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
+  Future<void> _checkout() async {
+    if (_cartItems.isEmpty) return;
+    setState(() => _isLoading = true);
+    try {
+      await _cartService.checkoutCart(_cartItems);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Berhasil membuat pesanan. Silakan lakukan pembayaran.')),
+        );
+      Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainNavigation(initialIndex: 1)),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal checkout: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   int get _totalPrice {
     int total = 0;
     for (var item in _cartItems) {
@@ -89,7 +115,7 @@ class _CartScreenState extends State<CartScreen> {
       if (product != null) {
         final price = (product['selling_price'] as num?)?.toInt() ?? 0;
         final qty = item['quantity'] as int? ?? 1;
-        total += price * qty;
+        total += (price * qty) + 7500; // Harga produk + biaya kirim tetap 7500 per item pesanan
       }
     }
     return total;
@@ -208,7 +234,7 @@ class _CartScreenState extends State<CartScreen> {
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                       ),
-                      onPressed: () {},
+                      onPressed: _cartItems.isEmpty ? null : _checkout,
                       child: Text(
                         'Checkout (${_cartItems.length})',
                         style: AppTextStyles.link.copyWith(
