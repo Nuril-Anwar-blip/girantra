@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:girantra/screens/seller/add_product_screen.dart';
+import 'package:girantra/screens/seller/product_seller_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../ui/app_colors.dart';
@@ -461,13 +463,25 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
               _buildActionButton(
                 icon: Icons.add_circle_outline,
                 label: 'Tambah Produk',
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const AddProductScreen(),
+                  ),
+                );
+                },
               ),
               const SizedBox(height: 12),
               _buildActionButton(
                 icon: Icons.inventory_2_outlined,
                 label: 'Produk Saya',
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ProductSellerScreen(),
+                  ),
+                );
+                },
               ),
             ],
           ),
