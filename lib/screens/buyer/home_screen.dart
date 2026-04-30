@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:girantra/models/product_model.dart';
-// import 'package:girantra/services/auth_service.dart';
 import 'package:girantra/services/product_service.dart';
 import 'package:girantra/ui/app_colors.dart';
 import 'package:girantra/ui/app_text_styles.dart';
 import 'package:girantra/widgets/header_section.dart';
 import 'package:girantra/widgets/product_card.dart';
-// import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'cart_screen.dart';
 import '../overlay/filter_screen.dart';
@@ -23,7 +21,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _productService = ProductService();
-  // final _authService = AuthService();
 
   late Future<List<ProductModel>> _futureProducts;
 
@@ -215,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemCount: products.length,
                 itemBuilder: (context, index) {
                   final product = products[index];
-                  return ProductCard(
+                   return ProductCard(
                     imageUrl: product.image_url,
                     tag: product.category_name ?? (product.category_id == 1
                         ? 'Pupuk'
