@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../ui/app_constants.dart';
 
 class CartService {
   final _supabase = Supabase.instance.client;
@@ -76,7 +77,7 @@ class CartService {
       final int qty = item['quantity'] ?? 1;
       final double priceAtPurchase = (product['selling_price'] as num?)?.toDouble() ?? 0;
       final double subTotal = priceAtPurchase * qty;
-      final double shippingCost = 7500; // Fixed shipping cost
+      final double shippingCost = AppConstants.totalFee; // Dari AppConstants (shippingFee + serviceFee)
       final double totalAmount = subTotal + shippingCost;
       
       final String transactionCode = 'TRX-${DateTime.now().millisecondsSinceEpoch}';

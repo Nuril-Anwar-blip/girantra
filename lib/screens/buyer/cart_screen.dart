@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:girantra/ui/app_text_styles.dart';
 
 import '../../ui/app_colors.dart';
+import '../../ui/app_constants.dart';
 // import '../ui/app_widgets.dart';
 import '../../widgets/product_card.dart';
 import '../../services/cart_service.dart';
@@ -115,7 +116,7 @@ class _CartScreenState extends State<CartScreen> {
       if (product != null) {
         final price = (product['selling_price'] as num?)?.toInt() ?? 0;
         final qty = item['quantity'] as int? ?? 1;
-        total += (price * qty) + 7500; // Harga produk + biaya kirim tetap 7500 per item pesanan
+        total += (price * qty) + AppConstants.totalFee.toInt(); // Harga produk + biaya kirim & layanan
       }
     }
     return total;

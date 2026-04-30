@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/product_model.dart';
 import '../../widgets/product_card.dart';
 import '../../ui/app_colors.dart';
+import '../../ui/app_constants.dart';
 import '../../ui/app_text_styles.dart';
 import 'payment_screen.dart';
 
@@ -21,6 +22,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String _fullName = '';
   String _phoneNumber = '';
   String _address = '';
+  String _sellerName = 'Seller'; // Nama toko/seller
   bool _isLoadingUser = true;
   bool _isProcessing = false;
 
@@ -28,6 +30,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void initState() {
     super.initState();
     _fetchUserData();
+    _fetchSellerName();
   }
 
   Future<void> _fetchUserData() async {
@@ -61,6 +64,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  Future<void> _fetchSellerName() async {
+    try {
+      final sellerData = await Supabase.instance.client
+          .from('users')
+          .select('full_name')
+          .eq('user_id', widget.product.seller_id)
+          .maybeSingle();
+
+      if (sellerData != null && mounted) {
+        setState(() {
+          _sellerName = sellerData['full_name'] ?? 'Seller';
+        });
+      }
+    } catch (e) {
+      print('Error fetching seller name: $e');
+    }
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -72,10 +93,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double shippingFee = 5000;
-    final double serviceFee = 2500;
     final double totalPrice =
-        widget.product.selling_price + shippingFee + serviceFee;
+        widget.product.selling_price + AppConstants.totalFee;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
@@ -208,7 +227,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 const SizedBox(height: 12),
                 ProductListTile(
                   title: widget.product.product_name,
-                  storeName: 'Plant Store',
+                  storeName: _sellerName,
                   price: formatCurrency(widget.product.selling_price),
                   imageUrl: widget.product.image_url,
                 ),
@@ -354,10 +373,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 const SizedBox(height: 8),
                 _buildPaymentRow(
                   'Subtotal Pengiriman',
-                  formatCurrency(shippingFee),
+                  formatCurrency(AppConstants.shippingFee),
                 ),
                 const SizedBox(height: 8),
-                _buildPaymentRow('Biaya Layanan', formatCurrency(serviceFee)),
+                _buildPaymentRow('Biaya Layanan', formatCurrency(AppConstants.serviceFee)),
                 const SizedBox(height: 12),
                 const Divider(),
                 const SizedBox(height: 12),
@@ -445,7 +464,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       'quantity' : 1,
                       'price_at_purchase': widget.product.selling_price,
                       'sub_total' : widget.product.selling_price*1,
-                      'shipping_cost' : shippingFee+serviceFee,
+                      'shipping_cost' : AppConstants.totalFee,
                       'total_amount': totalPrice,
                       'shipping_address': _address,
                       'payment_status': 'pending', 
