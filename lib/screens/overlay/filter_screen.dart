@@ -4,17 +4,30 @@ import 'package:girantra/ui/app_text_styles.dart';
 
 import '../../ui/app_colors.dart';
 
+/// Hasil filter yang dikembalikan ke HomeScreen
+class FilterResult {
+  final String? priceSort;    // 'Termurah' | 'Termahal' | null
+  final int? categoryId;      // null = semua kategori
+  final int? minRating;       // 1-5 | null
+
+  const FilterResult({this.priceSort, this.categoryId, this.minRating});
+
+  bool get hasFilter => priceSort != null || categoryId != null || minRating != null;
+}
+
 class FilterDialog extends StatefulWidget {
-  const FilterDialog({super.key});
+  final FilterResult? initialFilter;
+
+  const FilterDialog({super.key, this.initialFilter});
 
   @override
   State<FilterDialog> createState() => _FilterDialogState();
 }
 
 class _FilterDialogState extends State<FilterDialog> {
-  int? _selectedCategoryId;
-  String? _selectedPriceSort;
-  int? _selectedRating;
+  late int? _selectedCategoryId;
+  late String? _selectedPriceSort;
+  late int? _selectedRating;
 
   List<Map<String, dynamic>> _categories = [];
   bool _isLoadingCategories = true;
@@ -22,6 +35,10 @@ class _FilterDialogState extends State<FilterDialog> {
   @override
   void initState() {
     super.initState();
+    // Inisialisasi dari nilai filter yang sudah aktif
+    _selectedCategoryId = widget.initialFilter?.categoryId;
+    _selectedPriceSort  = widget.initialFilter?.priceSort;
+    _selectedRating     = widget.initialFilter?.minRating;
     _fetchCategories();
   }
 
@@ -175,10 +192,15 @@ class _FilterDialogState extends State<FilterDialog> {
                   elevation: 0,
                 ),
                 onPressed: () {
-                  // TODO: pass data back to caller via Navigator pop result
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop(
+                    FilterResult(
+                      priceSort: _selectedPriceSort,
+                      categoryId: _selectedCategoryId,
+                      minRating: _selectedRating,
+                    ),
+                  );
                 },
-                child: const Text('Tampilkan 30 Hasil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                child: const Text('Tampilkan Hasil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
               ),
             ),
           ],

@@ -25,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   late Future<List<ProductModel>> _futureProducts;
   String _searchQuery = '';
+  FilterResult? _activeFilter; // filter yang sedang aktif
 
   @override
   void initState() {
@@ -39,6 +40,49 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Buka dialog filter dan terapkan hasil yang dikembalikan
+  Future<void> _openFilter() async {
+    final result = await showDialog<FilterResult>(
+      context: context,
+      builder: (context) => FilterDialog(initialFilter: _activeFilter),
+    );
+    // result null = dialog ditutup tanpa apply
+    if (result != null) {
+      setState(() => _activeFilter = result.hasFilter ? result : null);
+    }
+  }
+
+  /// Terapkan filter + sort ke list produk
+  List<ProductModel> _applyFilter(List<ProductModel> all) {
+    var list = List<ProductModel>.from(all);
+
+    // Filter pencarian nama
+    if (_searchQuery.isNotEmpty) {
+      list = list.where((p) => p.product_name.toLowerCase().contains(_searchQuery)).toList();
+    }
+
+    if (_activeFilter == null) return list;
+
+    // Filter kategori
+    if (_activeFilter!.categoryId != null) {
+      list = list.where((p) => p.category_id == _activeFilter!.categoryId).toList();
+    }
+
+    // Filter rating minimum
+    if (_activeFilter!.minRating != null) {
+      list = list.where((p) => p.rating >= _activeFilter!.minRating!).toList();
+    }
+
+    // Sort harga
+    if (_activeFilter!.priceSort == 'Termurah') {
+      list.sort((a, b) => a.selling_price.compareTo(b.selling_price));
+    } else if (_activeFilter!.priceSort == 'Termahal') {
+      list.sort((a, b) => b.selling_price.compareTo(a.selling_price));
+    }
+
+    return list;
   }
 
   @override
@@ -149,21 +193,35 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 10),
               InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => const FilterDialog(),
-                  );
-                },
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryDark,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: const Icon(Icons.tune, color: Colors.white),
+                onTap: _openFilter,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: _activeFilter != null ? AppColors.primary : AppColors.primaryDark,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.divider),
+                      ),
+                      child: const Icon(Icons.tune, color: Colors.white),
+                    ),
+                    // Badge merah kecil saat filter aktif
+                    if (_activeFilter != null)
+                      Positioned(
+                        top: -4,
+                        right: -4,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ],
@@ -227,14 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Center(child: CircularProgressIndicator()),
                 );
               }
-              var products = snapshot.data ?? [];
-
-              // Filter berdasarkan query search (client-side)
-              if (_searchQuery.isNotEmpty) {
-                products = products
-                    .where((p) => p.product_name.toLowerCase().contains(_searchQuery))
-                    .toList();
-              }
+              var products = _applyFilter(snapshot.data ?? []);
 
               if (products.isEmpty) {
                 return Padding(
