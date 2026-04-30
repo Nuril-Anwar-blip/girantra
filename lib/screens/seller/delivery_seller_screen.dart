@@ -69,8 +69,13 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
             )
           ''')
           .eq('seller_id', sellerId)
-          .eq('payment_status', 'paid')
+          .inFilter('payment_status', ['pending', 'paid'])
           .order('transaction_date', ascending: false);
+
+      debugPrint('📦 Total transaksi ditemukan: ${response.length}');
+      for (final o in response) {
+        debugPrint('  → ID:${o['transaction_id']} | payment:${o['payment_status']} | logistics:${o['logistics']}');
+      }
 
       if (!mounted) return;
       setState(() {
@@ -85,7 +90,6 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
           
           if (logisticsData != null) {
             if (logisticsData is List && logisticsData.isNotEmpty) {
-              // Asumsi ambil data logistik terbaru jika ada lebih dari 1
               currentStatus = logisticsData.last['current_status']?.toString();
               arrivalDateStr = logisticsData.last['arrival_date']?.toString();
             } else if (logisticsData is Map) {
@@ -96,16 +100,16 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
 
           if (currentStatus == 'delivery' && arrivalDateStr != null) {
             final arrivalDate = DateTime.tryParse(arrivalDateStr);
-            // Cek apakah tanggal saat ini sudah melewati hari kedatangan
             if (arrivalDate != null && DateTime.now().isAfter(arrivalDate.add(const Duration(days: 1)))) {
               currentStatus = 'received';
               final txId = o['transaction_code'] ?? o['transaction_id'] ?? o['id'];
               if (txId != null) {
-                // Update ke database di background
                 _supabase.from('logistics').update({'current_status': 'received'}).eq('transaction_id', txId).catchError((_) => null);
               }
             }
           }
+
+          debugPrint('  currentStatus=$currentStatus → tab: ${currentStatus == null || currentStatus == 'pending' ? 'BARU' : currentStatus}');
 
           if (currentStatus == null || currentStatus == 'pending') {
             _baru.add(o);
@@ -119,7 +123,7 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
         _isLoading = false;
       });
     } catch (e) {
-      print('❌ Error loading seller orders: $e');
+      debugPrint('❌ Error loading seller orders: $e');
       if (!mounted) return;
       setState(() {
         _errorMessage = 'Gagal memuat pesanan: $e';
