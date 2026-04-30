@@ -21,13 +21,24 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _productService = ProductService();
+  final _searchController = TextEditingController();
 
   late Future<List<ProductModel>> _futureProducts;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _futureProducts = _productService.getProducts();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -101,18 +112,36 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   child: Row(
-                    children: const [
-                      Icon(Icons.search, size: 18, color: AppColors.mutedText),
-                      SizedBox(width: 8),
+                    children: [
+                      const Icon(Icons.search, size: 18, color: AppColors.mutedText),
+                      const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          'Cari pupuk atau hasil tani...',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.mutedText,
+                        child: TextField(
+                          controller: _searchController,
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 13,
+                            color: AppColors.text,
                           ),
+                          decoration: const InputDecoration(
+                            hintText: 'Cari pupuk atau hasil tani...',
+                            hintStyle: TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 12,
+                              color: AppColors.mutedText,
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          textInputAction: TextInputAction.search,
                         ),
                       ),
+                      if (_searchQuery.isNotEmpty)
+                        GestureDetector(
+                          onTap: () => _searchController.clear(),
+                          child: const Icon(Icons.close, size: 16, color: AppColors.mutedText),
+                        ),
                     ],
                   ),
                 ),
@@ -199,6 +228,34 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               }
               var products = snapshot.data ?? [];
+
+              // Filter berdasarkan query search (client-side)
+              if (_searchQuery.isNotEmpty) {
+                products = products
+                    .where((p) => p.product_name.toLowerCase().contains(_searchQuery))
+                    .toList();
+              }
+
+              if (products.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: Column(
+                    children: [
+                      Icon(Icons.search_off, size: 56, color: Colors.grey.shade300),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Produk "${_searchController.text}" tidak ditemukan',
+                        style: TextStyle(
+                          fontFamily: 'Montserrat',
+                          fontSize: 13,
+                          color: Colors.grey.shade500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                );
+              }
 
               return GridView.builder(
                 shrinkWrap: true,
