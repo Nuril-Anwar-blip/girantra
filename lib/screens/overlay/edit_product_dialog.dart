@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -33,7 +33,8 @@ class _EditProductDialogState extends State<EditProductDialog> {
 
   int? _selectedCategoryId;
   DateTime? _harvestDate;
-  File? _newImageFile;
+  XFile? _pickedFile;       // XFile cross-platform
+  Uint8List? _newImageBytes; // Bytes untuk preview & upload
   bool _isLoading = false;
   bool _isFetchingCategories = true;
   List<Map<String, dynamic>> _categories = [];
@@ -87,9 +88,13 @@ class _EditProductDialogState extends State<EditProductDialog> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     if (picked != null && mounted) {
-      setState(() => _newImageFile = File(picked.path));
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _pickedFile = picked;
+        _newImageBytes = bytes;
+      });
     }
   }
 
@@ -142,8 +147,8 @@ class _EditProductDialogState extends State<EditProductDialog> {
             widget.product.selling_price,
         stock: int.tryParse(_stockController.text.trim()) ?? widget.product.stock,
         unit: _unitController.text.trim(),
-        image_file: _newImageFile,                       // null jika tidak ganti
-        existingImageUrl: widget.product.image_url,       // pakai gambar lama
+        image_bytes: _newImageBytes,          // null jika tidak ganti
+        existingImageUrl: widget.product.image_url, // pakai gambar lama
         harvest_date: _harvestDate!,
         status_product: widget.product.status_product,
       );
@@ -226,10 +231,10 @@ class _EditProductDialogState extends State<EditProductDialog> {
                           borderRadius: BorderRadius.circular(8),
                           color: Colors.grey.shade50,
                         ),
-                        child: _newImageFile != null
+                        child: _newImageBytes != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: Image.file(_newImageFile!,
+                                child: Image.memory(_newImageBytes!,
                                     fit: BoxFit.cover),
                               )
                             : widget.product.image_url.isNotEmpty

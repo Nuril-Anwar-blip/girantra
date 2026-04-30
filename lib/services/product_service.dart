@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/product_model.dart';
 
@@ -63,7 +64,7 @@ class ProductService {
     required double ai_recommendation_price,
     required int stock,
     required String unit, // kg, pcs, liter, dll
-    required File image_file,
+    required Uint8List image_bytes, // Cross-platform: gunakan bytes, bukan File
     required DateTime harvest_date,
     required String status_product, // Enum (available, out_of_stock)
   }) async {
@@ -72,11 +73,15 @@ class ProductService {
       // Take seller ID from logged in user
       final String seller_id = supabase.auth.currentUser!.id;
 
-      // Upload image to storage
+      // Upload image to storage (cross-platform: uploadBinary)
       final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
       final String path = '$seller_id/$fileName';
 
-      await supabase.storage.from('product-image').upload(path, image_file);
+      await supabase.storage.from('product-image').uploadBinary(
+        path,
+        image_bytes,
+        fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+      );
 
       // Get public URL
       final String imageUrl = supabase.storage
@@ -111,7 +116,7 @@ class ProductService {
     }
   }
 
-  // Update product — image_file opsional, jika null pakai existingImageUrl
+  // Update product — image_bytes opsional, jika null pakai existingImageUrl
   Future<bool> updateProduct({
     required int product_id,
     required int category_id,
@@ -121,7 +126,7 @@ class ProductService {
     required double selling_price,
     required int stock,
     required String unit,
-    File? image_file,              // opsional
+    Uint8List? image_bytes,        // opsional, cross-platform bytes
     String existingImageUrl = '', // URL gambar lama jika tidak ganti gambar
     required DateTime harvest_date,
     required String status_product,
@@ -132,11 +137,15 @@ class ProductService {
 
       String imageUrl = existingImageUrl;
 
-      // Upload gambar baru hanya jika disediakan
-      if (image_file != null) {
+      // Upload gambar baru hanya jika disediakan (cross-platform: uploadBinary)
+      if (image_bytes != null) {
         final String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
         final String path = '$sellerId/$fileName';
-        await supabase.storage.from('product-image').upload(path, image_file);
+        await supabase.storage.from('product-image').uploadBinary(
+          path,
+          image_bytes,
+          fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+        );
         imageUrl = supabase.storage.from('product-image').getPublicUrl(path);
       }
 
@@ -301,14 +310,18 @@ class ProductService {
 class StorageService {
   final supabase = Supabase.instance.client;
 
-  Future<String?> uploadProductImage(File imageFile) async {
+  Future<String?> uploadProductImage(Uint8List imageBytes) async {
     try {
       final userId = supabase.auth.currentUser!.id;
       // Membuat path unik: user_id/timestamp.jpg
       final path = '$userId/${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      // Mengunggah ke bucket 'product-image'
-      await supabase.storage.from('product-image').upload(path, imageFile);
+      // Mengunggah ke bucket 'product-image' (cross-platform: uploadBinary)
+      await supabase.storage.from('product-image').uploadBinary(
+        path,
+        imageBytes,
+        fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+      );
 
       // Mengambil URL publik untuk disimpan ke tabel 'products'
       return supabase.storage.from('product-image').getPublicUrl(path);

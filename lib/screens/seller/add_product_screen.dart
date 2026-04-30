@@ -1,5 +1,6 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -26,7 +27,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _unitController = TextEditingController();
   
   DateTime? _harvestDate;
-  File? _imageFile;
+  XFile? _pickedFile;       // XFile dari image_picker (cross-platform)
+  Uint8List? _imageBytes;  // Bytes untuk preview & upload
   int? _selectedCategory;
   List<Map<String, dynamic>> _categories = [];
   bool _isLoading = false;
@@ -69,11 +71,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
     
     if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _pickedFile = pickedFile;
+        _imageBytes = bytes;
       });
     }
   }
@@ -107,7 +111,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   void _submitProduct() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_imageFile == null) {
+    if (_imageBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gambar produk harus ditambahkan', style: TextStyle(color: Colors.white)), backgroundColor: Colors.red),
       );
@@ -140,7 +144,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         ai_recommendation_price: 0.0,
         stock: int.tryParse(_stockController.text.trim()) ?? 0,
         unit: _unitController.text.trim(),
-        image_file: _imageFile!,
+        image_bytes: _imageBytes!,
         harvest_date: _harvestDate!,
         status_product: 'available',
       );
@@ -231,10 +235,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             color: Colors.transparent,
                             borderRadius: BorderRadius.circular(16)
                           ),
-                          child: _imageFile != null
+                          child: _imageBytes != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                child: Image.file(_imageFile!, fit: BoxFit.cover),
+                                child: Image.memory(_imageBytes!, fit: BoxFit.cover),
                               )
                             : Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
