@@ -20,31 +20,20 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
   late TabController _tabController;
   final _supabase = Supabase.instance.client;
 
-<<<<<<< HEAD
-  List<Map<String, dynamic>> _newOrders = [];
-  List<Map<String, dynamic>> _processingOrders = [];
-  List<Map<String, dynamic>> _shippedOrders = [];
-  bool _isLoading = true;
-=======
   bool _isLoading = true;
   String? _errorMessage;
 
   List<Map<String, dynamic>> _baru = [];
   List<Map<String, dynamic>> _proses = [];
   List<Map<String, dynamic>> _dikirim = [];
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-<<<<<<< HEAD
-    _tabController.addListener(() => setState(() {}));
-=======
     _tabController.addListener(() {
       setState(() {});
     });
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
     _loadOrders();
   }
 
@@ -55,66 +44,6 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
   }
 
   Future<void> _loadOrders() async {
-<<<<<<< HEAD
-    try {
-      final sellerId = _supabase.auth.currentUser?.id;
-      if (sellerId == null) return;
-
-      final response = await _supabase
-          .from('transactions')
-          .select('*, products(product_name, image_url, unit)')
-          .eq('seller_id', sellerId)
-          .order('transaction_date', ascending: false);
-
-      final orders = List<Map<String, dynamic>>.from(response);
-
-      if (mounted) {
-        setState(() {
-          // paid but no completed_date → new orders (belum diproses)
-          _newOrders = orders.where((o) {
-            final status = o['payment_status']?.toString() ?? '';
-            final completed = o['completed_date'];
-            return status == 'paid' && completed == null;
-          }).toList();
-
-          // pending payment → still processing
-          _processingOrders = orders.where((o) {
-            final status = o['payment_status']?.toString() ?? '';
-            return status == 'pending';
-          }).toList();
-
-          // completed orders
-          _shippedOrders = orders.where((o) {
-            final completed = o['completed_date'];
-            return completed != null;
-          }).toList();
-
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error loading orders: $e');
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _acceptOrder(Map<String, dynamic> order) async {
-    showDialog(
-      context: context,
-      builder: (_) => ArrangeDeliveryDialog(orderId: order['transaction_code']?.toString() ?? ''),
-    );
-  }
-
-  Future<void> _rejectOrder(Map<String, dynamic> order) async {
-    showDialog(
-      context: context,
-      builder: (_) => RejectOrderDialog(orderId: order['transaction_code']?.toString() ?? ''),
-    );
-  }
-
-  String _formatCurrency(num amount) {
-    return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
-=======
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -143,11 +72,6 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
           .inFilter('payment_status', ['pending', 'paid'])
           .order('transaction_date', ascending: false);
 
-      debugPrint('📦 Total transaksi ditemukan: ${response.length}');
-      for (final o in response) {
-        debugPrint('  → ID:${o['transaction_id']} | payment:${o['payment_status']} | logistics:${o['logistics']}');
-      }
-
       if (!mounted) return;
       setState(() {
         _baru = [];
@@ -157,30 +81,14 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
         for (final o in response) {
           final logisticsData = o['logistics'];
           String? currentStatus;
-          String? arrivalDateStr;
-          
+
           if (logisticsData != null) {
             if (logisticsData is List && logisticsData.isNotEmpty) {
               currentStatus = logisticsData.last['current_status']?.toString();
-              arrivalDateStr = logisticsData.last['arrival_date']?.toString();
             } else if (logisticsData is Map) {
               currentStatus = logisticsData['current_status']?.toString();
-              arrivalDateStr = logisticsData['arrival_date']?.toString();
             }
           }
-
-          if (currentStatus == 'delivery' && arrivalDateStr != null) {
-            final arrivalDate = DateTime.tryParse(arrivalDateStr);
-            if (arrivalDate != null && DateTime.now().isAfter(arrivalDate.add(const Duration(days: 1)))) {
-              currentStatus = 'received';
-              final txId = o['transaction_code'] ?? o['transaction_id'] ?? o['id'];
-              if (txId != null) {
-                _supabase.from('logistics').update({'current_status': 'received'}).eq('transaction_id', txId).catchError((_) => null);
-              }
-            }
-          }
-
-          debugPrint('  currentStatus=$currentStatus → tab: ${currentStatus == null || currentStatus == 'pending' ? 'BARU' : currentStatus}');
 
           if (currentStatus == null || currentStatus == 'pending') {
             _baru.add(o);
@@ -194,7 +102,7 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('❌ Error loading seller orders: $e');
+      debugPrint('Error loading seller orders: $e');
       if (!mounted) return;
       setState(() {
         _errorMessage = 'Gagal memuat pesanan: $e';
@@ -213,7 +121,6 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
     final str = id.toString();
     if (str.startsWith('TRX-') || str.startsWith('#')) return str;
     return '#TRX-$str';
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
   }
 
   Widget _buildCustomTab({
@@ -281,74 +188,6 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-<<<<<<< HEAD
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    children: [
-                      _buildCustomTab(label: 'Baru', count: '${_newOrders.length}', index: 0, isSelected: _tabController.index == 0),
-                      const SizedBox(width: 8),
-                      _buildCustomTab(label: 'Proses', count: '${_processingOrders.length}', index: 1, isSelected: _tabController.index == 1),
-                      const SizedBox(width: 8),
-                      _buildCustomTab(label: 'Dikirim', count: '${_shippedOrders.length}', index: 2, isSelected: _tabController.index == 2),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildOrderList(_newOrders, _TabState.baru),
-                      _buildOrderList(_processingOrders, _TabState.proses),
-                      _buildOrderList(_shippedOrders, _TabState.dikirim),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-
-  Widget _buildOrderList(List<Map<String, dynamic>> orders, _TabState tabState) {
-    if (orders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.inbox_outlined, size: 64, color: Colors.grey[300]),
-            const SizedBox(height: 12),
-            Text('Belum ada pesanan', style: TextStyle(color: Colors.grey[500])),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadOrders,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: orders.length,
-        itemBuilder: (context, index) {
-          final order = orders[index];
-          return _buildOrderCard(order, tabState);
-        },
-      ),
-    );
-  }
-
-  Widget _buildOrderCard(Map<String, dynamic> order, _TabState tabState) {
-    final product = order['products'] as Map<String, dynamic>? ?? {};
-    final trxCode = order['transaction_code']?.toString() ?? '-';
-    final productName = product['product_name']?.toString() ?? 'Produk';
-    final imageUrl = product['image_url']?.toString() ?? '';
-    final qty = order['quantity'] as int? ?? 1;
-    final totalAmount = (order['total_amount'] as num?)?.toDouble() ?? 0;
-    final address = order['shipping_address']?.toString() ?? '-';
-
-=======
           : _errorMessage != null
               ? Center(
                   child: Column(
@@ -356,10 +195,7 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
                     children: [
                       Text(_errorMessage!),
                       const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadOrders,
-                        child: const Text('Coba Lagi'),
-                      )
+                      ElevatedButton(onPressed: _loadOrders, child: const Text('Coba Lagi')),
                     ],
                   ),
                 )
@@ -370,26 +206,11 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Row(
                         children: [
-                          _buildCustomTab(
-                            label: 'Baru',
-                            count: _baru.length.toString(),
-                            index: 0,
-                            isSelected: _tabController.index == 0,
-                          ),
+                          _buildCustomTab(label: 'Baru', count: _baru.length.toString(), index: 0, isSelected: _tabController.index == 0),
                           const SizedBox(width: 8),
-                          _buildCustomTab(
-                            label: 'Proses',
-                            count: _proses.length.toString(),
-                            index: 1,
-                            isSelected: _tabController.index == 1,
-                          ),
+                          _buildCustomTab(label: 'Proses', count: _proses.length.toString(), index: 1, isSelected: _tabController.index == 1),
                           const SizedBox(width: 8),
-                          _buildCustomTab(
-                            label: 'Dikirim',
-                            count: _dikirim.length.toString(),
-                            index: 2,
-                            isSelected: _tabController.index == 2,
-                          ),
+                          _buildCustomTab(label: 'Dikirim', count: _dikirim.length.toString(), index: 2, isSelected: _tabController.index == 2),
                         ],
                       ),
                     ),
@@ -397,24 +218,9 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
                       child: TabBarView(
                         controller: _tabController,
                         children: [
-                          // TAB 1: Baru
-                          _buildTabContent(
-                            title: 'Pesanan Baru',
-                            items: _baru,
-                            tabState: _TabState.baru,
-                          ),
-                          // TAB 2: Proses
-                          _buildTabContent(
-                            title: 'Pesanan Diproses',
-                            items: _proses,
-                            tabState: _TabState.proses,
-                          ),
-                          // TAB 3: Dikirim
-                          _buildTabContent(
-                            title: 'Pesanan Dikirim',
-                            items: _dikirim,
-                            tabState: _TabState.dikirim,
-                          ),
+                          _buildTabContent(title: 'Pesanan Baru', items: _baru, tabState: _TabState.baru),
+                          _buildTabContent(title: 'Pesanan Diproses', items: _proses, tabState: _TabState.proses),
+                          _buildTabContent(title: 'Pesanan Dikirim', items: _dikirim, tabState: _TabState.dikirim),
                         ],
                       ),
                     ),
@@ -436,9 +242,7 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
           children: [
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.5,
-              child: const Center(
-                child: Text('Belum ada pesanan'),
-              ),
+              child: const Center(child: Text('Belum ada pesanan')),
             ),
           ],
         ),
@@ -450,14 +254,7 @@ class _DeliverySellerScreenState extends State<DeliverySellerScreen>
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.black87,
-            ),
-          ),
+          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black87)),
           const SizedBox(height: 12),
           ...items.map((order) {
             final product = order['products'] as Map<String, dynamic>?;
@@ -535,7 +332,6 @@ class _DeliveryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
     Color statusColor;
     String statusText;
     switch (tabState) {
@@ -549,34 +345,10 @@ class _DeliveryCard extends StatelessWidget {
         break;
       case _TabState.dikirim:
         statusColor = AppColors.primaryDark;
-        statusText = 'Selesai';
+        statusText = 'Dikirim';
         break;
     }
 
-<<<<<<< HEAD
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: SellerProductCard(
-        imageUrl: imageUrl,
-        title: productName,
-        priceFormatted: _formatCurrency(totalAmount),
-        statusText: statusText,
-        statusColor: statusColor,
-        topLabel: 'ID: $trxCode',
-        customQuantityText: 'Jumlah: $qty',
-        showProductStats: false,
-        showButtons: tabState == _TabState.baru,
-        secondaryActionText: tabState == _TabState.baru ? 'Tolak' : null,
-        secondaryActionColor: Colors.red,
-        primaryActionText: tabState == _TabState.baru ? 'Terima' : '',
-        showPrimaryActionIcon: false,
-        onPrimaryAction: () => _acceptOrder(order),
-        onSecondaryAction: tabState == _TabState.baru ? () => _rejectOrder(order) : null,
-        extraContent: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-=======
     return SellerProductCard(
       imageUrl: imageUrl,
       title: title,
@@ -591,59 +363,66 @@ class _DeliveryCard extends StatelessWidget {
       secondaryActionColor: Colors.red,
       primaryActionText: tabState == _TabState.baru ? 'Terima' : '',
       showPrimaryActionIcon: false,
-      onPrimaryAction: tabState == _TabState.baru ? () async {
-        final courierName = await showDialog<String>(
-          context: context,
-          builder: (_) => ArrangeDeliveryDialog(
-            orderId: id,
-            productName: title,
-            quantity: amount,
-            destinationAddress: address,
-          ),
-        );
-        
-        if (courierName != null) {
-          try {
-            final supabase = Supabase.instance.client;
-            
-            if (transactionIdDb != null) {
-              await supabase.from('logistics').insert({
-                'transaction_id': transactionIdDb,
-                'current_status': 'processing', 
-                'courier_name': courierName,
-                'tracking_number': 'DELIV-${DateTime.now().millisecondsSinceEpoch}',
-                'created_at': DateTime.now().toUtc().toIso8601String(),
-              });
+      onPrimaryAction: tabState == _TabState.baru
+          ? () async {
+              final courierName = await showDialog<String>(
+                context: context,
+                builder: (_) => ArrangeDeliveryDialog(
+                  orderId: id,
+                  productName: title,
+                  quantity: amount,
+                  destinationAddress: address,
+                ),
+              );
 
-              if (productId != null) {
-                final newStock = (currentStock - amount) < 0 ? 0 : (currentStock - amount);
-                final newStatus = newStock > 0 ? 'available' : 'out_of_stock';
-                await supabase.from('products').update({
-                  'stock': newStock,
-                  'status_product': newStatus
-                }).eq('product_id', productId);
+              if (courierName != null) {
+                try {
+                  final supabase = Supabase.instance.client;
+
+                  if (transactionIdDb != null) {
+                    await supabase.from('logistics').insert({
+                      'transaction_id': transactionIdDb,
+                      'current_status': 'processing',
+                      'courier_name': courierName,
+                      'tracking_number': 'DELIV-${DateTime.now().millisecondsSinceEpoch}',
+                      'created_at': DateTime.now().toUtc().toIso8601String(),
+                    });
+
+                    if (productId != null) {
+                      final newStock = (currentStock - amount) < 0 ? 0 : (currentStock - amount);
+                      final newStatus = newStock > 0 ? 'available' : 'out_of_stock';
+                      await supabase.from('products').update({
+                        'stock': newStock,
+                        'status_product': newStatus,
+                      }).eq('product_id', productId);
+                    }
+                  } else {
+                    throw Exception('ID Transaksi tidak ditemukan');
+                  }
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Pesanan berhasil diterima dan masuk ke Proses')),
+                  );
+                  onRefresh();
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal terima pesanan: $e')),
+                  );
+                }
               }
-            } else {
-              throw Exception('ID Transaksi tidak ditemukan');
             }
-
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pesanan berhasil diterima dan masuk ke Proses')));
-            onRefresh();
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal terima pesanan: $e')));
-          }
-        }
-      } : null,
-      onSecondaryAction: tabState == _TabState.baru ? () async {
-        final result = await showDialog(
-          context: context,
-          builder: (_) => RejectOrderDialog(orderId: id),
-        );
-        // Jika dialog mereturn true/berhasil tolak, kita refresh
-        if (result == true) {
-          onRefresh();
-        }
-      } : null,
+          : null,
+      onSecondaryAction: tabState == _TabState.baru
+          ? () async {
+              final result = await showDialog(
+                context: context,
+                builder: (_) => RejectOrderDialog(orderId: id),
+              );
+              if (result == true) {
+                onRefresh();
+              }
+            }
+          : null,
       extraContent: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -652,132 +431,91 @@ class _DeliveryCard extends StatelessWidget {
             children: [
               const Padding(
                 padding: EdgeInsets.only(top: 2),
-                child: Icon(
-                  Icons.location_on,
-                  color: Colors.orange,
-                  size: 16,
-                ),
+                child: Icon(Icons.location_on, color: Colors.orange, size: 16),
               ),
               const SizedBox(width: 3),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Pengiriman ke',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
+                    Text('Pengiriman ke', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                     const SizedBox(height: 2),
-                    Text(
-                      address,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Text(address, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),
             ],
           ),
-          if (tabState != _TabState.baru) ...[
+          if (tabState == _TabState.proses) ...[
             const SizedBox(height: 12),
-            Column(
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
-              crossAxisAlignment: CrossAxisAlignment.start,
+            ElevatedButton(
+              onPressed: () async {
+                final arrivalDate = await showDialog<DateTime>(
+                  context: context,
+                  builder: (_) => KirimPesananDialog(
+                    orderId: id,
+                    trackingNumber: trackingNumber,
+                  ),
+                );
+
+                if (arrivalDate != null) {
+                  try {
+                    final supabase = Supabase.instance.client;
+
+                    if (transactionIdDb != null) {
+                      await supabase.from('logistics').update({
+                        'current_status': 'delivery',
+                        'shipping_date': DateTime.now().toUtc().toIso8601String(),
+                        'arrival_date': arrivalDate.toUtc().toIso8601String(),
+                      }).eq('transaction_id', transactionIdDb);
+                    } else {
+                      throw Exception('ID Transaksi tidak ditemukan');
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Pesanan berhasil diatur pengirimannya')),
+                    );
+                    onRefresh();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Gagal atur kirim: $e')),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                minimumSize: const Size(0, 36),
+              ),
+              child: const Text('Kirim Pesanan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            ),
+          ],
+          if (tabState == _TabState.dikirim) ...[
+            const SizedBox(height: 12),
+            Row(
               children: [
-                const Padding(
-                  padding: EdgeInsets.only(top: 2),
-                  child: Icon(Icons.location_on, color: Colors.orange, size: 16),
-                ),
-                const SizedBox(width: 3),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Pengiriman ke', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                      Text('Status', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
                       const SizedBox(height: 2),
-                      Text(address, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                      Text(
+                        'Pesanan Dalam Pengiriman',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
+                      ),
                     ],
                   ),
                 ),
-<<<<<<< HEAD
-=======
-                if (tabState == _TabState.proses)
-                  ElevatedButton(
-                    onPressed: () async {
-                      final arrivalDate = await showDialog<DateTime>(
-                        context: context,
-                        builder: (_) => KirimPesananDialog(
-                          orderId: id,
-                          trackingNumber: trackingNumber,
-                        ),
-                      );
-                      
-                      if (arrivalDate != null) {
-                        try {
-                          final supabase = Supabase.instance.client;
-                          
-                          if (transactionIdDb != null) {
-                            await supabase.from('logistics').update({
-                              'current_status': 'delivery',
-                              'shipping_date': DateTime.now().toUtc().toIso8601String(),
-                              'arrival_date': arrivalDate.toUtc().toIso8601String(),
-                            }).eq('transaction_id', transactionIdDb);
-                          } else {
-                              throw Exception('ID Transaksi tidak ditemukan');
-                          }
-                
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pesanan berhasil diatur pengirimannya (Dikirim)')));
-                          onRefresh();
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal atur kirim: $e')));
-                        }
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      minimumSize: const Size(0, 36),
-                    ),
-                    child: const Text('Kirim Pesanan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                  ),
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
               ],
             ),
-            if (tabState != _TabState.baru) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Status', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                        const SizedBox(height: 2),
-                        Text(
-                          tabState == _TabState.proses ? 'Menunggu Pembayaran' : 'Pesanan Selesai',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: statusColor),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }
 }
-
-enum _TabState { baru, proses, dikirim }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 import '../../models/product_model.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 import '../../widgets/product_card.dart';
 import '../buyer/product_detail_screen.dart';
-import 'package:intl/intl.dart';
 
 class SellerScreen extends StatefulWidget {
   final String sellerId;
@@ -21,10 +21,6 @@ class _SellerScreenState extends State<SellerScreen>
   late TabController _tabController;
   final _supabase = Supabase.instance.client;
 
-  Map<String, dynamic>? _sellerData;
-  List<ProductModel> _products = [];
-  bool _isLoading = true;
-
   // Seller info
   String _sellerName = '';
   String _sellerAddress = '';
@@ -34,7 +30,6 @@ class _SellerScreenState extends State<SellerScreen>
 
   // Products & categories
   List<ProductModel> _products = [];
-  // { categoryName -> [products] }
   Map<String, List<ProductModel>> _categoryMap = {};
 
   bool _isLoading = true;
@@ -43,11 +38,7 @@ class _SellerScreenState extends State<SellerScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-<<<<<<< HEAD
-    _loadSellerData();
-=======
     _loadAllData();
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
   }
 
   @override
@@ -56,34 +47,6 @@ class _SellerScreenState extends State<SellerScreen>
     super.dispose();
   }
 
-<<<<<<< HEAD
-  Future<void> _loadSellerData() async {
-    try {
-      // Fetch seller profile
-      final sellerResp = await _supabase
-          .from('users')
-          .select()
-          .eq('user_id', widget.sellerId)
-          .maybeSingle();
-
-      // Fetch seller products
-      final productsResp = await _supabase
-          .from('products')
-          .select()
-          .eq('seller_id', widget.sellerId)
-          .eq('status_product', 'available')
-          .order('created_at', ascending: false);
-
-      if (mounted) {
-        setState(() {
-          _sellerData = sellerResp;
-          _products = productsResp.map((json) => ProductModel.fromJson(json)).toList();
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error loading seller data: $e');
-=======
   Future<void> _loadAllData() async {
     setState(() => _isLoading = true);
     try {
@@ -94,49 +57,20 @@ class _SellerScreenState extends State<SellerScreen>
     } catch (e) {
       debugPrint('Error loading seller data: $e');
     } finally {
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-<<<<<<< HEAD
-  // Group products by category
-  Map<String, List<ProductModel>> get _productsByCategory {
-    final map = <String, List<ProductModel>>{};
-    for (final p in _products) {
-      final cat = _getCategoryName(p.category_id);
-      map.putIfAbsent(cat, () => []).add(p);
-    }
-    return map;
-  }
-
-  String _getCategoryName(int id) {
-    switch (id) {
-      case 1: return 'Pupuk';
-      case 2: return 'Benih';
-      case 3: return 'Buah';
-      case 4: return 'Sayuran';
-      default: return 'Lainnya';
-    }
-  }
-
-  double get _avgRating {
-    if (_products.isEmpty) return 0;
-    final total = _products.fold<double>(0, (sum, p) => sum + p.rating);
-    return total / _products.length;
-=======
   Future<void> _fetchSellerInfo() async {
-    final supabase = Supabase.instance.client;
-
     // Fetch profil seller
-    final userData = await supabase
+    final userData = await _supabase
         .from('users')
         .select('full_name, address')
         .eq('user_id', widget.sellerId)
         .maybeSingle();
 
-    // Fetch total terjual: jumlah qty dari transaksi dengan payment_status = 'paid'
-    final txData = await supabase
+    // Fetch total terjual
+    final txData = await _supabase
         .from('transactions')
         .select('quantity')
         .eq('seller_id', widget.sellerId)
@@ -147,7 +81,7 @@ class _SellerScreenState extends State<SellerScreen>
       totalSold += (row['quantity'] as int? ?? 0);
     }
 
-    final avatar = supabase.storage
+    final avatar = _supabase.storage
         .from('avatars')
         .getPublicUrl('${widget.sellerId}/profile.jpg');
 
@@ -162,9 +96,7 @@ class _SellerScreenState extends State<SellerScreen>
   }
 
   Future<void> _fetchSellerProducts() async {
-    final supabase = Supabase.instance.client;
-
-    final response = await supabase
+    final response = await _supabase
         .from('products')
         .select('*, categories(category_name), users(address)')
         .eq('seller_id', widget.sellerId)
@@ -208,14 +140,10 @@ class _SellerScreenState extends State<SellerScreen>
       decimalDigits: 0,
     );
     return formatter.format(amount);
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
   }
 
   @override
   Widget build(BuildContext context) {
-    final sellerName = _sellerData?['full_name']?.toString() ?? 'Penjual';
-    final sellerAddress = _sellerData?['address']?.toString() ?? '-';
-
     return Scaffold(
       backgroundColor: AppColors.primaryDark,
       appBar: AppBar(
@@ -226,9 +154,6 @@ class _SellerScreenState extends State<SellerScreen>
         leading: TextButton.icon(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
-<<<<<<< HEAD
-          label: const Text('Kembali', style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-=======
           label: const Text(
             'Kembali',
             style: TextStyle(
@@ -238,13 +163,20 @@ class _SellerScreenState extends State<SellerScreen>
               fontWeight: FontWeight.w600,
             ),
           ),
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
         ),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16.0),
             child: Center(
-              child: Text('Detail Penjual', style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
+              child: Text(
+                'Detail Penjual',
+                style: TextStyle(
+                  fontFamily: 'Montserrat',
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],
@@ -253,23 +185,11 @@ class _SellerScreenState extends State<SellerScreen>
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : Column(
               children: [
-<<<<<<< HEAD
-                // Seller Header Info
-=======
                 // ── Seller Header ─────────────────────────────────────────
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                   child: Row(
                     children: [
-<<<<<<< HEAD
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: Colors.white24,
-                        child: Text(
-                          sellerName.isNotEmpty ? sellerName[0].toUpperCase() : 'S',
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-=======
                       // Avatar
                       ClipOval(
                         child: Image.network(
@@ -283,7 +203,6 @@ class _SellerScreenState extends State<SellerScreen>
                             color: Colors.white24,
                             child: const Icon(Icons.person, color: Colors.white, size: 32),
                           ),
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -291,114 +210,6 @@ class _SellerScreenState extends State<SellerScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-<<<<<<< HEAD
-                            Text(sellerName, style: AppTextStyles.h2.copyWith(color: Colors.white)),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(Icons.star, color: AppColors.accent, size: 16),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '${_avgRating.toStringAsFixed(1)}  |  ${_products.length} Produk',
-                                  style: AppTextStyles.subtitle.copyWith(color: Colors.white),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              sellerAddress,
-                              style: const TextStyle(fontFamily: 'Montserrat', fontSize: 11, color: Colors.white70),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Bottom White Container
-                Expanded(
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        topRight: Radius.circular(24),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 24.0, left: 16, right: 16),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              border: Border(bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1)),
-                            ),
-                            child: TabBar(
-                              controller: _tabController,
-                              indicatorSize: TabBarIndicatorSize.tab,
-                              indicator: const BoxDecoration(
-                                color: Color(0xFFE8F5E9),
-                                border: Border(bottom: BorderSide(color: Color(0xFF2E7D32), width: 3)),
-                              ),
-                              labelColor: const Color(0xFF2E7D32),
-                              unselectedLabelColor: Colors.grey,
-                              labelStyle: const TextStyle(fontFamily: 'Montserrat', fontWeight: FontWeight.w600, fontSize: 14),
-                              tabs: const [Tab(text: 'Produk'), Tab(text: 'Kategori')],
-                            ),
-                          ),
-                        ),
-
-                        Expanded(
-                          child: TabBarView(
-                            controller: _tabController,
-                            children: [
-                              // Produk Tab
-                              _products.isEmpty
-                                  ? const Center(child: Text('Belum ada produk'))
-                                  : GridView.builder(
-                                      padding: const EdgeInsets.all(16),
-                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.55,
-                                      ),
-                                      itemCount: _products.length,
-                                      itemBuilder: (context, index) {
-                                        final p = _products[index];
-                                        return ProductCard(
-                                          imageUrl: p.image_url,
-                                          tag: _getCategoryName(p.category_id),
-                                          title: p.product_name,
-                                          location: sellerAddress.split(',').first,
-                                          rating: p.rating > 0 ? '${p.rating}' : 'Baru',
-                                          price: 'Rp ${p.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
-                                          unit: '/ ${p.unit}',
-                                          onTap: () {
-                                            Navigator.of(context).push(
-                                              MaterialPageRoute(builder: (_) => ProductDetailScreen(product: p)),
-                                            );
-                                          },
-                                        );
-                                      },
-                                    ),
-
-                              // Kategori Tab
-                              _productsByCategory.isEmpty
-                                  ? const Center(child: Text('Belum ada kategori'))
-                                  : ListView(
-                                      padding: const EdgeInsets.all(16),
-                                      children: _productsByCategory.entries.map((entry) {
-                                        return _CategoryAccordion(
-                                          title: entry.key,
-                                          count: entry.value.length,
-                                          products: entry.value,
-                                        );
-                                      }).toList(),
-                                    ),
-                            ],
-                          ),
-=======
                             Text(
                               _sellerName,
                               style: AppTextStyles.h2.copyWith(color: Colors.white),
@@ -428,20 +239,17 @@ class _SellerScreenState extends State<SellerScreen>
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                Icon(Icons.star, color: AppColors.accent, size: 16),
+                                const Icon(Icons.star, color: AppColors.accent, size: 16),
                                 const SizedBox(width: 4),
                                 Text(
                                   _avgRating > 0
                                       ? '${_avgRating.toStringAsFixed(1)}  |  $_totalSold Terjual'
                                       : '$_totalSold Terjual',
-                                  style: AppTextStyles.subtitle.copyWith(
-                                    color: Colors.white,
-                                  ),
+                                  style: AppTextStyles.subtitle.copyWith(color: Colors.white),
                                 ),
                               ],
                             ),
                           ],
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
                         ),
                       ),
                     ],
@@ -503,16 +311,12 @@ class _SellerScreenState extends State<SellerScreen>
                                   ? const Center(
                                       child: Text(
                                         'Belum ada produk',
-                                        style: TextStyle(
-                                          fontFamily: 'Montserrat',
-                                          color: Colors.grey,
-                                        ),
+                                        style: TextStyle(fontFamily: 'Montserrat', color: Colors.grey),
                                       ),
                                     )
                                   : GridView.builder(
                                       padding: const EdgeInsets.all(16),
-                                      gridDelegate:
-                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                         crossAxisCount: 2,
                                         mainAxisSpacing: 12,
                                         crossAxisSpacing: 12,
@@ -531,7 +335,13 @@ class _SellerScreenState extends State<SellerScreen>
                                               : 'Baru',
                                           price: _formatCurrency(p.selling_price),
                                           unit: '/ ${p.unit}',
-                                          onTap: () {},
+                                          onTap: () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => ProductDetailScreen(product: p),
+                                              ),
+                                            );
+                                          },
                                         );
                                       },
                                     ),
@@ -541,10 +351,7 @@ class _SellerScreenState extends State<SellerScreen>
                                   ? const Center(
                                       child: Text(
                                         'Belum ada kategori',
-                                        style: TextStyle(
-                                          fontFamily: 'Montserrat',
-                                          color: Colors.grey,
-                                        ),
+                                        style: TextStyle(fontFamily: 'Montserrat', color: Colors.grey),
                                       ),
                                     )
                                   : ListView(
@@ -553,13 +360,7 @@ class _SellerScreenState extends State<SellerScreen>
                                         return _CategoryAccordion(
                                           title: entry.key,
                                           count: entry.value.length,
-                                          initialExpanded: _categoryMap.keys.first == entry.key,
-                                          items: entry.value.map((p) => {
-                                            'title': p.product_name,
-                                            'storeName': _sellerName,
-                                            'price': _formatCurrency(p.selling_price),
-                                            'image': p.image_url,
-                                          }).toList(),
+                                          products: entry.value,
                                         );
                                       }).toList(),
                                     ),
@@ -582,7 +383,11 @@ class _CategoryAccordion extends StatefulWidget {
   final int count;
   final List<ProductModel> products;
 
-  const _CategoryAccordion({required this.title, required this.count, required this.products});
+  const _CategoryAccordion({
+    required this.title,
+    required this.count,
+    required this.products,
+  });
 
   @override
   State<_CategoryAccordion> createState() => _CategoryAccordionState();
@@ -610,11 +415,17 @@ class _CategoryAccordionState extends State<_CategoryAccordion> {
                 children: [
                   Text(
                     '${widget.title} (${widget.count})',
-                    style: const TextStyle(fontFamily: 'Montserrat', color: Color(0xFF2E7D32), fontSize: 14, fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      color: Color(0xFF2E7D32),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   Icon(
                     _isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                    color: const Color(0xFF2E7D32), size: 20,
+                    color: const Color(0xFF2E7D32),
+                    size: 20,
                   ),
                 ],
               ),
@@ -627,16 +438,12 @@ class _CategoryAccordionState extends State<_CategoryAccordion> {
                 children: widget.products.map((p) {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
-<<<<<<< HEAD
-                    color: Colors.white,
-=======
                     decoration: const BoxDecoration(color: Colors.white),
->>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
                     padding: const EdgeInsets.all(4),
                     child: ProductListTile(
                       title: p.product_name,
                       storeName: 'Stok: ${p.stock} ${p.unit}',
-                      price: 'Rp ${p.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
+                      price: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(p.selling_price),
                       imageUrl: p.image_url,
                     ),
                   );
