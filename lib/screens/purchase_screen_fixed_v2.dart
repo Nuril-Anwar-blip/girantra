@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../ui/app_colors.dart';
-import '../ui/app_text_styles.dart';
+// import '../ui/app_text_styles.dart';
 
 class PurchaseScreen extends StatefulWidget {
   const PurchaseScreen({super.key});

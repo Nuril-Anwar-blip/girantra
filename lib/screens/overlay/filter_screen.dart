@@ -4,40 +4,42 @@ import 'package:girantra/ui/app_text_styles.dart';
 
 import '../../ui/app_colors.dart';
 
-class FilterDialog extends StatefulWidget {
-  final int? initialCategoryId;
-  final String? initialPriceSort;
-  final int? initialRating;
+/// Hasil filter yang dikembalikan ke HomeScreen
+class FilterResult {
+  final String? priceSort;    // 'Termurah' | 'Termahal' | null
+  final int? categoryId;      // null = semua kategori
+  final int? minRating;       // 1-5 | null
 
-  const FilterDialog({
-    super.key,
-    this.initialCategoryId,
-    this.initialPriceSort,
-    this.initialRating,
-  });
+  const FilterResult({this.priceSort, this.categoryId, this.minRating});
+
+  bool get hasFilter => priceSort != null || categoryId != null || minRating != null;
+}
+
+class FilterDialog extends StatefulWidget {
+  final FilterResult? initialFilter;
+
+  const FilterDialog({super.key, this.initialFilter});
 
   @override
   State<FilterDialog> createState() => _FilterDialogState();
 }
 
 class _FilterDialogState extends State<FilterDialog> {
-  int? _selectedCategoryId;
-  String? _selectedPriceSort;
-  int? _selectedRating;
+  late int? _selectedCategoryId;
+  late String? _selectedPriceSort;
+  late int? _selectedRating;
 
   List<Map<String, dynamic>> _categories = [];
+  bool _isLoadingCategories = true;
 
   @override
   void initState() {
     super.initState();
-    _selectedCategoryId = widget.initialCategoryId;
-    _selectedPriceSort = widget.initialPriceSort;
-    _selectedRating = widget.initialRating;
+    _selectedCategoryId = widget.initialFilter?.categoryId;
+    _selectedPriceSort  = widget.initialFilter?.priceSort;
+    _selectedRating     = widget.initialFilter?.minRating;
     _fetchCategories();
   }
-  bool _isLoadingCategories = true;
-
-  // initState moved above
 
   Future<void> _fetchCategories() async {
     try {
@@ -49,12 +51,8 @@ class _FilterDialogState extends State<FilterDialog> {
         });
       }
     } catch (e) {
-      print('Error fetching categories: $e');
-      if (mounted) {
-        setState(() {
-          _isLoadingCategories = false;
-        });
-      }
+      debugPrint('Error fetching categories: $e');
+      if (mounted) setState(() => _isLoadingCategories = false);
     }
   }
 
@@ -79,10 +77,7 @@ class _FilterDialogState extends State<FilterDialog> {
               children: [
                 Align(
                   alignment: Alignment.center,
-                  child: Text(
-                    'Filter',
-                    style: AppTextStyles.h2.copyWith(color: AppColors.primary),
-                  ),
+                  child: Text('Filter', style: AppTextStyles.h2.copyWith(color: AppColors.primary)),
                 ),
                 Align(
                   alignment: Alignment.centerRight,
@@ -99,10 +94,7 @@ class _FilterDialogState extends State<FilterDialog> {
                       minimumSize: Size.zero,
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    child: Text(
-                      'Reset',
-                      style: AppTextStyles.subtitle.copyWith(color: AppColors.accentDark, fontWeight: FontWeight.w500),
-                    ),
+                    child: Text('Reset', style: AppTextStyles.subtitle.copyWith(color: AppColors.accentDark, fontWeight: FontWeight.w500)),
                   ),
                 ),
               ],
@@ -111,11 +103,7 @@ class _FilterDialogState extends State<FilterDialog> {
             Text('Kategori', style: AppTextStyles.subtitle.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)),
             const SizedBox(height: 10),
             _isLoadingCategories
-                ? const SizedBox(
-                    height: 30,
-                    width: 30,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                  )
+                ? const SizedBox(height: 30, width: 30, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
                 : _categories.isEmpty
                     ? const Text('Tidak ada kategori', style: TextStyle(color: AppColors.mutedText, fontSize: 12))
                     : Wrap(
@@ -126,15 +114,8 @@ class _FilterDialogState extends State<FilterDialog> {
                           final String name = cat['name'] ?? cat['category_name'] ?? 'Unknown';
                           final isSelected = _selectedCategoryId == id;
                           return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedCategoryId = isSelected ? null : id;
-                              });
-                            },
-                            child: _FilterTag(
-                              text: name,
-                              isSelected: isSelected,
-                            ),
+                            onTap: () => setState(() => _selectedCategoryId = isSelected ? null : id),
+                            child: _FilterTag(text: name, isSelected: isSelected),
                           );
                         }).toList(),
                       ),
@@ -146,15 +127,11 @@ class _FilterDialogState extends State<FilterDialog> {
               runSpacing: 8,
               children: [
                 GestureDetector(
-                  onTap: () => setState(() {
-                    _selectedPriceSort = _selectedPriceSort == 'Termurah' ? null : 'Termurah';
-                  }),
+                  onTap: () => setState(() => _selectedPriceSort = _selectedPriceSort == 'Termurah' ? null : 'Termurah'),
                   child: _FilterTag(text: 'Termurah', isSelected: _selectedPriceSort == 'Termurah'),
                 ),
                 GestureDetector(
-                  onTap: () => setState(() {
-                    _selectedPriceSort = _selectedPriceSort == 'Termahal' ? null : 'Termahal';
-                  }),
+                  onTap: () => setState(() => _selectedPriceSort = _selectedPriceSort == 'Termahal' ? null : 'Termahal'),
                   child: _FilterTag(text: 'Termahal', isSelected: _selectedPriceSort == 'Termahal'),
                 ),
               ],
@@ -169,11 +146,7 @@ class _FilterDialogState extends State<FilterDialog> {
                 final stars = 5 - index;
                 final isSelected = _selectedRating == stars;
                 return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedRating = isSelected ? null : stars;
-                    });
-                  },
+                  onTap: () => setState(() => _selectedRating = isSelected ? null : stars),
                   child: _RatingChip(stars: stars, selected: isSelected),
                 );
               }),
@@ -184,16 +157,18 @@ class _FilterDialogState extends State<FilterDialog> {
               height: 48,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF358C36), // Green color matching image
+                  backgroundColor: const Color(0xFF358C36),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   elevation: 0,
                 ),
                 onPressed: () {
-                  Navigator.of(context).pop({
-                    'categoryId': _selectedCategoryId,
-                    'priceSort': _selectedPriceSort,
-                    'rating': _selectedRating,
-                  });
+                  Navigator.of(context).pop(
+                    FilterResult(
+                      priceSort: _selectedPriceSort,
+                      categoryId: _selectedCategoryId,
+                      minRating: _selectedRating,
+                    ),
+                  );
                 },
                 child: const Text('Terapkan Filter', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
               ),
@@ -215,22 +190,13 @@ class _FilterTag extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = isSelected ? const Color(0xFF358C36) : Colors.white;
     final fg = isSelected ? Colors.white : AppColors.mutedText;
-    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(4),
+        color: bg, borderRadius: BorderRadius.circular(4),
         border: Border.all(color: isSelected ? Colors.transparent : AppColors.divider),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-          color: fg,
-        ),
-      ),
+      child: Text(text, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500, color: fg)),
     );
   }
 }
@@ -245,18 +211,16 @@ class _RatingChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final bg = selected ? const Color(0xFF358C36) : Colors.white;
     final fg = selected ? Colors.white : AppColors.mutedText;
-    final starColor = selected ? const Color(0xFFFFC107) : const Color(0xFFFFC107);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(4),
+        color: bg, borderRadius: BorderRadius.circular(4),
         border: Border.all(color: selected ? Colors.transparent : AppColors.divider),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.star, size: 14, color: starColor),
+          const Icon(Icons.star, size: 14, color: Color(0xFFFFC107)),
           const SizedBox(width: 4),
           Text('$stars', style: TextStyle(fontWeight: FontWeight.w600, color: fg, fontSize: 12)),
         ],
@@ -264,4 +228,3 @@ class _RatingChip extends StatelessWidget {
     );
   }
 }
-

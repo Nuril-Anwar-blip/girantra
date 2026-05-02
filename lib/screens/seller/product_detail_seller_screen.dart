@@ -94,18 +94,74 @@ class _ProductDetailSellerScreenState
       ),
     );
 
-    if (confirmed == true && widget.product.product_id != null) {
-      final ok = await _productService.deleteProduct(widget.product.product_id!);
-      if (ok && mounted) {
+    if (confirmed != true || widget.product.product_id == null) return;
+
+    // Cek apakah produk masih dalam transaksi aktif
+    try {
+      final supabase = Supabase.instance.client;
+      final sellerId = supabase.auth.currentUser?.id ?? '';
+
+      final txRows = await supabase
+          .from('transactions')
+          .select('product_id, payment_status, logistics(current_status)')
+          .eq('seller_id', sellerId)
+          .eq('product_id', widget.product.product_id!)
+          .inFilter('payment_status', ['pending', 'paid']);
+
+      final isLocked = (txRows as List<dynamic>).any((r) {
+        final logData = r['logistics'];
+        String? logStatus;
+        if (logData is List && logData.isNotEmpty) {
+          logStatus = logData.last['current_status']?.toString();
+        } else if (logData is Map) {
+          logStatus = logData['current_status']?.toString();
+        }
+        // Terkunci jika logistik belum selesai
+        return logStatus != 'delivered' &&
+            logStatus != 'received' &&
+            logStatus != 'completed';
+      });
+
+      if (isLocked) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Produk berhasil dihapus'),
-            backgroundColor: Colors.red,
+          SnackBar(
+            content: Row(
+              children: const [
+                Icon(Icons.warning_amber_rounded, color: Colors.white, size: 20),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Produk ini masih memiliki transaksi yang sedang diproses atau dalam pengiriman.',
+                    style: TextStyle(fontFamily: 'Montserrat', fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFFF57F17),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            duration: const Duration(seconds: 4),
           ),
         );
-        // Pop dengan hasil true supaya ProductSellerScreen bisa refresh
-        Navigator.of(context).pop(true);
+        return;
       }
+    } catch (e) {
+      debugPrint('⚠️ Gagal cek transaksi aktif saat hapus: $e');
+      // Jika cek gagal, lanjutkan proses hapus
+    }
+
+    // Tidak ada transaksi aktif → hapus produk
+    final ok = await _productService.deleteProduct(widget.product.product_id!);
+    if (ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Produk berhasil dihapus'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      Navigator.of(context).pop(true);
     }
   }
 

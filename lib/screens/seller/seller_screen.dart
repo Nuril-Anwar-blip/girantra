@@ -5,6 +5,7 @@ import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 import '../../widgets/product_card.dart';
 import '../buyer/product_detail_screen.dart';
+import 'package:intl/intl.dart';
 
 class SellerScreen extends StatefulWidget {
   final String sellerId;
@@ -24,11 +25,29 @@ class _SellerScreenState extends State<SellerScreen>
   List<ProductModel> _products = [];
   bool _isLoading = true;
 
+  // Seller info
+  String _sellerName = '';
+  String _sellerAddress = '';
+  String _avatarUrl = '';
+  int _totalSold = 0;
+  double _avgRating = 0.0;
+
+  // Products & categories
+  List<ProductModel> _products = [];
+  // { categoryName -> [products] }
+  Map<String, List<ProductModel>> _categoryMap = {};
+
+  bool _isLoading = true;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+<<<<<<< HEAD
     _loadSellerData();
+=======
+    _loadAllData();
+>>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
   }
 
   @override
@@ -37,6 +56,7 @@ class _SellerScreenState extends State<SellerScreen>
     super.dispose();
   }
 
+<<<<<<< HEAD
   Future<void> _loadSellerData() async {
     try {
       // Fetch seller profile
@@ -63,10 +83,23 @@ class _SellerScreenState extends State<SellerScreen>
       }
     } catch (e) {
       print('Error loading seller data: $e');
+=======
+  Future<void> _loadAllData() async {
+    setState(() => _isLoading = true);
+    try {
+      await Future.wait([
+        _fetchSellerInfo(),
+        _fetchSellerProducts(),
+      ]);
+    } catch (e) {
+      debugPrint('Error loading seller data: $e');
+    } finally {
+>>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+<<<<<<< HEAD
   // Group products by category
   Map<String, List<ProductModel>> get _productsByCategory {
     final map = <String, List<ProductModel>>{};
@@ -91,6 +124,91 @@ class _SellerScreenState extends State<SellerScreen>
     if (_products.isEmpty) return 0;
     final total = _products.fold<double>(0, (sum, p) => sum + p.rating);
     return total / _products.length;
+=======
+  Future<void> _fetchSellerInfo() async {
+    final supabase = Supabase.instance.client;
+
+    // Fetch profil seller
+    final userData = await supabase
+        .from('users')
+        .select('full_name, address')
+        .eq('user_id', widget.sellerId)
+        .maybeSingle();
+
+    // Fetch total terjual: jumlah qty dari transaksi dengan payment_status = 'paid'
+    final txData = await supabase
+        .from('transactions')
+        .select('quantity')
+        .eq('seller_id', widget.sellerId)
+        .eq('payment_status', 'paid');
+
+    int totalSold = 0;
+    for (final row in txData) {
+      totalSold += (row['quantity'] as int? ?? 0);
+    }
+
+    final avatar = supabase.storage
+        .from('avatars')
+        .getPublicUrl('${widget.sellerId}/profile.jpg');
+
+    if (mounted) {
+      setState(() {
+        _sellerName = userData?['full_name']?.toString() ?? 'Seller';
+        _sellerAddress = userData?['address']?.toString() ?? '';
+        _avatarUrl = avatar;
+        _totalSold = totalSold;
+      });
+    }
+  }
+
+  Future<void> _fetchSellerProducts() async {
+    final supabase = Supabase.instance.client;
+
+    final response = await supabase
+        .from('products')
+        .select('*, categories(category_name), users(address)')
+        .eq('seller_id', widget.sellerId)
+        .eq('status_product', 'available')
+        .order('created_at', ascending: false);
+
+    final products = (response as List)
+        .map((json) => ProductModel.fromJson(json))
+        .toList();
+
+    // Hitung rata-rata rating
+    double totalRating = 0;
+    int ratedCount = 0;
+    for (final p in products) {
+      if (p.rating > 0) {
+        totalRating += p.rating;
+        ratedCount++;
+      }
+    }
+
+    // Kelompokkan per kategori
+    final Map<String, List<ProductModel>> categoryMap = {};
+    for (final p in products) {
+      final catName = p.category_name ?? 'Lainnya';
+      categoryMap.putIfAbsent(catName, () => []).add(p);
+    }
+
+    if (mounted) {
+      setState(() {
+        _products = products;
+        _avgRating = ratedCount > 0 ? totalRating / ratedCount : 0.0;
+        _categoryMap = categoryMap;
+      });
+    }
+  }
+
+  String _formatCurrency(double amount) {
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
+    return formatter.format(amount);
+>>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
   }
 
   @override
@@ -108,7 +226,19 @@ class _SellerScreenState extends State<SellerScreen>
         leading: TextButton.icon(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
+<<<<<<< HEAD
           label: const Text('Kembali', style: TextStyle(fontFamily: 'Montserrat', color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+=======
+          label: const Text(
+            'Kembali',
+            style: TextStyle(
+              fontFamily: 'Montserrat',
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+>>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
         ),
         actions: const [
           Padding(
@@ -123,17 +253,37 @@ class _SellerScreenState extends State<SellerScreen>
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : Column(
               children: [
+<<<<<<< HEAD
                 // Seller Header Info
+=======
+                // ── Seller Header ─────────────────────────────────────────
+>>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
                 Padding(
                   padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                   child: Row(
                     children: [
+<<<<<<< HEAD
                       CircleAvatar(
                         radius: 28,
                         backgroundColor: Colors.white24,
                         child: Text(
                           sellerName.isNotEmpty ? sellerName[0].toUpperCase() : 'S',
                           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+=======
+                      // Avatar
+                      ClipOval(
+                        child: Image.network(
+                          _avatarUrl,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 56,
+                            height: 56,
+                            color: Colors.white24,
+                            child: const Icon(Icons.person, color: Colors.white, size: 32),
+                          ),
+>>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -141,6 +291,7 @@ class _SellerScreenState extends State<SellerScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+<<<<<<< HEAD
                             Text(sellerName, style: AppTextStyles.h2.copyWith(color: Colors.white)),
                             const SizedBox(height: 4),
                             Row(
@@ -247,6 +398,173 @@ class _SellerScreenState extends State<SellerScreen>
                                     ),
                             ],
                           ),
+=======
+                            Text(
+                              _sellerName,
+                              style: AppTextStyles.h2.copyWith(color: Colors.white),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (_sellerAddress.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  const Icon(Icons.location_on, color: Colors.white70, size: 13),
+                                  const SizedBox(width: 2),
+                                  Expanded(
+                                    child: Text(
+                                      _sellerAddress,
+                                      style: AppTextStyles.subtitle.copyWith(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.star, color: AppColors.accent, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _avgRating > 0
+                                      ? '${_avgRating.toStringAsFixed(1)}  |  $_totalSold Terjual'
+                                      : '$_totalSold Terjual',
+                                  style: AppTextStyles.subtitle.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+>>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── White Bottom Sheet ─────────────────────────────────────
+                Expanded(
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(24),
+                        topRight: Radius.circular(24),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        // Tab Bar
+                        Padding(
+                          padding: const EdgeInsets.only(top: 24, left: 16, right: 16),
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1),
+                              ),
+                            ),
+                            child: TabBar(
+                              controller: _tabController,
+                              indicatorSize: TabBarIndicatorSize.tab,
+                              indicator: const BoxDecoration(
+                                color: Color(0xFFE8F5E9),
+                                border: Border(
+                                  bottom: BorderSide(color: Color(0xFF2E7D32), width: 3),
+                                ),
+                              ),
+                              labelColor: const Color(0xFF2E7D32),
+                              unselectedLabelColor: Colors.grey,
+                              labelStyle: const TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                              tabs: [
+                                Tab(text: 'Produk (${_products.length})'),
+                                Tab(text: 'Kategori (${_categoryMap.length})'),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Tab Content
+                        Expanded(
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: [
+                              // ── Tab Produk ───────────────────────────────
+                              _products.isEmpty
+                                  ? const Center(
+                                      child: Text(
+                                        'Belum ada produk',
+                                        style: TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    )
+                                  : GridView.builder(
+                                      padding: const EdgeInsets.all(16),
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                        crossAxisCount: 2,
+                                        mainAxisSpacing: 12,
+                                        crossAxisSpacing: 12,
+                                        childAspectRatio: 0.55,
+                                      ),
+                                      itemCount: _products.length,
+                                      itemBuilder: (context, index) {
+                                        final p = _products[index];
+                                        return ProductCard(
+                                          imageUrl: p.image_url,
+                                          tag: p.category_name ?? 'Produk',
+                                          title: p.product_name,
+                                          location: p.seller_address ?? _sellerAddress,
+                                          rating: p.rating > 0
+                                              ? '${p.rating} (${p.sold_count})'
+                                              : 'Baru',
+                                          price: _formatCurrency(p.selling_price),
+                                          unit: '/ ${p.unit}',
+                                          onTap: () {},
+                                        );
+                                      },
+                                    ),
+
+                              // ── Tab Kategori ─────────────────────────────
+                              _categoryMap.isEmpty
+                                  ? const Center(
+                                      child: Text(
+                                        'Belum ada kategori',
+                                        style: TextStyle(
+                                          fontFamily: 'Montserrat',
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    )
+                                  : ListView(
+                                      padding: const EdgeInsets.all(16),
+                                      children: _categoryMap.entries.map((entry) {
+                                        return _CategoryAccordion(
+                                          title: entry.key,
+                                          count: entry.value.length,
+                                          initialExpanded: _categoryMap.keys.first == entry.key,
+                                          items: entry.value.map((p) => {
+                                            'title': p.product_name,
+                                            'storeName': _sellerName,
+                                            'price': _formatCurrency(p.selling_price),
+                                            'image': p.image_url,
+                                          }).toList(),
+                                        );
+                                      }).toList(),
+                                    ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -258,6 +576,7 @@ class _SellerScreenState extends State<SellerScreen>
   }
 }
 
+// ── Category Accordion Widget ────────────────────────────────────────────────
 class _CategoryAccordion extends StatefulWidget {
   final String title;
   final int count;
@@ -308,7 +627,11 @@ class _CategoryAccordionState extends State<_CategoryAccordion> {
                 children: widget.products.map((p) {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
+<<<<<<< HEAD
                     color: Colors.white,
+=======
+                    decoration: const BoxDecoration(color: Colors.white),
+>>>>>>> e81318f64191ca5a2876ff743f2f91bc95ef2073
                     padding: const EdgeInsets.all(4),
                     child: ProductListTile(
                       title: p.product_name,

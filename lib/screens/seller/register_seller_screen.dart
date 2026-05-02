@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -22,7 +23,7 @@ class _RegisterSellerScreenState extends State<RegisterSellerScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isUploadingAvatar = false;
-  File? _imageFile;
+  Uint8List? _imageBytes; // Cross-platform preview
   String? _avatarUrl;
 
   @override
@@ -81,8 +82,9 @@ class _RegisterSellerScreenState extends State<RegisterSellerScreen> {
 
     if (image == null) return;
 
+    final bytes = await image.readAsBytes();
     setState(() {
-      _imageFile = File(image.path);
+      _imageBytes = bytes;
       _isUploadingAvatar = true;
     });
 
@@ -93,10 +95,10 @@ class _RegisterSellerScreenState extends State<RegisterSellerScreen> {
 
         await Supabase.instance.client.storage
             .from('avatars')
-            .upload(
+            .uploadBinary(
               path,
-              _imageFile!,
-              fileOptions: const FileOptions(upsert: true),
+              bytes,
+              fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
             );
 
         setState(() {
@@ -413,8 +415,8 @@ class _RegisterSellerScreenState extends State<RegisterSellerScreen> {
                           shape: BoxShape.circle,
                         ),
                         clipBehavior: Clip.hardEdge,
-                        child: _imageFile != null
-                            ? Image.file(_imageFile!, fit: BoxFit.cover)
+                        child: _imageBytes != null
+                            ? Image.memory(_imageBytes!, fit: BoxFit.cover)
                             : (_avatarUrl != null
                                   ? Image.network(
                                       _avatarUrl!,

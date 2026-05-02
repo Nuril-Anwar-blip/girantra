@@ -66,17 +66,19 @@ class ProductCard extends StatelessWidget {
                           : const Icon(Icons.image_outlined, color: Colors.grey),
                     ),
                   ),
+                  // Tag label (kiri atas)
                   Positioned(
                     top: 12,
                     left: 0,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                      ),
+                      decoration: const BoxDecoration(color: Colors.white),
                       child: Text(
                         tag,
-                        style: AppTextStyles.subtitle.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 12),
+                        style: AppTextStyles.subtitle.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12),
                       ),
                     ),
                   ),
@@ -106,9 +108,13 @@ class ProductCard extends StatelessWidget {
                         color: Colors.grey,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        location,
-                        style: AppTextStyles.subtitle,
+                      Expanded(
+                        child: Text(
+                          location,
+                          style: AppTextStyles.subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),

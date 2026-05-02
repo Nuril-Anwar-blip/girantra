@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -21,7 +23,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isUploadingAvatar = false;
-  File? _imageFile;
+  Uint8List? _imageBytes; // Cross-platform preview
+  File? _imageFile;       // Untuk upload (non-web)
   String? _avatarUrl;
 
   @override
@@ -124,8 +127,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     if (image == null) return;
 
+    // Baca sebagai bytes untuk cross-platform preview
+    final bytes = await image.readAsBytes();
     setState(() {
-      _imageFile = File(image.path);
+      _imageBytes = bytes;
+      if (!kIsWeb) _imageFile = File(image.path);
       _isUploadingAvatar = true;
     });
 
@@ -134,11 +140,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (user != null) {
         final String path = '${user.id}/profile.jpg';
 
-        await Supabase.instance.client.storage.from('avatars').upload(
-          path,
-          _imageFile!,
-          fileOptions: const FileOptions(upsert: true),
-        );
+        if (kIsWeb) {
+          // Upload dari bytes untuk web
+          await Supabase.instance.client.storage.from('avatars').uploadBinary(
+            path,
+            _imageBytes!,
+            fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+          );
+        } else {
+          // Upload dari File untuk mobile/desktop
+          await Supabase.instance.client.storage.from('avatars').upload(
+            path,
+            _imageFile!,
+            fileOptions: const FileOptions(upsert: true),
+          );
+        }
 
         setState(() {
           _avatarUrl = '${Supabase.instance.client.storage.from('avatars').getPublicUrl(path)}?t=${DateTime.now().millisecondsSinceEpoch}';
@@ -265,8 +281,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         shape: BoxShape.circle,
                       ),
                       clipBehavior: Clip.hardEdge,
-                      child: _imageFile != null
-                          ? Image.file(_imageFile!, fit: BoxFit.cover)
+                      child: _imageBytes != null
+                          ? Image.memory(_imageBytes!, fit: BoxFit.cover)
                           : (_avatarUrl != null
                               ? Image.network(
                                   _avatarUrl!,

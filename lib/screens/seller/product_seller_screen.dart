@@ -10,7 +10,7 @@ import '../overlay/delete_product_dialog.dart';
 import '../overlay/archive_product_dialog.dart';
 import '../overlay/activate_product_dialog.dart';
 import '../overlay/edit_stock_dialog.dart';
-import '../overlay/edit_product_dialog.dart';
+// import '../overlay/edit_product_dialog.dart';
 import 'add_product_screen.dart';
 import 'product_detail_seller_screen.dart';
 
@@ -30,6 +30,9 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
   List<ProductModel> _aktifProducts = [];
   List<ProductModel> _habisProducts = [];
   List<ProductModel> _arsipProducts = [];
+
+  // Product IDs yang sedang dalam transaksi aktif (tidak bisa diarsipkan)
+  Set<int> _activeTransactionProductIds = {};
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -51,45 +54,81 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
   }
 
   Future<void> _loadProducts() async {
-    // ── DEBUG: lihat semua nilai status_product yg ada di DB ─────────────
-    try {
-      final supabase = Supabase.instance.client;
-      final sellerId = supabase.auth.currentUser?.id;
-      final debug = await supabase
-          .from('products')
-          .select('product_id, product_name, status_product')
-          .eq('seller_id', sellerId ?? '');
-      print('📋 DEBUG semua produk seller:');
-      for (final row in debug) {
-        print('  ID:${row["product_id"]} | "${row["status_product"]}" | ${row["product_name"]}');
-      }
-    } catch (e) {
-      print('❌ DEBUG error: $e');
-    }
-    // ─────────────────────────────────────────────────────────────────────
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
+
+    // ── 1. Load produk (wajib) ──────────────────────────────────────────
     try {
-      final results = await Future.wait([
+      final productResults = await Future.wait([
         _productService.getSellerProductsByStatus('available'),
         _productService.getSellerProductsByStatus('out_of_stock'),
         _productService.getSellerProductsByStatus('archived'),
       ]);
+
       if (!mounted) return;
       setState(() {
-        _aktifProducts = results[0];
-        _habisProducts = results[1];
-        _arsipProducts = results[2];
+        _aktifProducts = productResults[0];
+        _habisProducts = productResults[1];
+        _arsipProducts = productResults[2];
         _isLoading = false;
       });
     } catch (e) {
+      debugPrint('❌ Error load produk: $e');
       if (!mounted) return;
       setState(() {
         _errorMessage = 'Gagal memuat produk. Coba lagi.';
         _isLoading = false;
       });
+      return; // stop jika produk gagal
+    }
+
+    // ── 2. Load transaksi aktif (opsional, tidak gagalkan load produk) ──
+    try {
+      final supabase = Supabase.instance.client;
+      final sellerId = supabase.auth.currentUser?.id ?? '';
+
+      // Join logistics untuk mendapatkan current_status yang benar
+      // (current_status ada di tabel logistics, bukan transactions)
+      final txRows = await supabase
+          .from('transactions')
+          .select('product_id, payment_status, logistics(current_status)')
+          .eq('seller_id', sellerId)
+          .inFilter('payment_status', ['pending', 'paid']);
+
+      debugPrint('🔒 Cek transaksi aktif: ${txRows.length} transaksi');
+
+      final activeIds = (txRows as List<dynamic>).where((r) {
+        // Ambil current_status dari relasi logistics
+        final logData = r['logistics'];
+        String? logStatus;
+        if (logData is List && logData.isNotEmpty) {
+          logStatus = logData.last['current_status']?.toString();
+        } else if (logData is Map) {
+          logStatus = logData['current_status']?.toString();
+        }
+
+        debugPrint(
+          '  product_id=${r['product_id']} | payment=${r['payment_status']} | logStatus=$logStatus',
+        );
+
+        // Produk terkunci jika:
+        // - Tidak ada logistik (transaksi baru/pending) ATAU
+        // - Logistik masih dalam proses (bukan delivered/received/completed)
+        final isFinished = logStatus == 'delivered' ||
+            logStatus == 'received' ||
+            logStatus == 'completed';
+        return !isFinished;
+      }).map((r) => r['product_id'] as int?).whereType<int>().toSet();
+
+      debugPrint('🔒 Product IDs terkunci: $activeIds');
+
+      if (mounted) {
+        setState(() => _activeTransactionProductIds = activeIds);
+      }
+    } catch (e) {
+      debugPrint('⚠️ Peringatan: gagal cek transaksi aktif: $e');
     }
   }
 
@@ -341,7 +380,6 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                           builder: (context) => const AddProductScreen(),
                         ),
                       );
-                      // Refresh setelah kembali dari AddProductScreen
                       _loadProducts();
                     },
                     child: Container(
@@ -391,44 +429,81 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                     priceFormatted: _formatPrice(product.selling_price),
                     statusText: 'Aktif',
                     statusColor: AppColors.primary,
-                    soldCount: 0,
+                    soldCount: product.sold_count,
                     rating: product.rating,
                     secondaryActionText: 'Arsipkan',
                     onSecondaryAction: () async {
+                      // Langkah 1: Tampilkan overlay konfirmasi seperti biasa
                       final confirmed = await showDialog<bool>(
                         context: context,
                         builder: (_) => ArchiveProductDialog(
                           productName: product.product_name,
                         ),
                       );
-                      if (confirmed == true && product.product_id != null) {
-                        _showLoadingDialog('Mengarsipkan produk...');
-                        try {
-                          await _productService.updateProductStatus(
-                            product.product_id!,
-                            'archived',
+
+                      if (confirmed != true || product.product_id == null) return;
+
+                      // Langkah 2: Setelah konfirmasi, cek apakah produk sedang dalam transaksi
+                      final isLocked = _activeTransactionProductIds.contains(product.product_id);
+                      if (isLocked) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: const [
+                                Icon(Icons.warning_amber_rounded,
+                                    color: Colors.white, size: 20),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Produk ini masih memiliki transaksi yang sedang diproses atau dalam pengiriman.',
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: const Color(0xFFF57F17),
+                            behavior: SnackBarBehavior.floating,
+                            margin: const EdgeInsets.all(16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            duration: const Duration(seconds: 4),
+                          ),
+                        );
+                        return;
+                      }
+
+                      // Langkah 3: Tidak ada transaksi aktif → arsipkan
+                      _showLoadingDialog('Mengarsipkan produk...');
+                      try {
+                        await _productService.updateProductStatus(
+                          product.product_id!,
+                          'archived',
+                        );
+                        _hideLoadingDialog();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Produk berhasil diarsipkan'),
+                              backgroundColor: Colors.orange,
+                            ),
                           );
-                          _hideLoadingDialog();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Produk berhasil diarsipkan'),
-                                backgroundColor: Colors.orange,
-                              ),
-                            );
-                            _loadProducts();
-                          }
-                        } catch (e) {
-                          _hideLoadingDialog();
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Gagal arsipkan: $e'),
-                                backgroundColor: Colors.red,
-                                duration: const Duration(seconds: 6),
-                              ),
-                            );
-                          }
+                          _loadProducts();
+                        }
+                      } catch (e) {
+                        _hideLoadingDialog();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Gagal arsipkan: $e'),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 6),
+                            ),
+                          );
                         }
                       }
                     },
@@ -489,7 +564,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                     priceFormatted: _formatPrice(product.selling_price),
                     statusText: 'Habis',
                     statusColor: Colors.red,
-                    soldCount: 0,
+                    soldCount: product.sold_count,
                     rating: product.rating,
                     primaryActionText: 'Stok Ulang',
                     onPrimaryAction: () async {
@@ -577,7 +652,7 @@ class _ProductSellerScreenState extends State<ProductSellerScreen>
                     priceFormatted: _formatPrice(product.selling_price),
                     statusText: 'Arsip',
                     statusColor: Colors.orange,
-                    soldCount: 0,
+                    soldCount: product.sold_count,
                     rating: product.rating,
                     secondaryActionText: 'Hapus',
                     secondaryActionColor: Colors.red,

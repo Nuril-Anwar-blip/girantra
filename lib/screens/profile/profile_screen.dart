@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:girantra/screens/buyer/cart_screen.dart';
 import 'package:girantra/screens/buyer/like_screen.dart';
-import 'package:girantra/screens/auth/register_screen.dart';
+// import 'package:girantra/screens/auth/register_screen.dart';
 import 'package:girantra/screens/seller/delivery_seller_screen.dart';
 import 'package:girantra/screens/seller/product_seller_screen.dart';
 import 'package:girantra/screens/seller/register_seller_screen.dart';
@@ -74,10 +74,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       _buildProfileCard(context),
                       const SizedBox(height: 16),
-                      if (_role == 'buyer') ...[
-                        _buildHistoryCard(context),
-                        const SizedBox(height: 16),
-                      ],
                       _buildActivityCard(context),
                       const SizedBox(height: 16),
                       if (_role == 'buyer') ...[
@@ -292,18 +288,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildHistoryCard(BuildContext context) {
-    return _buildCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionTitle('Riwayat'),
-          const SizedBox(height: 12),
-          _buildMenuItem(Icons.receipt_long_outlined, 'Riwayat Transaksi', () {}),
-        ],
-      ),
-    );
-  }
 
   Widget _buildActivityCard(BuildContext context) {
     return _buildCard(

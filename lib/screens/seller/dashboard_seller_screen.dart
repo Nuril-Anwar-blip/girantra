@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:girantra/screens/seller/add_product_screen.dart';
+import 'package:girantra/screens/seller/product_seller_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:intl/intl.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 import '../../widgets/header_section.dart';
@@ -12,6 +15,132 @@ class DashboardSellerScreen extends StatefulWidget {
 }
 
 class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
+  double _totalSaldo = 0;
+  int _pesananBaru = 0;
+  int _pesananProses = 0;
+  int _pesananDikirim = 0;
+  bool _isLoadingSaldo = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboardData();
+  }
+
+  Future<void> _loadDashboardData() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
+      if (user == null) {
+        setState(() => _isLoadingSaldo = false);
+        return;
+      }
+
+      final response = await supabase
+          .from('transactions')
+          .select('''
+            *,
+            logistics (
+              *
+            )
+          ''')
+          .eq('seller_id', user.id)
+          .eq('payment_status', 'paid');
+      
+      double total = 0;
+      int baru = 0;
+      int proses = 0;
+      int dikirim = 0;
+
+      for (var item in response) {
+        final subTotal = item['sub_total'];
+        if (subTotal != null) {
+          total += (subTotal is num ? subTotal.toDouble() : double.tryParse(subTotal.toString()) ?? 0);
+        }
+
+        final logisticsData = item['logistics'];
+        String? currentStatus;
+        String? arrivalDateStr;
+        
+        if (logisticsData != null) {
+          if (logisticsData is List && logisticsData.isNotEmpty) {
+            currentStatus = logisticsData.last['current_status']?.toString();
+            arrivalDateStr = logisticsData.last['arrival_date']?.toString();
+          } else if (logisticsData is Map) {
+            currentStatus = logisticsData['current_status']?.toString();
+            arrivalDateStr = logisticsData['arrival_date']?.toString();
+          }
+        }
+
+        if (currentStatus == 'delivery' && arrivalDateStr != null) {
+          final arrivalDate = DateTime.tryParse(arrivalDateStr);
+          // Cek apakah tanggal saat ini sudah melewati hari kedatangan + 1 hari
+          if (arrivalDate != null && DateTime.now().isAfter(arrivalDate.add(const Duration(days: 1)))) {
+            currentStatus = 'received';
+            final txId = item['transaction_code'] ?? item['transaction_id'] ?? item['id'];
+            if (txId != null) {
+              // Update ke database di background agar sinkron
+              supabase.from('logistics').update({'current_status': 'received'}).eq('transaction_id', txId).catchError((_) => null);
+            }
+          }
+        }
+
+        if (currentStatus == null || currentStatus == 'pending') {
+          baru++;
+        } else if (currentStatus == 'processing' || currentStatus == 'packed') {
+          proses++;
+        } else if (currentStatus == 'delivery' || currentStatus == 'on_delivery' || currentStatus == 'delivered' || currentStatus == 'received') {
+          dikirim++;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _totalSaldo = total;
+          _pesananBaru = baru;
+          _pesananProses = proses;
+          _pesananDikirim = dikirim;
+          _isLoadingSaldo = false;
+        });
+      }
+
+      // Check and update wallets table
+      try {
+        final walletResponse = await supabase
+            .from('wallets')
+            .select('wallet_id')
+            .eq('seller_id', user.id)
+            .maybeSingle();
+
+        if (walletResponse != null) {
+          await supabase.from('wallets').update({
+            'balance': total,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          }).eq('seller_id', user.id);
+        } else {
+          await supabase.from('wallets').insert({
+            'seller_id': user.id,
+            'balance': total,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          });
+        }
+      } catch (e) {
+        print('Error updating wallets table: $e');
+        // Kita tidak melemparkan error ini ke UI agar saldo tetap tampil di Dashboard
+      }
+    } catch (e) {
+      print('Error loading dashboard data: $e');
+      if (mounted) {
+        setState(() => _isLoadingSaldo = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error muat data dashboard: $e')));
+      }
+    }
+  }
+
+  String _formatCurrency(double amount) {
+    return NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(amount);
+  }
+
   // Use Scaffold so it plays nicely, although the parent has Scaffold as well.
   // We can just use a Container for the body, but Scaffold gives us safe area and app bar.
   @override
@@ -77,7 +206,7 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Rp 34.500.000',
+                _isLoadingSaldo ? '-' : _formatCurrency(_totalSaldo),
                 style: AppTextStyles.h1.copyWith(color: AppColors.primary),
               ),
               const SizedBox(
@@ -157,11 +286,11 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _buildStatusCounter('10', 'Pesanan Baru')),
+              Expanded(child: _buildStatusCounter(_isLoadingSaldo ? '-' : '$_pesananBaru', 'Pesanan Baru')),
               Container(width: 1, height: 40, color: AppColors.divider),
-              Expanded(child: _buildStatusCounter('6', 'Dikirim')),
+              Expanded(child: _buildStatusCounter(_isLoadingSaldo ? '-' : '$_pesananProses', 'Diproses')),
               Container(width: 1, height: 40, color: AppColors.divider),
-              Expanded(child: _buildStatusCounter('43', 'Diterima')),
+              Expanded(child: _buildStatusCounter(_isLoadingSaldo ? '-' : '$_pesananDikirim', 'Dikirim')),
             ],
           ),
           const SizedBox(height: 24),
@@ -334,13 +463,25 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
               _buildActionButton(
                 icon: Icons.add_circle_outline,
                 label: 'Tambah Produk',
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const AddProductScreen(),
+                  ),
+                );
+                },
               ),
               const SizedBox(height: 12),
               _buildActionButton(
                 icon: Icons.inventory_2_outlined,
                 label: 'Produk Saya',
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ProductSellerScreen(),
+                  ),
+                );
+                },
               ),
             ],
           ),

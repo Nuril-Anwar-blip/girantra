@@ -5,6 +5,7 @@ import 'package:girantra/ui/app_colors.dart';
 import 'package:girantra/ui/app_text_styles.dart';
 import 'package:girantra/widgets/header_section.dart';
 import 'package:girantra/widgets/product_card.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'cart_screen.dart';
 import '../overlay/filter_screen.dart';
@@ -23,20 +24,50 @@ class _HomeScreenState extends State<HomeScreen> {
   final _productService = ProductService();
   final _searchController = TextEditingController();
 
-  List<ProductModel> _allProducts = [];
-  List<ProductModel> _displayProducts = [];
-  bool _isLoading = true;
-
-  // Filter state
-  int? _filterCategoryId;
-  String? _filterPriceSort;
-  int? _filterRating;
+  late Future<List<ProductModel>> _futureProducts;
   String _searchQuery = '';
+  FilterResult? _activeFilter;
+
+  // Kategori dari database
+  List<Map<String, dynamic>> _categories = [];
+  int? _selectedCategoryId;
+
+  // Mapping category_name → icon
+  IconData _iconForCategory(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('benih') || lower.contains('bibit')) return Icons.spa_outlined;
+    if (lower.contains('pupuk')) return Icons.eco_outlined;
+    if (lower.contains('buah')) return Icons.apple_outlined;
+    if (lower.contains('sayur')) return Icons.grass_outlined;
+    if (lower.contains('padi') || lower.contains('beras')) return Icons.agriculture_outlined;
+    if (lower.contains('pestisida') || lower.contains('obat')) return Icons.science_outlined;
+    return Icons.category_outlined;
+  }
 
   @override
   void initState() {
     super.initState();
-    _loadProducts();
+    _futureProducts = _productService.getProducts();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
+    });
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final response = await Supabase.instance.client
+          .from('categories')
+          .select('category_id, category_name')
+          .order('category_id');
+      if (mounted) {
+        setState(() {
+          _categories = List<Map<String, dynamic>>.from(response);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching categories: $e');
+    }
   }
 
   @override
@@ -46,59 +77,54 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadProducts() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _futureProducts = _productService.getProducts();
+    });
     try {
-      final products = await _productService.getProducts();
-      setState(() {
-        _allProducts = products;
-        _applyFilters();
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
+      await _futureProducts;
+    } catch (_) {}
+  }
+
+  /// Buka dialog filter dan terapkan hasil
+  Future<void> _openFilter() async {
+    final result = await showDialog<FilterResult>(
+      context: context,
+      builder: (context) => FilterDialog(initialFilter: _activeFilter),
+    );
+    if (result != null) {
+      setState(() => _activeFilter = result.hasFilter ? result : null);
     }
   }
 
-  void _applyFilters() {
-    List<ProductModel> result = List.from(_allProducts);
+  /// Terapkan filter + sort ke list produk
+  List<ProductModel> _applyFilter(List<ProductModel> all) {
+    var list = List<ProductModel>.from(all);
 
-    // Search
+    // Filter pencarian nama
     if (_searchQuery.isNotEmpty) {
-      final q = _searchQuery.toLowerCase();
-      result = result.where((p) =>
-        p.product_name.toLowerCase().contains(q) ||
-        p.description.toLowerCase().contains(q)
-      ).toList();
+      list = list.where((p) => p.product_name.toLowerCase().contains(_searchQuery)).toList();
     }
 
-    // Category filter
-    if (_filterCategoryId != null) {
-      result = result.where((p) => p.category_id == _filterCategoryId).toList();
+    // Filter kategori shortcut (prioritas lebih tinggi dari filter dialog)
+    if (_selectedCategoryId != null) {
+      list = list.where((p) => p.category_id == _selectedCategoryId).toList();
+    } else if (_activeFilter?.categoryId != null) {
+      list = list.where((p) => p.category_id == _activeFilter!.categoryId).toList();
     }
 
-    // Rating filter
-    if (_filterRating != null) {
-      result = result.where((p) => p.rating >= _filterRating!).toList();
+    // Filter rating minimum
+    if (_activeFilter?.minRating != null) {
+      list = list.where((p) => p.rating >= _activeFilter!.minRating!).toList();
     }
 
-    // Price sort
-    if (_filterPriceSort == 'Termurah') {
-      result.sort((a, b) => a.selling_price.compareTo(b.selling_price));
-    } else if (_filterPriceSort == 'Termahal') {
-      result.sort((a, b) => b.selling_price.compareTo(a.selling_price));
+    // Sort harga
+    if (_activeFilter?.priceSort == 'Termurah') {
+      list.sort((a, b) => a.selling_price.compareTo(b.selling_price));
+    } else if (_activeFilter?.priceSort == 'Termahal') {
+      list.sort((a, b) => b.selling_price.compareTo(a.selling_price));
     }
 
-    _displayProducts = result;
-  }
-
-  String _getCategoryTag(int categoryId) {
-    switch (categoryId) {
-      case 1: return 'Pupuk';
-      case 2: return 'Benih';
-      case 3: return 'Buah';
-      case 4: return 'Sayuran';
-      default: return 'Produk';
-    }
+    return list;
   }
 
   @override
@@ -148,8 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 12),
-
-            // Search bar + Filter button
+            // Search bar + Filter
             Row(
               children: [
                 Expanded(
@@ -168,31 +193,20 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: TextField(
                             controller: _searchController,
+                            style: const TextStyle(fontFamily: 'Montserrat', fontSize: 13, color: AppColors.text),
                             decoration: const InputDecoration(
                               hintText: 'Cari pupuk atau hasil tani...',
-                              hintStyle: TextStyle(fontSize: 12, color: AppColors.mutedText),
+                              hintStyle: TextStyle(fontFamily: 'Montserrat', fontSize: 12, color: AppColors.mutedText),
                               border: InputBorder.none,
                               isDense: true,
                               contentPadding: EdgeInsets.zero,
                             ),
-                            style: const TextStyle(fontSize: 13, color: AppColors.text),
-                            onChanged: (value) {
-                              setState(() {
-                                _searchQuery = value;
-                                _applyFilters();
-                              });
-                            },
+                            textInputAction: TextInputAction.search,
                           ),
                         ),
                         if (_searchQuery.isNotEmpty)
                           GestureDetector(
-                            onTap: () {
-                              _searchController.clear();
-                              setState(() {
-                                _searchQuery = '';
-                                _applyFilters();
-                              });
-                            },
+                            onTap: () => _searchController.clear(),
                             child: const Icon(Icons.close, size: 16, color: AppColors.mutedText),
                           ),
                       ],
@@ -202,173 +216,154 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(width: 10),
                 InkWell(
                   borderRadius: BorderRadius.circular(12),
-                  onTap: () async {
-                    final result = await showDialog<Map<String, dynamic>>(
-                      context: context,
-                      builder: (context) => FilterDialog(
-                        initialCategoryId: _filterCategoryId,
-                        initialPriceSort: _filterPriceSort,
-                        initialRating: _filterRating,
+                  onTap: _openFilter,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: _activeFilter != null ? AppColors.primary : AppColors.primaryDark,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.divider),
+                        ),
+                        child: const Icon(Icons.tune, color: Colors.white),
                       ),
-                    );
-                    if (result != null) {
-                      setState(() {
-                        _filterCategoryId = result['categoryId'];
-                        _filterPriceSort = result['priceSort'];
-                        _filterRating = result['rating'];
-                        _applyFilters();
-                      });
-                    }
-                  },
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: (_filterCategoryId != null || _filterPriceSort != null || _filterRating != null)
-                          ? AppColors.primary
-                          : AppColors.primaryDark,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.divider),
-                    ),
-                    child: const Icon(Icons.tune, color: Colors.white),
+                      if (_activeFilter != null)
+                        Positioned(
+                          top: -4, right: -4,
+                          child: Container(width: 12, height: 12, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
+                        ),
+                    ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-
-            // Category shortcuts (functional)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _CategoryShortcut(
-                  label: 'Benih', icon: Icons.spa_outlined,
-                  isActive: _filterCategoryId == 2,
-                  onTap: () {
-                    setState(() {
-                      _filterCategoryId = _filterCategoryId == 2 ? null : 2;
-                      _applyFilters();
-                    });
-                  },
-                ),
-                _CategoryShortcut(
-                  label: 'Pupuk', icon: Icons.eco_outlined,
-                  isActive: _filterCategoryId == 1,
-                  onTap: () {
-                    setState(() {
-                      _filterCategoryId = _filterCategoryId == 1 ? null : 1;
-                      _applyFilters();
-                    });
-                  },
-                ),
-                _CategoryShortcut(
-                  label: 'Buah', icon: Icons.apple_outlined,
-                  isActive: _filterCategoryId == 3,
-                  onTap: () {
-                    setState(() {
-                      _filterCategoryId = _filterCategoryId == 3 ? null : 3;
-                      _applyFilters();
-                    });
-                  },
-                ),
-                _CategoryShortcut(
-                  label: 'Sayuran', icon: Icons.grass_outlined,
-                  isActive: _filterCategoryId == 4,
-                  onTap: () {
-                    setState(() {
-                      _filterCategoryId = _filterCategoryId == 4 ? null : 4;
-                      _applyFilters();
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 25),
-
-            // Section header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _filterCategoryId != null
-                    ? 'Hasil Filter (${_displayProducts.length})'
-                    : _searchQuery.isNotEmpty
-                      ? 'Hasil Pencarian (${_displayProducts.length})'
-                      : 'Lihat Produk Favorit',
-                  style: AppTextStyles.h2,
-                ),
-                if (_filterCategoryId == null && _searchQuery.isEmpty)
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const LikeScreen()),
-                      );
-                    },
-                    child: Text(
-                      'Lihat Selengkapnya >',
-                      style: AppTextStyles.link.copyWith(
-                        color: AppColors.accent,
-                        fontWeight: FontWeight.w400,
-                        decoration: TextDecoration.underline,
-                        decorationColor: AppColors.accent,
-                      ),
+            // Category Shortcuts (dinamis dari database)
+            _categories.isEmpty
+                ? const SizedBox.shrink()
+                : SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _CategoryShortcut(
+                            label: 'Semua', icon: Icons.apps_outlined,
+                            isSelected: _selectedCategoryId == null,
+                            onTap: () => setState(() => _selectedCategoryId = null),
+                          ),
+                        ),
+                        ..._categories.map((cat) {
+                          final int id = cat['category_id'] as int? ?? 0;
+                          final String name = cat['category_name']?.toString() ?? 'Lainnya';
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _CategoryShortcut(
+                              label: name, icon: _iconForCategory(name),
+                              isSelected: _selectedCategoryId == id,
+                              onTap: () => setState(() {
+                                _selectedCategoryId = _selectedCategoryId == id ? null : id;
+                              }),
+                            ),
+                          );
+                        }),
+                      ],
                     ),
                   ),
+            const SizedBox(height: 25),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Lihat Produk Favorit', style: AppTextStyles.h2),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (context) => const LikeScreen()),
+                    );
+                  },
+                  child: Text(
+                    'Lihat Selengkapnya >',
+                    style: AppTextStyles.link.copyWith(
+                      color: AppColors.accent, fontWeight: FontWeight.w400,
+                      decoration: TextDecoration.underline, decorationColor: AppColors.accent,
+                    ),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 10),
-
-            // Product grid
-            if (_isLoading)
-              const Padding(
-                padding: EdgeInsets.only(top: 32),
-                child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-              )
-            else if (_displayProducts.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 48),
-                child: Column(
-                  children: [
-                    Icon(Icons.search_off, size: 64, color: Colors.grey[300]),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Produk tidak ditemukan',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 14),
-                    ),
-                  ],
-                ),
-              )
-            else
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 12,
-                  crossAxisSpacing: 12,
-                  childAspectRatio: 0.55,
-                ),
-                itemCount: _displayProducts.length,
-                itemBuilder: (context, index) {
-                  final product = _displayProducts[index];
-                  return ProductCard(
-                    imageUrl: product.image_url,
-                    tag: _getCategoryTag(product.category_id),
-                    title: product.product_name,
-                    location: 'Surakarta',
-                    rating: product.rating > 0 ? '${product.rating}' : 'Baru',
-                    price: 'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
-                    unit: ' / ${product.unit.length > 1 ? product.unit.substring(0, 1).toUpperCase() + product.unit.substring(1).toLowerCase() : product.unit}',
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => ProductDetailScreen(product: product),
-                        ),
-                      );
-                    },
+            FutureBuilder<List<ProductModel>>(
+              future: _futureProducts,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.only(top: 32),
+                    child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
                   );
-                },
-              ),
+                }
+                var products = _applyFilter(snapshot.data ?? []);
+
+                if (products.isEmpty) {
+                  final selectedCatName = _selectedCategoryId != null
+                      ? (_categories.firstWhere(
+                          (c) => c['category_id'] == _selectedCategoryId,
+                          orElse: () => {'category_name': 'Kategori ini'},
+                        )['category_name']?.toString() ?? 'Kategori ini')
+                      : null;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 40),
+                    child: Column(
+                      children: [
+                        Icon(
+                          _selectedCategoryId != null ? Icons.inventory_2_outlined : Icons.search_off,
+                          size: 56, color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _selectedCategoryId != null
+                              ? 'Produk "$selectedCatName" belum tersedia'
+                              : 'Produk "${_searchController.text}" tidak ditemukan',
+                          style: TextStyle(fontFamily: 'Montserrat', fontSize: 13, color: Colors.grey.shade500),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.55,
+                  ),
+                  itemCount: products.length,
+                  itemBuilder: (context, index) {
+                    final product = products[index];
+                    return ProductCard(
+                      imageUrl: product.image_url,
+                      tag: product.category_name ?? (product.category_id == 1
+                          ? 'Pupuk' : (product.category_id == 2 ? 'Benih' : 'Produk')),
+                      title: product.product_name,
+                      location: product.seller_address != null && product.seller_address!.isNotEmpty
+                          ? product.seller_address! : 'Surakarta',
+                      rating: product.rating > 0 ? '${product.rating}' : 'Baru',
+                      price: 'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
+                      unit: ' / ${product.unit.length > 1 ? product.unit.substring(0, 1).toUpperCase() + product.unit.substring(1).toLowerCase() : product.unit}',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (context) => ProductDetailScreen(product: product)),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -380,13 +375,13 @@ class _CategoryShortcut extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
-  final bool isActive;
+  final bool isSelected;
 
   const _CategoryShortcut({
     required this.label,
     required this.icon,
     required this.onTap,
-    this.isActive = false,
+    this.isSelected = false,
   });
 
   @override
@@ -394,26 +389,30 @@ class _CategoryShortcut extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: onTap,
-      child: Container(
-        width: 74,
-        padding: const EdgeInsets.symmetric(vertical: 10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primary.withOpacity(0.15) : Colors.white,
+          color: isSelected ? AppColors.primary : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isActive ? AppColors.primary : AppColors.divider,
-            width: isActive ? 2 : 1,
+            color: isSelected ? AppColors.primary : AppColors.divider,
+            width: isSelected ? 1.5 : 1,
           ),
+          boxShadow: isSelected
+              ? [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 3))]
+              : [],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: AppColors.primaryDark, size: 22),
+            Icon(icon, color: isSelected ? Colors.white : AppColors.primaryDark, size: 22),
             const SizedBox(height: 6),
             Text(
               label,
               style: AppTextStyles.subtitle.copyWith(
-                color: AppColors.primaryDark,
-                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? Colors.white : AppColors.primaryDark,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],

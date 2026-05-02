@@ -44,10 +44,10 @@ class _PurchaseScreenState extends State<PurchaseScreen>
 
   // ── Mapping status DB ke tab ──────────────────────────────────────────────
   // Sesuaikan nilai ini dengan enum/status yang ada di database Anda
-  static const _statusBelumBayar = ['pending', 'paid', 'rejected'];
-  static const _statusDikemas    = ['processing', 'packed'];
-  static const _statusDikirim    = ['shipped', 'on_delivery'];
-  static const _statusDiterima   = ['delivered', 'completed'];
+  // static const _statusBelumBayar = ['pending', 'paid', 'rejected'];
+  // static const _statusDikemas    = ['processing', 'packed'];
+  // static const _statusDikirim    = ['shipped', 'on_delivery'];
+  // static const _statusDiterima   = ['delivered', 'completed'];
 
   Future<void> _loadOrders() async {
     setState(() { _isLoading = true; _errorMessage = null; });
@@ -61,38 +61,68 @@ class _PurchaseScreenState extends State<PurchaseScreen>
           .select('''
             *,
             products (
-              product_name,
-              image_url,
-              selling_price
+              *
+            ),
+            logistics (
+              *
             )
           ''')
           .eq('buyer_id', buyerId)
           .order('transaction_date', ascending: false);
 
-      print('📦 Total transactions: ${response.length}');
-      for (final o in response) {
-        final st = o['payment_status'] ?? o['status'] ?? o['transaction_status'];
-        print('  Trx: ${o["transaction_code"] ?? o["transaction_id"]} | status: $st | product: ${o["products"]?["product_name"]}');
-      }
-
       if (!mounted) return;
       setState(() {
-        _belumBayar = response.where((o) {
-          final st = (o['payment_status'] ?? o['status'] ?? o['transaction_status'])?.toString();
-          return _statusBelumBayar.contains(st);
-        }).toList();
-        _dikemas = response.where((o) {
-          final st = (o['payment_status'] ?? o['status'] ?? o['transaction_status'])?.toString();
-          return _statusDikemas.contains(st);
-        }).toList();
-        _dikirim = response.where((o) {
-          final st = (o['payment_status'] ?? o['status'] ?? o['transaction_status'])?.toString();
-          return _statusDikirim.contains(st);
-        }).toList();
-        _diterima = response.where((o) {
-          final st = (o['payment_status'] ?? o['status'] ?? o['transaction_status'])?.toString();
-          return _statusDiterima.contains(st);
-        }).toList();
+        _belumBayar = [];
+        _dikemas = [];
+        _dikirim = [];
+        _diterima = [];
+
+        for (final o in response) {
+          final paymentStatus = (o['payment_status'] ?? o['status'] ?? o['transaction_status'])?.toString();
+          
+          final logisticsData = o['logistics'];
+          String? currentStatus;
+          String? arrivalDateStr;
+          if (logisticsData != null) {
+            if (logisticsData is List && logisticsData.isNotEmpty) {
+              currentStatus = logisticsData.last['current_status']?.toString();
+              arrivalDateStr = logisticsData.last['arrival_date']?.toString();
+            } else if (logisticsData is Map) {
+              currentStatus = logisticsData['current_status']?.toString();
+              arrivalDateStr = logisticsData['arrival_date']?.toString();
+            }
+          }
+
+          if (currentStatus == 'delivery' && arrivalDateStr != null) {
+            final arrivalDate = DateTime.tryParse(arrivalDateStr);
+            // Cek apakah tanggal saat ini sudah melewati hari kedatangan
+            if (arrivalDate != null && DateTime.now().isAfter(arrivalDate.add(const Duration(days: 1)))) {
+              currentStatus = 'received';
+              final txId = o['transaction_code'] ?? o['transaction_id'] ?? o['id'];
+              if (txId != null) {
+                // Update ke database di background
+                _supabase.from('logistics').update({'current_status': 'received'}).eq('transaction_id', txId).catchError((_) => null);
+              }
+            }
+          }
+
+          if (paymentStatus == 'pending' || paymentStatus == 'failed' || paymentStatus == 'rejected' || paymentStatus == null) {
+            _belumBayar.add(o);
+          } else if (paymentStatus == 'paid') {
+            if (currentStatus == null || currentStatus == 'pending') {
+              _belumBayar.add(o); // Menunggu seller klik Terima
+            } else if (currentStatus == 'processing' || currentStatus == 'packed') {
+              _dikemas.add(o);
+            } else if (currentStatus == 'delivery' || currentStatus == 'on_delivery') {
+              _dikirim.add(o);
+            } else if (currentStatus == 'delivered' || currentStatus == 'completed' || currentStatus == 'received') {
+              _diterima.add(o);
+            } else {
+              _belumBayar.add(o);
+            }
+          }
+        }
+
         _isLoading  = false;
       });
     } catch (e) {
@@ -210,7 +240,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
                     statusColor = Colors.orange;
                   }
                   return GestureDetector(
-                    onTap: () {
+                    onTap: status == 'paid' ? null : () {
                       final transactionId = order['transaction_code']?.toString() ?? order['transaction_id']?.toString() ?? order['id']?.toString() ?? '';
                       final amount = order['total_amount'] ?? order['total_price'] ?? 0;
                       Navigator.push(
@@ -251,7 +281,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
                 children: _dikemas.map((order) => _buildOrderCard(
                   order: order,
                   statusText: 'Diproses',
-                  statusColor: AppColors.primary,
+                  statusColor: AppColors.accent,
                   showButtons: false,
                   extraContent: _buildStatusRow(
                     label: 'Status',
@@ -275,29 +305,89 @@ class _PurchaseScreenState extends State<PurchaseScreen>
         child: _dikirim.isEmpty
             ? _buildEmptyState(Icons.local_shipping_outlined, 'Tidak ada pesanan yang sedang dikirim')
             : Column(
-                children: _dikirim.map((order) => _buildOrderCard(
-                  order: order,
-                  statusText: 'Dikirim',
-                  statusColor: AppColors.primary,
-                  showButtons: false,
-                  extraContent: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildStatusRow(
-                        label: 'Kurir',
-                        value: order['courier_name']?.toString() ?? 'Pengiriman Mandiri (Anda)',
-                        valueColor: AppColors.text,
-                        valueBold: true,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildStatusRow(
-                        label: 'Status',
-                        value: 'Sedang Menuju Ke Lokasi',
-                        valueColor: AppColors.primary,
-                      ),
-                    ],
-                  ),
-                )).toList(),
+                children: _dikirim.map((order) {
+                  final logistics = order['logistics'];
+                  Map<String, dynamic>? logData;
+                  if (logistics is List && logistics.isNotEmpty) {
+                    logData = logistics.last;
+                  } else if (logistics is Map) {
+                    logData = logistics as Map<String, dynamic>;
+                  }
+                  
+                  final courier = logData?['courier_name']?.toString() ?? 'Pengiriman Mandiri';
+                  final trackingNumber = logData?['tracking_number']?.toString() ?? '-';
+                  final arrivalDateStr = logData?['arrival_date']?.toString();
+                  String estimasi = '-';
+                  if (arrivalDateStr != null) {
+                    final date = DateTime.tryParse(arrivalDateStr);
+                    if (date != null) {
+                      estimasi = DateFormat('dd MMMM yyyy').format(date);
+                    }
+                  }
+
+                  return _buildOrderCard(
+                    order: order,
+                    statusText: 'Dikirim', 
+                    statusColor: AppColors.primaryDark,
+                    showButtons: false,
+                    extraContent: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Kurir', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  const SizedBox(height: 2),
+                                  Text(courier, style: AppTextStyles.subtitle.copyWith(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.text)),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('No Resi', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  const SizedBox(height: 2),
+                                  Text(trackingNumber, style: AppTextStyles.subtitle.copyWith(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.text)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Status', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  const SizedBox(height: 2),
+                                  Text('Sedang dalam Pengiriman', style: AppTextStyles.subtitle.copyWith(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Estimasi Sampai', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+                                  const SizedBox(height: 2),
+                                  Text(estimasi, style: AppTextStyles.subtitle.copyWith(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.text)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
               ),
       ),
     );
@@ -324,7 +414,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
                     children: [
                       _buildStatusRow(
                         label: 'Kurir',
-                        value: order['courier_name']?.toString() ?? 'Pengiriman Mandiri (Anda)',
+                        value: order['courier_name']?.toString() ?? 'Pengiriman Mandiri',
                         valueColor: AppColors.text,
                         valueBold: true,
                       ),
@@ -353,7 +443,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
     final product      = order['products'] as Map<String, dynamic>?;
     final productName  = product?['product_name']?.toString() ?? 'Produk';
     final imageUrl     = product?['image_url']?.toString() ?? '';
-    final price        = _formatPrice(product?['selling_price'] ?? order['total_price'] ?? 0);
+    final price        = _formatPrice(order['total_amount'] ?? order['total_price'] ?? 0);
     final quantity     = order['quantity'] ?? order['qty'] ?? 0;
     final shippingAddress      = order['shipping_address']?.toString() ??
                         order['address']?.toString() ?? '-';

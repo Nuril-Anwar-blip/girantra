@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../ui/app_constants.dart';
 
 class CartService {
   final _supabase = Supabase.instance.client;
@@ -52,5 +53,53 @@ class CartService {
 
   Future<void> removeFromCart(dynamic cartId) async {
     await _supabase.from('carts').delete().eq('card_id', cartId);
+  }
+
+  Future<void> checkoutCart(List<Map<String, dynamic>> cartItems) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) throw Exception('User not logged in');
+
+    if (cartItems.isEmpty) return;
+
+    // Ambil alamat pembeli
+    final userResponse = await _supabase
+        .from('users')
+        .select('address')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+    final String address = userResponse?['address']?.toString() ?? '-';
+
+    for (var item in cartItems) {
+      final product = item['products'];
+      if (product == null) continue;
+
+      final int qty = item['quantity'] ?? 1;
+      final double priceAtPurchase = (product['selling_price'] as num?)?.toDouble() ?? 0;
+      final double subTotal = priceAtPurchase * qty;
+      final double shippingCost = AppConstants.totalFee; // Dari AppConstants (shippingFee + serviceFee)
+      final double totalAmount = subTotal + shippingCost;
+      
+      final String transactionCode = 'TRX-${DateTime.now().millisecondsSinceEpoch}';
+
+      // 1. Insert ke transactions
+      await _supabase.from('transactions').insert({
+        'transaction_code': transactionCode,
+        'buyer_id': user.id,
+        'seller_id': product['seller_id'],
+        'product_id': product['product_id'],
+        'quantity': qty,
+        'price_at_purchase': priceAtPurchase,
+        'sub_total': subTotal,
+        'shipping_cost': shippingCost,
+        'total_amount': totalAmount,
+        'shipping_address': address,
+        'payment_status': 'pending',
+      });
+
+      // 2. Hapus dari keranjang
+      final cartIdField = item.containsKey('card_id') ? 'card_id' : 'cart_id';
+      await removeFromCart(item[cartIdField]);
+    }
   }
 }

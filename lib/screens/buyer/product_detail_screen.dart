@@ -6,17 +6,57 @@ import 'package:girantra/screens/seller/seller_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/product_model.dart';
+import '../../services/favorite_service.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
-// import '../ui/app_widgets.dart';
 
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends StatefulWidget {
   final ProductModel product;
 
   const ProductDetailScreen({super.key, required this.product});
 
   @override
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  final _favoriteService = FavoriteService();
+  bool _isFavorited = false;
+  bool _isFavLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFavoriteStatus();
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    final productId = widget.product.product_id;
+    if (productId == null) return;
+    final ids = await _favoriteService.getFavoriteProductIds();
+    if (mounted) setState(() => _isFavorited = ids.contains(productId));
+  }
+
+  Future<void> _toggleFavorite() async {
+    final productId = widget.product.product_id;
+    if (productId == null) return;
+    setState(() => _isFavLoading = true);
+    try {
+      final isNowFav = await _favoriteService.toggleFavorite(productId, _isFavorited);
+      if (mounted) {
+        setState(() {
+          _isFavorited = isNowFav;
+          _isFavLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isFavLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final product = widget.product;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -40,10 +80,22 @@ class ProductDetailScreen extends StatelessWidget {
             icon: const Icon(Icons.ios_share, color: AppColors.primary),
             onPressed: () {},
           ),
-          IconButton(
-            icon: const Icon(Icons.favorite, color: Colors.grey),
-            onPressed: () {},
-          ),
+          _isFavLoading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
+                  ),
+                )
+              : IconButton(
+                  icon: Icon(
+                    _isFavorited ? Icons.favorite : Icons.favorite_border,
+                    color: _isFavorited ? Colors.red : Colors.grey,
+                  ),
+                  onPressed: _toggleFavorite,
+                ),
           const SizedBox(width: 6),
         ],
       ),
@@ -114,9 +166,11 @@ class ProductDetailScreen extends StatelessWidget {
                                 vertical: 4,
                               ),
                               color: AppColors.primary,
-                              child: const Text(
-                                'Pupuk',
-                                style: TextStyle(
+                              child: Text(
+                                product.category_name ?? (product.category_id == 1
+                                    ? 'Pupuk'
+                                    : (product.category_id == 2 ? 'Benih' : 'Produk')),
+                                style: const TextStyle(
                                   fontFamily: 'Montserrat',
                                   color: Colors.white,
                                   fontSize: 14,
@@ -146,6 +200,31 @@ class ProductDetailScreen extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                         color: AppColors.text,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on,
+                          size: 16,
+                          color: AppColors.mutedText,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            product.seller_address != null && product.seller_address!.isNotEmpty
+                                ? product.seller_address!
+                                : 'Surakarta',
+                            style: const TextStyle(
+                              fontFamily: 'Montserrat',
+                              fontSize: 14,
+                              color: AppColors.mutedText,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -185,6 +264,61 @@ class ProductDetailScreen extends StatelessWidget {
                         color: AppColors.text,
                         fontWeight: FontWeight.w600,
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'SATUAN',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 12,
+                                  color: AppColors.mutedText,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              Text(
+                                product.unit.isNotEmpty ? product.unit : '-',
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 16,
+                                  color: AppColors.text,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'TANGGAL PANEN',
+                                style: TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 12,
+                                  color: AppColors.mutedText,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              Text(
+                                '${product.harvest_date.day} ${['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'][product.harvest_date.month - 1]} ${product.harvest_date.year}',
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  fontSize: 16,
+                                  color: AppColors.text,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
                     Container(
