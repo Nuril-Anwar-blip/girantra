@@ -65,18 +65,7 @@ class AuthScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 18),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _Dot(active: true),
-                      const SizedBox(width: 6),
-                      _Dot(active: false),
-                      const SizedBox(width: 6),
-                      _Dot(active: false),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 36),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: SizedBox(
@@ -142,22 +131,3 @@ class AuthScreen extends StatelessWidget {
     );
   }
 }
-
-class _Dot extends StatelessWidget {
-  final bool active;
-
-  const _Dot({required this.active});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 6,
-      height: 6,
-      decoration: BoxDecoration(
-        color: active ? Colors.white : Colors.white54,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-}
-

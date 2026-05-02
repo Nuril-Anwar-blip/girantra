@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:girantra/screens/onboarding/auth_gate.dart';
 
 import '../../services/auth_service.dart';
 import '../../ui/app_colors.dart';
@@ -31,8 +32,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    if (!mounted) return;
-
     try {
       final user = await _authService.signUp(
         email: _emailController.text.trim(),
@@ -47,53 +46,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (user != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Registrasi berhasil! Silakan cek kotak masuk atau spam email Anda untuk melakukan aktivasi.',
-              style: TextStyle(fontFamily: 'Montserrat', color: AppColors.text ),
-            ),
-            backgroundColor: AppColors.background,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.only(
-              bottom: MediaQuery.of(context).size.height - 150,
-              left: 24,
-              right: 24,
-            ),
-          ),
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const AuthGate()),
+          (route) => false,
         );
-        Navigator.of(context).pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Registrasi berhasil! Silakan cek kotak masuk atau spam email Anda untuk melakukan aktivasi.',
-              style: TextStyle(fontFamily: 'Montserrat', color: AppColors.text),
-            ),
-            backgroundColor: AppColors.background,
-            behavior: SnackBarBehavior.floating,
-            margin: EdgeInsets.only(
-              bottom: MediaQuery.of(context).size.height - 150,
-              left: 24,
-              right: 24,
-            ),
+          const SnackBar(
+            content: Text('Registrasi berhasil! Silakan cek email untuk verifikasi.'),
+            duration: Duration(seconds: 3),
           ),
         );
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const AuthGate()),
+              (route) => false,
+            );
+          }
+        });
       }
     } catch (e) {
       if (!mounted) return;
       String errorMsg = e.toString();
-      if (errorMsg.startsWith('Exception: ')) {
-        errorMsg = errorMsg.substring(11); // Menghapus tulisan "Exception: " agar lebih rapi
-      }
-      
-      if (errorMsg.contains('Email sudah terdaftar')) {
-        setState(() => _emailErrorMessage = errorMsg);
-        _formKey.currentState!.validate(); // Trigger ulang validasi untuk menampilkan error di textbox
+      if (errorMsg.contains('already registered') ||
+          errorMsg.contains('Email sudah')) {
+        setState(() => _emailErrorMessage = 'Email sudah terdaftar');
+        _formKey.currentState!.validate();
+      } else if (errorMsg.contains('Password')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password minimal 6 karakter'), backgroundColor: Colors.red),
+        );
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Registrasi gagal: $errorMsg')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Registrasi gagal: $errorMsg'), backgroundColor: Colors.red),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -118,24 +105,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Stack(
           children: [
             Positioned(
-              left: 16,
-              top: 12,
-              child: Image.asset(
-                'assets/images/logo_girantra.png',
-                width: 44,
-                height: 44,
-              ),
+              left: 16, top: 12,
+              child: Image.asset('assets/images/logo_girantra.png', width: 44, height: 44),
             ),
             Positioned(
-              top: 70,
-              left: 0,
-              right: 0,
+              top: 70, left: 0, right: 0,
               child: Center(
-                child: Image.asset(
-                  'assets/images/loading_img_3.png',
-                  width: 260,
-                  fit: BoxFit.contain,
-                ),
+                child: Image.asset('assets/images/loading_img_3.png', width: 260, fit: BoxFit.contain),
               ),
             ),
             Align(
@@ -157,58 +133,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 children: const [
                                   Text('Hello!', style: AppTextStyles.h1),
                                   SizedBox(height: 4),
-                                  Text(
-                                    'welcome to Girantra',
-                                    style: AppTextStyles.subtitle,
-                                  ),
+                                  Text('Welcome to Girantra', style: AppTextStyles.subtitle),
                                 ],
                               ),
-                              Text(
-                                'Register',
-                                style: AppTextStyles.subtitle.copyWith(
-                                  color: AppColors.primaryDark,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                              Text('Register', style: AppTextStyles.subtitle.copyWith(
+                                color: AppColors.primaryDark, fontWeight: FontWeight.w500,
+                              )),
                             ],
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _fullNameController,
-                            decoration: authFieldDecoration(
-                              hint: 'Full Name',
-                              icon: Icons.person_outline,
-                            ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Wajib diisi' : null,
+                            decoration: authFieldDecoration(hint: 'Full Name', icon: Icons.person_outline),
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Nama lengkap wajib diisi';
+                              if (v.length < 3) return 'Nama minimal 3 karakter';
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 10),
                           TextFormField(
                             controller: _phoneController,
-                            decoration: authFieldDecoration(
-                              hint: 'Phone Number',
-                              icon: Icons.call_outlined,
-                            ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Wajib diisi' : null,
+                            decoration: authFieldDecoration(hint: 'Phone Number', icon: Icons.call_outlined),
+                            keyboardType: TextInputType.phone,
+                            validator: (v) => v == null || v.isEmpty ? 'Nomor telepon wajib diisi' : null,
                           ),
                           const SizedBox(height: 10),
                           TextFormField(
                             controller: _addressController,
-                            decoration: authFieldDecoration(
-                              hint: 'Address',
-                              icon: Icons.location_on_outlined,
-                            ),
-                            validator: (v) =>
-                                v == null || v.isEmpty ? 'Wajib diisi' : null,
+                            decoration: authFieldDecoration(hint: 'Address', icon: Icons.location_on_outlined),
+                            maxLines: 2,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return 'Alamat wajib diisi';
+                              if (v.length < 10) return 'Alamat terlalu pendek';
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 10),
                           TextFormField(
                             controller: _emailController,
-                            decoration: authFieldDecoration(
-                              hint: 'Email',
-                              icon: Icons.email_outlined,
-                            ),
+                            decoration: authFieldDecoration(hint: 'Email', icon: Icons.email_outlined),
                             keyboardType: TextInputType.emailAddress,
                             onChanged: (v) {
                               if (_emailErrorMessage != null) {
@@ -217,8 +181,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               }
                             },
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'Wajib diisi';
-                              if (!v.contains('@')) return 'Format email tidak valid';
+                              if (v == null || v.isEmpty) return 'Email wajib diisi';
+                              if (!RegExp(r'^[^@]+@[^@]+\.[^@]+$').hasMatch(v)) return 'Format email tidak valid';
                               if (_emailErrorMessage != null) return _emailErrorMessage;
                               return null;
                             },
@@ -226,15 +190,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           const SizedBox(height: 10),
                           TextFormField(
                             controller: _passwordController,
-                            decoration: authFieldDecoration(
-                              hint: 'Password',
-                              icon: Icons.lock_outline,
-                            ),
+                            decoration: authFieldDecoration(hint: 'Password', icon: Icons.lock_outline),
                             obscureText: true,
-                            autovalidateMode: AutovalidateMode.onUserInteraction,
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'Wajib diisi';
-                              if (v.length < 6) return 'Minimal 6 karakter';
+                              if (v == null || v.isEmpty) return 'Password wajib diisi';
+                              if (v.length < 6) return 'Password minimal 6 karakter';
                               return null;
                             },
                           ),
@@ -242,27 +202,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           PrimaryPillButton(
                             text: 'Register',
                             isLoading: _isLoading,
-                            onPressed: _onRegister,
+                            onPressed: _isLoading ? null : _onRegister,
                           ),
                           const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                'Already have an account? ',
-                                style: AppTextStyles.subtitle.copyWith(
-                                  color: AppColors.mutedText,
-                                ),
-                              ),
+                              Text('Already have an account? ',
+                                style: AppTextStyles.subtitle.copyWith(color: AppColors.mutedText)),
                               GestureDetector(
                                 onTap: () => Navigator.of(context).pop(),
-                                child: Text(
-                                  'Login',
-                                  style: AppTextStyles.link.copyWith(
-                                  color: AppColors.primaryDark,
-                                  fontWeight: FontWeight.w500,
-                                  )
-                                ),
+                                child: Text('Login', style: AppTextStyles.link.copyWith(
+                                  color: AppColors.primaryDark, fontWeight: FontWeight.w500,
+                                )),
                               ),
                             ],
                           ),

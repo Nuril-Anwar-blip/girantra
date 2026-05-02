@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:girantra/screens/onboarding/onboarding_screen.dart';
 import 'package:girantra/screens/onboarding/auth_gate.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -11,13 +10,38 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+  late Animation<double> _scaleAnim;
+
   @override
   void initState() {
     super.initState();
+
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _fadeAnim = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeIn),
+    );
+    _scaleAnim = Tween<double>(begin: 0.7, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutBack),
+    );
+
+    _animController.forward();
+
     Future.delayed(const Duration(seconds: 3), () async {
       await _checkSessionAndNavigate();
     });
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkSessionAndNavigate() async {
@@ -28,7 +52,6 @@ class _SplashScreenState extends State<SplashScreen> {
     if (lastActiveStr != null) {
       final lastActive = DateTime.parse(lastActiveStr);
       final difference = DateTime.now().difference(lastActive);
-      // Timeout 15 menit
       if (difference.inMinutes >= 15) {
         isTimeout = true;
       }
@@ -38,25 +61,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    if (session != null) {
-      if (isTimeout) {
-        // Token kedaluwarsa, hapus session dan paksa login ulang
-        await Supabase.instance.client.auth.signOut();
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-          );
-        }
-      } else {
-        // Token valid, langsung Bypass Onboarding
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const AuthGate()),
-        );
-      }
-    } else {
-      // Sama sekali belum login, langsung ke Onboarding
+    if (session != null && isTimeout) {
+      await Supabase.instance.client.auth.signOut();
+    }
+
+    // Selalu navigasi ke AuthGate — dia yang menentukan AuthScreen atau Home
+    if (mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+        MaterialPageRoute(builder: (context) => const AuthGate()),
       );
     }
   }
@@ -64,31 +76,41 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2E7D32), // Background hex #2E7D32
+      backgroundColor: const Color(0xFF2E7D32),
       body: Center(
-        child: Image.asset(
-          'assets/images/logo_girantra.png', // Make sure to place logo.png in this folder
-          width: 150,
-          height: 150,
-          errorBuilder: (context, error, stackTrace) {
-            // Fallback if logo.png is not yet added
-            return const Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: ScaleTransition(
+            scale: _scaleAnim,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.image_not_supported,
-                  size: 100,
-                  color: Colors.white,
+                Image.asset(
+                  'assets/images/logo_girantra.png',
+                  width: 120,
+                  height: 120,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.eco,
+                      size: 100,
+                      color: Colors.white,
+                    );
+                  },
                 ),
-                SizedBox(height: 16),
-                Text(
-                  'assets/images/logo_girantra.png\nbelum ditemukan',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white),
-                )
+                const SizedBox(height: 16),
+                const Text(
+                  'Girantra',
+                  style: TextStyle(
+                    fontFamily: 'Montserrat',
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
+                  ),
+                ),
               ],
-            );
-          },
+            ),
+          ),
         ),
       ),
     );

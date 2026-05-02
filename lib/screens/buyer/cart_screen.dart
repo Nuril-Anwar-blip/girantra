@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:girantra/ui/app_text_styles.dart';
 
+import '../../models/product_model.dart';
 import '../../ui/app_colors.dart';
-// import '../ui/app_widgets.dart';
 import '../../widgets/product_card.dart';
 import '../../services/cart_service.dart';
+import 'checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -28,9 +29,7 @@ class _CartScreenState extends State<CartScreen> {
     setState(() => _isLoading = true);
     try {
       final items = await _cartService.getCarts();
-      setState(() {
-        _cartItems = items;
-      });
+      setState(() => _cartItems = items);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -38,41 +37,29 @@ class _CartScreenState extends State<CartScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _updateQty(int index, int newQty) async {
     if (newQty < 1) return;
-    
     final item = _cartItems[index];
     final cartIdField = item.containsKey('card_id') ? 'card_id' : 'cart_id';
-    
-    setState(() {
-      _cartItems[index]['quantity'] = newQty;
-    });
-
+    final oldQty = item['quantity'] as int? ?? 1;
+    setState(() => _cartItems[index]['quantity'] = newQty);
     try {
       await _cartService.updateQuantity(item[cartIdField], newQty);
     } catch (e) {
-      // Revert on error
-      setState(() {
-        _cartItems[index]['quantity'] = item['quantity'];
-      });
+      setState(() => _cartItems[index]['quantity'] = oldQty);
     }
   }
 
   Future<void> _deleteItem(int index) async {
     final item = _cartItems[index];
     final cartIdField = item.containsKey('card_id') ? 'card_id' : 'cart_id';
-    
     try {
       await _cartService.removeFromCart(item[cartIdField]);
-      setState(() {
-        _cartItems.removeAt(index);
-      });
+      setState(() => _cartItems.removeAt(index));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -99,6 +86,17 @@ class _CartScreenState extends State<CartScreen> {
     return 'Rp ${amount.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}';
   }
 
+  void _onCheckout() {
+    if (_cartItems.isEmpty) return;
+    final firstItem = _cartItems.first;
+    final product = firstItem['products'];
+    if (product == null) return;
+    final productModel = ProductModel.fromJson(product);
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => CheckoutScreen(product: productModel)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -111,28 +109,13 @@ class _CartScreenState extends State<CartScreen> {
         leading: TextButton.icon(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.text, size: 16),
-          label: const Text(
-            'Kembali',
-            style: TextStyle(
-              fontFamily: 'Montserrat',
-              color: AppColors.text,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          label: const Text('Kembali', style: TextStyle(fontFamily: 'Montserrat', color: AppColors.text, fontWeight: FontWeight.w700)),
         ),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16.0),
             child: Center(
-              child: Text(
-                'Keranjang Saya',
-                style: TextStyle(
-                  fontFamily: 'Montserrat',
-                  color: AppColors.text,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: Text('Keranjang Saya', style: TextStyle(fontFamily: 'Montserrat', color: AppColors.text, fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           )
         ],
@@ -143,20 +126,27 @@ class _CartScreenState extends State<CartScreen> {
               children: [
                 Expanded(
                   child: _cartItems.isEmpty
-                      ? const Center(child: Text('Keranjang kosong'))
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey[300]),
+                              const SizedBox(height: 12),
+                              Text('Keranjang kosong', style: TextStyle(color: Colors.grey[500])),
+                            ],
+                          ),
+                        )
                       : ListView.separated(
                           padding: const EdgeInsets.all(16),
                           itemCount: _cartItems.length,
-                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          separatorBuilder: (_, __) => const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final item = _cartItems[index];
                             final product = item['products'] ?? {};
-                            
                             final categoryId = product['category_id'] as int? ?? 0;
-                            final tag = categoryId == 1 ? 'Pupuk' : (categoryId == 2 ? 'Benih' : 'Produk');
+                            final tag = categoryId == 1 ? 'Pupuk' : (categoryId == 2 ? 'Benih' : (categoryId == 3 ? 'Buah' : (categoryId == 4 ? 'Sayuran' : 'Produk')));
                             final price = (product['selling_price'] as num?)?.toInt() ?? 0;
                             final qty = item['quantity'] as int? ?? 1;
-
                             return ProductCart(
                               tag: tag,
                               title: product['product_name']?.toString() ?? 'Produk',
@@ -171,58 +161,48 @@ class _CartScreenState extends State<CartScreen> {
                           },
                         ),
                 ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: AppColors.divider)),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'TOTAL',
-                        style: AppTextStyles.subtitle,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _formatCurrency(_totalPrice),
-                        style: AppTextStyles.finalPrice,
-                      ),
-                    ],
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(top: BorderSide(color: AppColors.divider)),
                   ),
-                  SizedBox(
-                    height: 40,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6),
+                  child: SafeArea(
+                    top: false,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('TOTAL', style: AppTextStyles.subtitle),
+                            const SizedBox(height: 2),
+                            Text(_formatCurrency(_totalPrice), style: AppTextStyles.finalPrice),
+                          ],
                         ),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                      ),
-                      onPressed: () {},
-                      child: Text(
-                        'Checkout (${_cartItems.length})',
-                        style: AppTextStyles.link.copyWith(
-                          color: AppColors.background,
+                        SizedBox(
+                          height: 40,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _cartItems.isEmpty ? Colors.grey : AppColors.primary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                            ),
+                            onPressed: _cartItems.isEmpty ? null : _onCheckout,
+                            child: Text(
+                              'Checkout (${_cartItems.length})',
+                              style: AppTextStyles.link.copyWith(color: AppColors.background),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -5,7 +5,16 @@ import 'package:girantra/ui/app_text_styles.dart';
 import '../../ui/app_colors.dart';
 
 class FilterDialog extends StatefulWidget {
-  const FilterDialog({super.key});
+  final int? initialCategoryId;
+  final String? initialPriceSort;
+  final int? initialRating;
+
+  const FilterDialog({
+    super.key,
+    this.initialCategoryId,
+    this.initialPriceSort,
+    this.initialRating,
+  });
 
   @override
   State<FilterDialog> createState() => _FilterDialogState();
@@ -17,13 +26,18 @@ class _FilterDialogState extends State<FilterDialog> {
   int? _selectedRating;
 
   List<Map<String, dynamic>> _categories = [];
-  bool _isLoadingCategories = true;
 
   @override
   void initState() {
     super.initState();
+    _selectedCategoryId = widget.initialCategoryId;
+    _selectedPriceSort = widget.initialPriceSort;
+    _selectedRating = widget.initialRating;
     _fetchCategories();
   }
+  bool _isLoadingCategories = true;
+
+  // initState moved above
 
   Future<void> _fetchCategories() async {
     try {
@@ -175,10 +189,13 @@ class _FilterDialogState extends State<FilterDialog> {
                   elevation: 0,
                 ),
                 onPressed: () {
-                  // TODO: pass data back to caller via Navigator pop result
-                  Navigator.of(context).pop();
+                  Navigator.of(context).pop({
+                    'categoryId': _selectedCategoryId,
+                    'priceSort': _selectedPriceSort,
+                    'rating': _selectedRating,
+                  });
                 },
-                child: const Text('Tampilkan 30 Hasil', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                child: const Text('Terapkan Filter', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
               ),
             ),
           ],

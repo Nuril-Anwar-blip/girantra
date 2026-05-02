@@ -250,7 +250,7 @@ class ProductDetailScreen extends StatelessWidget {
                                 onTap: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (context) => const SellerScreen(),
+                                      builder: (context) => SellerScreen(sellerId: product.seller_id),
                                     ),
                                   );
                                 },
