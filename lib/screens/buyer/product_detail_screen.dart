@@ -42,7 +42,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     if (productId == null) return;
     setState(() => _isFavLoading = true);
     try {
-      final isNowFav = await _favoriteService.toggleFavorite(productId, _isFavorited);
+      final isNowFav = await _favoriteService.toggleFavorite(
+        productId,
+        _isFavorited,
+      );
       if (mounted) {
         setState(() {
           _isFavorited = isNowFav;
@@ -64,7 +67,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         elevation: 0,
         leading: TextButton.icon(
           onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.text, size: 16),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: AppColors.text,
+            size: 16,
+          ),
           label: const Text(
             'Kembali',
             style: TextStyle(
@@ -86,7 +93,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   child: SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.red,
+                    ),
                   ),
                 )
               : IconButton(
@@ -167,9 +177,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                               color: AppColors.primary,
                               child: Text(
-                                product.category_name ?? (product.category_id == 1
-                                    ? 'Pupuk'
-                                    : (product.category_id == 2 ? 'Benih' : 'Produk')),
+                                product.category_name ??
+                                    (product.category_id == 1
+                                        ? 'Pupuk'
+                                        : (product.category_id == 2
+                                              ? 'Benih'
+                                              : 'Produk')),
                                 style: const TextStyle(
                                   fontFamily: 'Montserrat',
                                   color: Colors.white,
@@ -212,7 +225,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            product.seller_address != null && product.seller_address!.isNotEmpty
+                            product.seller_address != null &&
+                                    product.seller_address!.isNotEmpty
                                 ? product.seller_address!
                                 : 'Surakarta',
                             style: const TextStyle(
@@ -341,7 +355,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           Row(
                             children: [
                               Text(
-                                product.rating > 0 ? '${product.rating}' : 'Baru',
+                                product.rating > 0
+                                    ? '${product.rating}'
+                                    : 'Baru',
                                 style: TextStyle(
                                   fontFamily: 'Montserrat',
                                   fontSize: 16,
@@ -374,17 +390,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 .eq('user_id', product.seller_id)
                                 .maybeSingle(),
                             builder: (context, snapshot) {
-                              final sellerName = snapshot.data?['full_name']?.toString() ?? 'Penjual';
-                              final sellerAddress = snapshot.data?['address']?.toString() ?? '-';
+                              final sellerName =
+                                  snapshot.data?['full_name']?.toString() ??
+                                  'Penjual';
+                              final sellerAddress =
+                                  snapshot.data?['address']?.toString() ?? '-';
                               final avatarUrl = Supabase.instance.client.storage
                                   .from('avatars')
-                                  .getPublicUrl('${product.seller_id}/profile.jpg');
+                                  .getPublicUrl(
+                                    '${product.seller_id}/profile.jpg',
+                                  );
 
                               return InkWell(
                                 onTap: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (context) => SellerScreen(sellerId: product.seller_id),
+                                      builder: (context) => SellerScreen(
+                                        sellerId: product.seller_id,
+                                      ),
                                     ),
                                   );
                                 },
@@ -396,19 +419,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         width: 48,
                                         height: 48,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            Container(
-                                              width: 48,
-                                              height: 48,
-                                              color: Colors.grey[200],
-                                              child: const Icon(Icons.person, color: Colors.grey),
-                                            ),
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Container(
+                                                  width: 48,
+                                                  height: 48,
+                                                  color: Colors.grey[200],
+                                                  child: const Icon(
+                                                    Icons.person,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             sellerName,
@@ -490,10 +518,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ),
                         ),
                         onPressed: () async {
-                          final user = Supabase.instance.client.auth.currentUser;
+                          final user =
+                              Supabase.instance.client.auth.currentUser;
                           if (user == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Harap login terlebih dahulu')),
+                              const SnackBar(
+                                content: Text('Harap login terlebih dahulu'),
+                              ),
                             );
                             return;
                           }
@@ -507,22 +538,33 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 .maybeSingle();
 
                             if (existing != null) {
-                              final currentQty = existing['quantity'] as int? ?? 0;
-                              final cartIdField = existing.containsKey('card_id') ? 'card_id' : 'cart_id';
-                              await Supabase.instance.client.from('carts').update({
-                                'quantity': currentQty + 1,
-                              }).eq(cartIdField, existing[cartIdField]);
+                              final currentQty =
+                                  existing['quantity'] as int? ?? 0;
+                              final cartIdField =
+                                  existing.containsKey('card_id')
+                                  ? 'card_id'
+                                  : 'cart_id';
+                              await Supabase.instance.client
+                                  .from('carts')
+                                  .update({'quantity': currentQty + 1})
+                                  .eq(cartIdField, existing[cartIdField]);
                             } else {
-                              await Supabase.instance.client.from('carts').insert({
-                                'buyer_id': user.id,
-                                'product_id': product.product_id,
-                                'quantity': 1,
-                              });
+                              await Supabase.instance.client
+                                  .from('carts')
+                                  .insert({
+                                    'buyer_id': user.id,
+                                    'product_id': product.product_id,
+                                    'quantity': 1,
+                                  });
                             }
-                            
+
                             if (!context.mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Berhasil ditambahkan ke keranjang')),
+                              const SnackBar(
+                                content: Text(
+                                  'Berhasil ditambahkan ke keranjang',
+                                ),
+                              ),
                             );
                             Navigator.of(context).push(
                               MaterialPageRoute(
@@ -558,7 +600,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) => CheckoutScreen(product: product),
+                              builder: (context) =>
+                                  CheckoutScreen(product: product),
                             ),
                           );
                         },
