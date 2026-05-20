@@ -3,15 +3,15 @@ import 'package:girantra/models/product_model.dart';
 import 'package:girantra/services/product_service.dart';
 import 'package:girantra/ui/app_colors.dart';
 import 'package:girantra/ui/app_text_styles.dart';
-import 'package:girantra/widgets/header_section.dart';
+import 'driver_location_screen.dart';
 import 'package:girantra/widgets/product_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'cart_screen.dart';
 import '../overlay/filter_screen.dart';
 import 'like_screen.dart';
 import '../notification/notification_screen.dart';
 import 'product_detail_screen.dart';
+import '../ai/ai_research_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   FilterResult? _activeFilter;
 
-  // Kategori dari database
+  // Categories from database
   List<Map<String, dynamic>> _categories = [];
   int? _selectedCategoryId;
 
@@ -85,7 +85,6 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {}
   }
 
-  /// Buka dialog filter dan terapkan hasil
   Future<void> _openFilter() async {
     final result = await showDialog<FilterResult>(
       context: context,
@@ -96,34 +95,24 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  /// Terapkan filter + sort ke list produk
   List<ProductModel> _applyFilter(List<ProductModel> all) {
     var list = List<ProductModel>.from(all);
-
-    // Filter pencarian nama
     if (_searchQuery.isNotEmpty) {
       list = list.where((p) => p.product_name.toLowerCase().contains(_searchQuery)).toList();
     }
-
-    // Filter kategori shortcut (prioritas lebih tinggi dari filter dialog)
     if (_selectedCategoryId != null) {
       list = list.where((p) => p.category_id == _selectedCategoryId).toList();
     } else if (_activeFilter?.categoryId != null) {
       list = list.where((p) => p.category_id == _activeFilter!.categoryId).toList();
     }
-
-    // Filter rating minimum
     if (_activeFilter?.minRating != null) {
       list = list.where((p) => p.rating >= _activeFilter!.minRating!).toList();
     }
-
-    // Sort harga
     if (_activeFilter?.priceSort == 'Termurah') {
       list.sort((a, b) => a.selling_price.compareTo(b.selling_price));
     } else if (_activeFilter?.priceSort == 'Termahal') {
       list.sort((a, b) => b.selling_price.compareTo(a.selling_price));
     }
-
     return list;
   }
 
@@ -131,14 +120,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: LocationHeaderAppBar(
-        title: 'Location',
+      appBar: AppBar(
+        title: const Text('Lokasi'),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.black87),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const NotificationScreen()),
+                MaterialPageRoute(builder: (_) => const NotificationScreen()),
               );
             },
           ),
@@ -146,12 +137,21 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.text),
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const CartScreen()),
+                MaterialPageRoute(builder: (_) => const CartScreen()),
               );
             },
           ),
           const SizedBox(width: 8),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF1D9E75),
+        child: const Icon(Icons.location_on, color: Colors.white),
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const DriverLocationScreen()),
+          );
+        },
       ),
       body: RefreshIndicator(
         color: AppColors.primary,
@@ -159,17 +159,66 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Banner
-            Container(
-              height: 120,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(5),
-                color: Colors.white,
-                image: const DecorationImage(
-                  fit: BoxFit.cover,
-                  image: NetworkImage(
-                    'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=60',
+            // Premium AI Banner
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AiResearchScreen()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2E7D32), Color(0xFF1D9E75)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF1D9E75).withOpacity(0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.smart_toy_outlined, color: Colors.white, size: 12),
+                                SizedBox(width: 4),
+                                Text('AI POWERED', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w700, fontFamily: 'Montserrat', letterSpacing: 0.5)),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text('Tanya Asisten AI Girantra 👋', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white, fontFamily: 'Montserrat')),
+                          const SizedBox(height: 4),
+                          Text('Cari pupuk terlaris & benih unggul termurah dengan analisis data real-time.', style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.9), fontFamily: 'Montserrat', height: 1.3)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      child: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF1D9E75), size: 20),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -180,11 +229,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: Container(
                     height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.divider),
-                    ),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.divider)),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     child: Row(
                       children: [
@@ -205,10 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         if (_searchQuery.isNotEmpty)
-                          GestureDetector(
-                            onTap: () => _searchController.clear(),
-                            child: const Icon(Icons.close, size: 16, color: AppColors.mutedText),
-                          ),
+                          GestureDetector(onTap: () => _searchController.clear(), child: const Icon(Icons.close, size: 16, color: AppColors.mutedText)),
                       ],
                     ),
                   ),
@@ -223,25 +265,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       Container(
                         width: 44,
                         height: 44,
-                        decoration: BoxDecoration(
-                          color: _activeFilter != null ? AppColors.primary : AppColors.primaryDark,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: AppColors.divider),
-                        ),
+                        decoration: BoxDecoration(color: _activeFilter != null ? AppColors.primary : AppColors.primaryDark, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.divider)),
                         child: const Icon(Icons.tune, color: Colors.white),
                       ),
                       if (_activeFilter != null)
-                        Positioned(
-                          top: -4, right: -4,
-                          child: Container(width: 12, height: 12, decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle)),
-                        ),
+                        const Positioned(top: -4, right: -4, child: CircleAvatar(radius: 6, backgroundColor: Colors.red)),
                     ],
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            // Category Shortcuts (dinamis dari database)
+            // Category shortcuts
             _categories.isEmpty
                 ? const SizedBox.shrink()
                 : SingleChildScrollView(
@@ -250,26 +285,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         Padding(
                           padding: const EdgeInsets.only(right: 8),
-                          child: _CategoryShortcut(
-                            label: 'Semua', icon: Icons.apps_outlined,
-                            isSelected: _selectedCategoryId == null,
-                            onTap: () => setState(() => _selectedCategoryId = null),
-                          ),
+                          child: _CategoryShortcut(label: 'Semua', icon: Icons.apps_outlined, isSelected: _selectedCategoryId == null, onTap: () => setState(() => _selectedCategoryId = null)),
                         ),
                         ..._categories.map((cat) {
                           final int id = cat['category_id'] as int? ?? 0;
                           final String name = cat['category_name']?.toString() ?? 'Lainnya';
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
-                            child: _CategoryShortcut(
-                              label: name, icon: _iconForCategory(name),
-                              isSelected: _selectedCategoryId == id,
-                              onTap: () => setState(() {
-                                _selectedCategoryId = _selectedCategoryId == id ? null : id;
-                              }),
-                            ),
+                            child: _CategoryShortcut(label: name, icon: _iconForCategory(name), isSelected: _selectedCategoryId == id, onTap: () => setState(() => _selectedCategoryId = _selectedCategoryId == id ? null : id)),
                           );
-                        }),
+                        }).toList(),
                       ],
                     ),
                   ),
@@ -279,18 +304,8 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text('Lihat Produk Favorit', style: AppTextStyles.h2),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const LikeScreen()),
-                    );
-                  },
-                  child: Text(
-                    'Lihat Selengkapnya >',
-                    style: AppTextStyles.link.copyWith(
-                      color: AppColors.accent, fontWeight: FontWeight.w400,
-                      decoration: TextDecoration.underline, decorationColor: AppColors.accent,
-                    ),
-                  ),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LikeScreen())),
+                  child: Text('Lihat Selengkapnya >', style: AppTextStyles.link.copyWith(color: AppColors.accent, fontWeight: FontWeight.w400, decoration: TextDecoration.underline, decorationColor: AppColors.accent)),
                 ),
               ],
             ),
@@ -299,34 +314,21 @@ class _HomeScreenState extends State<HomeScreen> {
               future: _futureProducts,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.only(top: 32),
-                    child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                  );
+                  return const Padding(padding: EdgeInsets.only(top: 32), child: Center(child: CircularProgressIndicator(color: AppColors.primary)));
                 }
-                var products = _applyFilter(snapshot.data ?? []);
-
+                final products = _applyFilter(snapshot.data ?? []);
                 if (products.isEmpty) {
                   final selectedCatName = _selectedCategoryId != null
-                      ? (_categories.firstWhere(
-                          (c) => c['category_id'] == _selectedCategoryId,
-                          orElse: () => {'category_name': 'Kategori ini'},
-                        )['category_name']?.toString() ?? 'Kategori ini')
+                      ? (_categories.firstWhere((c) => c['category_id'] == _selectedCategoryId, orElse: () => {'category_name': 'Kategori ini'})['category_name']?.toString() ?? 'Kategori ini')
                       : null;
-
                   return Padding(
                     padding: const EdgeInsets.only(top: 40),
                     child: Column(
                       children: [
-                        Icon(
-                          _selectedCategoryId != null ? Icons.inventory_2_outlined : Icons.search_off,
-                          size: 56, color: Colors.grey.shade300,
-                        ),
+                        Icon(_selectedCategoryId != null ? Icons.inventory_2_outlined : Icons.search_off, size: 56, color: Colors.grey.shade300),
                         const SizedBox(height: 12),
                         Text(
-                          _selectedCategoryId != null
-                              ? 'Produk "$selectedCatName" belum tersedia'
-                              : 'Produk "${_searchController.text}" tidak ditemukan',
+                          _selectedCategoryId != null ? 'Produk "$selectedCatName" belum tersedia' : 'Produk "${_searchController.text}" tidak ditemukan',
                           style: TextStyle(fontFamily: 'Montserrat', fontSize: 13, color: Colors.grey.shade500),
                           textAlign: TextAlign.center,
                         ),
@@ -334,31 +336,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 }
-
                 return GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.55,
-                  ),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.55),
                   itemCount: products.length,
                   itemBuilder: (context, index) {
                     final product = products[index];
                     return ProductCard(
                       imageUrl: product.image_url,
-                      tag: product.category_name ?? (product.category_id == 1
-                          ? 'Pupuk' : (product.category_id == 2 ? 'Benih' : 'Produk')),
+                      tag: product.category_name ?? (product.category_id == 1 ? 'Pupuk' : (product.category_id == 2 ? 'Benih' : 'Produk')),
                       title: product.product_name,
-                      location: product.seller_address != null && product.seller_address!.isNotEmpty
-                          ? product.seller_address! : 'Surakarta',
+                      location: product.seller_address?.isNotEmpty == true ? product.seller_address! : 'Surakarta',
                       rating: product.rating > 0 ? '${product.rating}' : 'Baru',
-                      price: 'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}',
+                      price: 'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
                       unit: ' / ${product.unit.length > 1 ? product.unit.substring(0, 1).toUpperCase() + product.unit.substring(1).toLowerCase() : product.unit}',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => ProductDetailScreen(product: product)),
-                        );
-                      },
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProductDetailScreen(product: product))),
                     );
                   },
                 );
@@ -377,12 +370,7 @@ class _CategoryShortcut extends StatelessWidget {
   final VoidCallback onTap;
   final bool isSelected;
 
-  const _CategoryShortcut({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    this.isSelected = false,
-  });
+  const _CategoryShortcut({required this.label, required this.icon, required this.onTap, this.isSelected = false, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -395,26 +383,15 @@ class _CategoryShortcut extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.divider,
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: isSelected
-              ? [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 3))]
-              : [],
+          border: Border.all(color: isSelected ? AppColors.primary : AppColors.divider, width: isSelected ? 1.5 : 1),
+          boxShadow: isSelected ? [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 3))] : [],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, color: isSelected ? Colors.white : AppColors.primaryDark, size: 22),
             const SizedBox(height: 6),
-            Text(
-              label,
-              style: AppTextStyles.subtitle.copyWith(
-                color: isSelected ? Colors.white : AppColors.primaryDark,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
+            Text(label, style: AppTextStyles.subtitle.copyWith(color: isSelected ? Colors.white : AppColors.primaryDark, fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500)),
           ],
         ),
       ),
