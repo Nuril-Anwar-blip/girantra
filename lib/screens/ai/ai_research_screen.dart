@@ -295,6 +295,7 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
     );
   }
 
+  // widget
   Widget _buildChips() {
     return Container(
       color: Colors.white,
