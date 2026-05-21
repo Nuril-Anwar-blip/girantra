@@ -216,3 +216,17 @@ drop trigger if exists trg_notify_transaction_update on public.transactions;
 create trigger trg_notify_transaction_update
 after update on public.transactions
 for each row execute function public.notify_transaction_status_change();
+
+-- 10. COURIER LOCATIONS (Untuk tracking real-time)
+create table if not exists public.courier_locations (
+  location_id bigint generated always as identity primary key,
+  transaction_id bigint not null unique references public.transactions(transaction_id) on delete cascade,
+  courier_id uuid not null references public.users(user_id) on delete cascade,
+  latitude numeric not null,
+  longitude numeric not null,
+  heading numeric,
+  updated_at timestamptz not null default now()
+);
+
+-- Enable realtime for courier_locations
+alter publication supabase_realtime add table public.courier_locations;

@@ -10,8 +10,8 @@ void main() async {
   
   final supabase = Supabase.instance.client;
   try {
-    final res = await supabase.from('carts').select().limit(1);
-    print('Carts table query successful: $res');
+    final res = await supabase.from('courier_locations').select().limit(1);
+    print('courier_locations table query successful: $res');
   } catch (e) {
     print('Error: $e');
   }

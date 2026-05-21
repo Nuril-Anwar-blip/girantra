@@ -10,6 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # ai generate
+  google_generative_ai: ^0.4.7
+
   # supabase & auth
   supabase_flutter: ^2.12.0
   flutter_dotenv: ^6.0.0

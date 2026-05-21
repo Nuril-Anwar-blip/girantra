@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geocoding/geocoding.dart';
+import 'driver_location_screen.dart';
 import '../../models/product_model.dart';
 import '../../widgets/product_card.dart';
 import '../../ui/app_colors.dart';
@@ -22,6 +25,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String _fullName = '';
   String _phoneNumber = '';
   String _address = '';
+  double? _pickedLatitude;
+  double? _pickedLongitude;
   String _sellerName = 'Seller'; // Nama toko/seller
   bool _isLoadingUser = true;
   bool _isProcessing = false;
@@ -79,6 +84,48 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
     } catch (e) {
       print('Error fetching seller name: $e');
+    }
+  }
+
+  Future<void> _selectLocationFromMap() async {
+    final LatLng? result = await Navigator.of(context).push<LatLng>(
+      MaterialPageRoute(
+        builder: (_) => const DriverLocationScreen(),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _pickedLatitude = result.latitude;
+        _pickedLongitude = result.longitude;
+        _address = "Memuat alamat...";
+      });
+
+      try {
+        final placemarks = await placemarkFromCoordinates(result.latitude, result.longitude);
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          final formattedAddress = [
+            p.street,
+            p.subLocality,
+            p.locality,
+            p.subAdministrativeArea,
+            p.administrativeArea,
+            p.postalCode
+          ].where((e) => e != null && e.isNotEmpty).join(', ');
+          setState(() {
+            _address = formattedAddress;
+          });
+        } else {
+          setState(() {
+            _address = "Koordinat: ${result.latitude}, ${result.longitude}";
+          });
+        }
+      } catch (e) {
+        setState(() {
+          _address = "Koordinat: ${result.latitude}, ${result.longitude}";
+        });
+      }
     }
   }
 
@@ -188,14 +235,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       const SizedBox(height: 4),
                       _isLoadingUser 
                         ? const SizedBox.shrink()
-                        : Text(
-                            _address,
-                            style: const TextStyle(
-                              fontFamily: 'Montserrat',
-                              color: AppColors.mutedText,
-                              fontSize: 12,
-                              height: 1.4,
-                            ),
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _address,
+                                style: const TextStyle(
+                                  fontFamily: 'Montserrat',
+                                  color: AppColors.mutedText,
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              OutlinedButton.icon(
+                                onPressed: _selectLocationFromMap,
+                                icon: const Icon(Icons.map, size: 16, color: Color(0xFF358C36)),
+                                label: const Text(
+                                  'Pilih Lokasi dari Peta',
+                                  style: TextStyle(
+                                    fontFamily: 'Montserrat',
+                                    fontSize: 12,
+                                    color: Color(0xFF358C36),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Color(0xFF358C36)),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                     ],
                   ),
@@ -468,7 +541,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       'total_amount': totalPrice,
                       'shipping_address': _address,
                       'payment_status': 'pending', 
-                      // Jika schema butuh field lain, tambahkan di sini
+                      if (_pickedLatitude != null) 'latitude': _pickedLatitude,
+                      if (_pickedLongitude != null) 'longitude': _pickedLongitude,
                     }).select().single();
 
                     // Generate UUID transaction_id

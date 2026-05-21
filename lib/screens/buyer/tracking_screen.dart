@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../services/location_service.dart';
 import '../../ui/app_colors.dart';
 import '../../ui/app_text_styles.dart';
 
@@ -51,15 +53,139 @@ class _TrackingScreenState extends State<TrackingScreen> {
     return 'Rp ${amount.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
   }
 
-  // Determine which steps are active based on payment_status
+  // Determine which steps are active based on order_status and payment_status
   int _getActiveStep() {
-    final status = _transaction?['payment_status']?.toString() ?? 'pending';
+    final paymentStatus = _transaction?['payment_status']?.toString() ?? 'unpaid';
+    final orderStatus = _transaction?['order_status']?.toString() ?? 'pending';
     final completed = _transaction?['completed_date'];
 
-    if (completed != null) return 4;
-    if (status == 'paid') return 2;
-    if (status == 'pending') return 1;
+    if (completed != null || orderStatus == 'completed') return 4;
+    if (orderStatus == 'shipped') return 3;
+    if (paymentStatus == 'paid' || orderStatus == 'processing') return 2;
+    if (paymentStatus == 'pending') return 1;
     return 0;
+  }
+
+  Widget _buildLiveTrackingMap() {
+    final tLat = _transaction?['latitude'];
+    final tLng = _transaction?['longitude'];
+    if (tLat == null || tLng == null) {
+      return const SizedBox.shrink(); // No location set by buyer
+    }
+
+    final LatLng destination = LatLng(
+      double.parse(tLat.toString()),
+      double.parse(tLng.toString()),
+    );
+
+    return StreamBuilder<Map<String, dynamic>?>(
+      stream: LocationService().watchCourierLocation(widget.transactionId),
+      builder: (context, snapshot) {
+        LatLng? courierPos;
+        if (snapshot.hasData && snapshot.data != null) {
+          final lat = snapshot.data!['latitude'];
+          final lng = snapshot.data!['longitude'];
+          if (lat != null && lng != null) {
+            courierPos = LatLng(
+              double.parse(lat.toString()),
+              double.parse(lng.toString()),
+            );
+          }
+        }
+
+        final Set<Marker> markers = {
+          Marker(
+            markerId: const MarkerId('destination'),
+            position: destination,
+            infoWindow: const InfoWindow(title: 'Lokasi Pengiriman Anda'),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          ),
+        };
+
+        if (courierPos != null) {
+          markers.add(
+            Marker(
+              markerId: const MarkerId('courier'),
+              position: courierPos,
+              infoWindow: const InfoWindow(title: 'Kurir / Driver'),
+              icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+            ),
+          );
+        }
+
+        return Container(
+          height: 250,
+          margin: const EdgeInsets.only(bottom: 24),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.divider),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(11),
+            child: Stack(
+              children: [
+                GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: courierPos ?? destination,
+                    zoom: 14.5,
+                  ),
+                  markers: markers,
+                  myLocationButtonEnabled: false,
+                  zoomControlsEnabled: false,
+                ),
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: courierPos != null ? Colors.green : Colors.orange,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          courierPos != null ? 'Kurir Aktif (Real-time)' : 'Menunggu Kurir Berangkat',
+                          style: const TextStyle(
+                            fontFamily: 'Montserrat',
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.text,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -137,6 +263,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
+
+                    // Live Tracking Map
+                    _buildLiveTrackingMap(),
 
                     // Product info card
                     _buildProductCard(),

@@ -3,10 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Model untuk pesan chat
-// ─────────────────────────────────────────────────────────────────────────────
-
 class ChatMessage {
   final String role; // 'user' | 'assistant'
   final String content;
@@ -20,10 +16,6 @@ class ChatMessage {
     this.recommendations,
   });
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Model untuk rekomendasi penjual
-// ─────────────────────────────────────────────────────────────────────────────
 
 class SellerRecommendation {
   final String sellerName;
@@ -69,10 +61,6 @@ class SellerRecommendation {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Model ringkasan statistik marketplace
-// ─────────────────────────────────────────────────────────────────────────────
-
 class MarketStats {
   final int totalSellers;
   final int totalProducts;
@@ -85,15 +73,13 @@ class MarketStats {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Service utama
-// ─────────────────────────────────────────────────────────────────────────────
 
 class AiResearchService {
   final _supabase = Supabase.instance.client;
 
   // Ambil API key dari .env
-  String get _apiKey => dotenv.env['OPENAI_API_KEY'] ?? '';
+  String get _apiKey =>
+      dotenv.env['GEMINI_API_KEY'] ?? dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 
   // ── 1. Ambil statistik marketplace ───────────────────────────────────────
 
@@ -201,7 +187,7 @@ class AiResearchService {
     }
   }
 
-  // ── 3. Bangun system prompt untuk Claude ─────────────────────────────────
+  // ── 3. Bangun system prompt untuk Gemini ─────────────────────────────────
 
   String _buildSystemPrompt(List<Map<String, dynamic>> products) {
     final productJson = jsonEncode(products);
@@ -252,7 +238,7 @@ PENTING: Jawab HANYA dengan JSON valid. Tidak ada teks di luar JSON.
 ''';
   }
 
-  // ── 4. Panggil OpenAI API ─────────────────────────────────────────────────
+  // ── 4. Panggil Gemini API ─────────────────────────────────────────────────
 
   Future<
     ({String message, List<SellerRecommendation> recommendations, String tip})
@@ -262,38 +248,52 @@ PENTING: Jawab HANYA dengan JSON valid. Tidak ada teks di luar JSON.
     required List<Map<String, dynamic>> conversationHistory,
   }) async {
     if (_apiKey.isEmpty) {
-      throw Exception('OPENAI_API_KEY tidak ditemukan di file .env');
+      throw Exception('GEMINI_API_KEY tidak ditemukan di file .env');
     }
 
     // Ambil konteks produk dari Supabase
     final products = await _fetchProductsContext(userMessage);
 
-    // Susun history percakapan untuk multi-turn
-    final messages = <Map<String, dynamic>>[];
-    
-    // Tambahkan system prompt sebagai instruksi utama
-    messages.add({
-      'role': 'system',
-      'content': _buildSystemPrompt(products),
-    });
+    // Susun history percakapan untuk Gemini
+    final contents = <Map<String, dynamic>>[];
 
     for (final hist in conversationHistory) {
-      messages.add({'role': hist['role'], 'content': hist['content']});
+      final role = hist['role'] == 'assistant' ? 'model' : 'user';
+      contents.add({
+        'role': role,
+        'parts': [
+          {'text': hist['content']},
+        ],
+      });
     }
-    messages.add({'role': 'user', 'content': userMessage});
 
-    // Panggil OpenAI API
+    // Tambahkan pesan user saat ini
+    contents.add({
+      'role': 'user',
+      'parts': [
+        {'text': userMessage},
+      ],
+    });
+
+    final systemPrompt = _buildSystemPrompt(products);
+
+    // Panggil Gemini API
     final response = await http.post(
-      Uri.parse('https://api.openai.com/v1/chat/completions'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $_apiKey',
-      },
+      Uri.parse(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_apiKey',
+      ),
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'model': 'gpt-4o',
-        'max_tokens': 1500,
-        'response_format': {'type': 'json_object'},
-        'messages': messages,
+        'contents': contents,
+        'systemInstruction': {
+          'parts': [
+            {'text': systemPrompt},
+          ],
+        },
+        'generationConfig': {
+          'responseMimeType': 'application/json',
+          'temperature': 0.7,
+        },
       }),
     );
 
@@ -302,9 +302,10 @@ PENTING: Jawab HANYA dengan JSON valid. Tidak ada teks di luar JSON.
     }
 
     final data = jsonDecode(response.body);
-    final rawText = data['choices'][0]['message']['content'] as String;
+    final rawText =
+        data['candidates'][0]['content']['parts'][0]['text'] as String;
 
-    // Parse JSON dari respons Claude
+    // Parse JSON dari respons Gemini
     try {
       final parsed = jsonDecode(rawText.trim()) as Map<String, dynamic>;
       final recs = (parsed['recommendations'] as List? ?? [])
