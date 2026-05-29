@@ -3,7 +3,6 @@ import 'package:girantra/models/product_model.dart';
 import 'package:girantra/services/product_service.dart';
 import 'package:girantra/ui/app_colors.dart';
 import 'package:girantra/ui/app_text_styles.dart';
-import 'driver_location_screen.dart';
 import 'package:girantra/widgets/product_card.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'cart_screen.dart';
@@ -27,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late Future<List<ProductModel>> _futureProducts;
   String _searchQuery = '';
   FilterResult? _activeFilter;
+  String _userAddress = 'Memuat lokasi...';
 
   // Categories from database
   List<Map<String, dynamic>> _categories = [];
@@ -52,6 +52,34 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
     });
     _fetchCategories();
+    _fetchUserAddress();
+  }
+
+  Future<void> _fetchUserAddress() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user != null) {
+        final userData = await Supabase.instance.client
+            .from('users')
+            .select('address')
+            .eq('user_id', user.id)
+            .maybeSingle();
+        if (userData != null && mounted) {
+          setState(() {
+            _userAddress = userData['address'] ?? 'Alamat belum diatur';
+          });
+        }
+      } else {
+        setState(() {
+          _userAddress = 'Tamu (Alamat belum diatur)';
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching address: $e');
+      setState(() {
+        _userAddress = 'Alamat belum diatur';
+      });
+    }
   }
 
   Future<void> _fetchCategories() async {
@@ -121,9 +149,61 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Lokasi'),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        elevation: 0,
+        leadingWidth: 56,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: Image.asset(
+            'assets/images/logo_girantra.png',
+            width: 36,
+            height: 36,
+            errorBuilder: (context, error, stackTrace) => const Icon(
+              Icons.agriculture,
+              color: Color(0xFF1D9E75),
+              size: 28,
+            ),
+          ),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Location',
+              style: TextStyle(
+                fontFamily: 'Montserrat',
+                fontSize: 10,
+                color: AppColors.mutedText,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                const Icon(
+                  Icons.location_on,
+                  color: Colors.orange,
+                  size: 13,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    _userAddress,
+                    style: const TextStyle(
+                      fontFamily: 'Montserrat',
+                      fontSize: 12,
+                      color: AppColors.text,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.black87),
@@ -144,85 +224,12 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF1D9E75),
-        child: const Icon(Icons.location_on, color: Colors.white),
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const DriverLocationScreen()),
-          );
-        },
-      ),
       body: RefreshIndicator(
         color: AppColors.primary,
         onRefresh: _loadProducts,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Premium AI Banner
-            GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AiResearchScreen()),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2E7D32), Color(0xFF1D9E75)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF1D9E75).withOpacity(0.25),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.smart_toy_outlined, color: Colors.white, size: 12),
-                                SizedBox(width: 4),
-                                Text('AI POWERED', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w700, fontFamily: 'Montserrat', letterSpacing: 0.5)),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text('Tanya Asisten AI Girantra 👋', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white, fontFamily: 'Montserrat')),
-                          const SizedBox(height: 4),
-                          Text('Cari pupuk terlaris & benih unggul termurah dengan analisis data real-time.', style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.9), fontFamily: 'Montserrat', height: 1.3)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                      child: const Icon(Icons.chat_bubble_outline_rounded, color: Color(0xFF1D9E75), size: 20),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
             // Search bar + Filter
             Row(
               children: [

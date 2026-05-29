@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as http;  
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -73,14 +73,12 @@ class MarketStats {
   });
 }
 
-
 class AiResearchService {
   final _supabase = Supabase.instance.client;
 
   // Ambil API key dari .env
-  String get _apiKey =>
-      dotenv.env['GEMINI_API_KEY'] ?? dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
-
+Future<string> panggilDeepSeek(StringpromptUser) async {
+  final apiKey = .env.example['DEEPSEEK_API_KEY'] ?? '';}
   // ── 1. Ambil statistik marketplace ───────────────────────────────────────
 
   Future<MarketStats> fetchMarketStats() async {
@@ -207,6 +205,8 @@ CARA MENJAWAB:
    - Stok tersedia (bobot 15%): lebih banyak = lebih aman
    - Volume penjualan (bobot 10%): produk populer = terpercaya
 4. Berikan 1 insight/tip belanja yang actionable.
+5. Jika pertanyaan bersifat umum tentang pertanian (cara menanam, tips bertani, dll), tetap jawab dengan pengetahuanmu dan kosongkan recommendations.
+6. Selalu jawab dalam Bahasa Indonesia yang ramah dan natural.
 
 FORMAT RESPONS (WAJIB JSON VALID, tanpa markdown backtick):
 {
@@ -231,14 +231,14 @@ FORMAT RESPONS (WAJIB JSON VALID, tanpa markdown backtick):
 
 label_type harus salah satu dari: "green" (harga terbaik/murah), "blue" (rating tinggi/populer), "amber" (stok besar/cepat kirim).
 
-Jika pertanyaan tidak berkaitan dengan produk/penjual, jawab dengan format:
+Jika pertanyaan tidak berkaitan dengan produk/penjual tertentu, jawab dengan format:
 {"message": "Pesan dalam Bahasa Indonesia", "recommendations": [], "tip": ""}
 
 PENTING: Jawab HANYA dengan JSON valid. Tidak ada teks di luar JSON.
 ''';
   }
 
-  // ── 4. Panggil Gemini API ─────────────────────────────────────────────────
+  // ── 4. Panggil Gemini API via google_generative_ai package ────────────────
 
   Future<
     ({String message, List<SellerRecommendation> recommendations, String tip})
@@ -248,82 +248,73 @@ PENTING: Jawab HANYA dengan JSON valid. Tidak ada teks di luar JSON.
     required List<Map<String, dynamic>> conversationHistory,
   }) async {
     if (_apiKey.isEmpty) {
-      throw Exception('GEMINI_API_KEY tidak ditemukan di file .env');
+      throw Exception('⚠️ GEMINI_API_KEY tidak ditemukan di file .env. Pastikan Anda menambahkan variable GEMINI_API_KEY dengan nilai API key Gemini Anda.');
     }
 
-    // Ambil konteks produk dari Supabase
-    final products = await _fetchProductsContext(userMessage);
-
-    // Susun history percakapan untuk Gemini
-    final contents = <Map<String, dynamic>>[];
-
-    for (final hist in conversationHistory) {
-      final role = hist['role'] == 'assistant' ? 'model' : 'user';
-      contents.add({
-        'role': role,
-        'parts': [
-          {'text': hist['content']},
-        ],
-      });
-    }
-
-    // Tambahkan pesan user saat ini
-    contents.add({
-      'role': 'user',
-      'parts': [
-        {'text': userMessage},
-      ],
-    });
-
-    final systemPrompt = _buildSystemPrompt(products);
-
-    // Panggil Gemini API
-    final response = await http.post(
-      Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$_apiKey',
-      ),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'contents': contents,
-        'systemInstruction': {
-          'parts': [
-            {'text': systemPrompt},
-          ],
-        },
-        'generationConfig': {
-          'responseMimeType': 'application/json',
-          'temperature': 0.7,
-        },
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('API Error ${response.statusCode}: ${response.body}');
-    }
-
-    final data = jsonDecode(response.body);
-    final rawText =
-        data['candidates'][0]['content']['parts'][0]['text'] as String;
-
-    // Parse JSON dari respons Gemini
     try {
-      final parsed = jsonDecode(rawText.trim()) as Map<String, dynamic>;
-      final recs = (parsed['recommendations'] as List? ?? [])
-          .map((r) => SellerRecommendation.fromJson(r as Map<String, dynamic>))
-          .toList();
+      // Ambil konteks produk dari Supabase
+      final products = await _fetchProductsContext(userMessage);
 
-      return (
-        message: parsed['message'] as String? ?? '',
-        recommendations: recs,
-        tip: parsed['tip'] as String? ?? '',
+      // Bangun system prompt dengan data produk terbaru
+      final systemPrompt = _buildSystemPrompt(products);
+
+      // Buat model baru setiap kali agar system prompt selalu update dengan data terbaru
+      final model = _getModel(systemPrompt);
+
+      // Susun history percakapan untuk Gemini SDK
+      final history = <Content>[];
+      for (final hist in conversationHistory) {
+        final role = hist['role'] == 'assistant' ? 'model' : 'user';
+        history.add(Content(role, [TextPart(hist['content'] as String)]));
+      }
+
+      // Buat chat session dengan history
+      final chat = model.startChat(history: history);
+
+      // Kirim pesan user dan tunggu respons
+      final response = await chat.sendMessage(
+        Content.text(userMessage),
       );
-    } catch (_) {
-      // Fallback jika JSON tidak valid
-      return (
-        message: rawText,
-        recommendations: <SellerRecommendation>[],
-        tip: '',
-      );
+
+      final rawText = response.text ?? '';
+
+      // Parse JSON dari respons Gemini
+      try {
+        // Bersihkan jika ada markdown code block
+        String cleanedText = rawText.trim();
+        if (cleanedText.startsWith('```json')) {
+          cleanedText = cleanedText.substring(7);
+        }
+        if (cleanedText.startsWith('```')) {
+          cleanedText = cleanedText.substring(3);
+        }
+        if (cleanedText.endsWith('```')) {
+          cleanedText = cleanedText.substring(0, cleanedText.length - 3);
+        }
+        cleanedText = cleanedText.trim();
+
+        final parsed = jsonDecode(cleanedText) as Map<String, dynamic>;
+        final recs = (parsed['recommendations'] as List? ?? [])
+            .map((r) => SellerRecommendation.fromJson(r as Map<String, dynamic>))
+            .toList();
+
+        return (
+          message: parsed['message'] as String? ?? '',
+          recommendations: recs,
+          tip: parsed['tip'] as String? ?? '',
+        );
+      } catch (_) {
+        // Fallback jika JSON tidak valid, tampilkan teks mentah
+        return (
+          message: rawText,
+          recommendations: <SellerRecommendation>[],
+          tip: '',
+        );
+      }
+    } on GenerativeAIException catch (e) {
+      throw Exception('Gemini AI Error: ${e.message}');
+    } catch (e) {
+      throw Exception('Gagal menghubungi AI: $e');
     }
   }
 }

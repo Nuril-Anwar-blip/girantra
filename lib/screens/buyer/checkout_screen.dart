@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geocoding/geocoding.dart';
-import 'driver_location_screen.dart';
 import '../../models/product_model.dart';
 import '../../widgets/product_card.dart';
 import '../../ui/app_colors.dart';
@@ -25,6 +22,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String _fullName = '';
   String _phoneNumber = '';
   String _address = '';
+  late TextEditingController _addressController;
   double? _pickedLatitude;
   double? _pickedLongitude;
   String _sellerName = 'Seller'; // Nama toko/seller
@@ -34,6 +32,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
+    _addressController = TextEditingController();
     _fetchUserData();
     _fetchSellerName();
   }
@@ -54,7 +53,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           setState(() {
             _fullName = userData['full_name'] ?? 'Pengguna';
             _phoneNumber = userData['phone_number'] ?? 'Belum ada nomor telepon';
-            _address = userData['address'] ?? 'Belum ada alamat, silakan isi di profil Anda';
+            _address = userData['address'] ?? '';
+            _addressController.text = _address;
             _isLoadingUser = false;
           });
         } else {
@@ -87,50 +87,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  Future<void> _selectLocationFromMap() async {
-    final LatLng? result = await Navigator.of(context).push<LatLng>(
-      MaterialPageRoute(
-        builder: (_) => const DriverLocationScreen(),
-      ),
-    );
-
-    if (result != null) {
-      setState(() {
-        _pickedLatitude = result.latitude;
-        _pickedLongitude = result.longitude;
-        _address = "Memuat alamat...";
-      });
-
-      try {
-        final placemarks = await placemarkFromCoordinates(result.latitude, result.longitude);
-        if (placemarks.isNotEmpty) {
-          final p = placemarks.first;
-          final formattedAddress = [
-            p.street,
-            p.subLocality,
-            p.locality,
-            p.subAdministrativeArea,
-            p.administrativeArea,
-            p.postalCode
-          ].where((e) => e != null && e.isNotEmpty).join(', ');
-          setState(() {
-            _address = formattedAddress;
-          });
-        } else {
-          setState(() {
-            _address = "Koordinat: ${result.latitude}, ${result.longitude}";
-          });
-        }
-      } catch (e) {
-        setState(() {
-          _address = "Koordinat: ${result.latitude}, ${result.longitude}";
-        });
-      }
-    }
-  }
-
   @override
   void dispose() {
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -232,41 +191,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               ],
                             ),
                           ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
                       _isLoadingUser 
                         ? const SizedBox.shrink()
                         : Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                _address,
+                              TextFormField(
+                                controller: _addressController,
+                                maxLines: 3,
                                 style: const TextStyle(
                                   fontFamily: 'Montserrat',
-                                  color: AppColors.mutedText,
                                   fontSize: 12,
-                                  height: 1.4,
+                                  color: AppColors.text,
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              OutlinedButton.icon(
-                                onPressed: _selectLocationFromMap,
-                                icon: const Icon(Icons.map, size: 16, color: Color(0xFF358C36)),
-                                label: const Text(
-                                  'Pilih Lokasi dari Peta',
-                                  style: TextStyle(
+                                decoration: InputDecoration(
+                                  hintText: 'Masukkan alamat pengiriman lengkap Anda (Jalan, RT/RW, Desa/Kecamatan, Kota)...',
+                                  hintStyle: const TextStyle(
                                     fontFamily: 'Montserrat',
                                     fontSize: 12,
-                                    color: Color(0xFF358C36),
-                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.mutedText,
                                   ),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Color(0xFF358C36)),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  shape: RoundedRectangleBorder(
+                                  contentPadding: const EdgeInsets.all(12),
+                                  border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: AppColors.divider),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(6),
+                                    borderSide: const BorderSide(color: Color(0xFF358C36)),
                                   ),
                                 ),
+                                onChanged: (val) {
+                                  _address = val;
+                                },
                               ),
                             ],
                           ),
@@ -525,9 +483,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     return;
                   }
 
+                  final enteredAddress = _addressController.text.trim();
+                  if (enteredAddress.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Harap lengkapi alamat pengiriman Anda')));
+                    return;
+                  }
+
                   setState(() => _isProcessing = true);
 
                   try {
+                    // Update user's address in Supabase so it's saved for next time
+                    await Supabase.instance.client.from('users').update({
+                      'address': enteredAddress,
+                    }).eq('user_id', user.id);
+
                     // Masukkan ke tabel transactions
                     final response = await Supabase.instance.client.from('transactions').insert({
                       'transaction_code' : "TRX-"+DateTime.now().millisecondsSinceEpoch.toString(),
@@ -539,10 +508,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       'sub_total' : widget.product.selling_price*1,
                       'shipping_cost' : AppConstants.totalFee,
                       'total_amount': totalPrice,
-                      'shipping_address': _address,
+                      'shipping_address': enteredAddress,
                       'payment_status': 'pending', 
-                      if (_pickedLatitude != null) 'latitude': _pickedLatitude,
-                      if (_pickedLongitude != null) 'longitude': _pickedLongitude,
                     }).select().single();
 
                     // Generate UUID transaction_id

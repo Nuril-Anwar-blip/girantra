@@ -126,7 +126,7 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
           _ChatEntry.ai(
             message:
                 'Maaf, terjadi kesalahan: ${e.toString().replaceAll('Exception: ', '')}. '
-                'Pastikan OPENAI_API_KEY sudah diisi di file .env.',
+                'Pastikan GEMINI_API_KEY sudah diisi di file .env.',
           ),
         );
         _isLoading = false;
