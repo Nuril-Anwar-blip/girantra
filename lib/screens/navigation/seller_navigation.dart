@@ -4,6 +4,7 @@ import '../../ui/app_colors.dart';
 import '../seller/dashboard_seller_screen.dart';
 import '../seller/product_seller_screen.dart';
 import '../seller/delivery_seller_screen.dart';
+import '../ai/ai_research_screen.dart';
 import '../profile/profile_screen.dart';
 
 class SellerNavigation extends StatefulWidget {
@@ -20,6 +21,7 @@ class _SellerNavigationState extends State<SellerNavigation> {
     DashboardSellerScreen(),
     ProductSellerScreen(),
     DeliverySellerScreen(),
+    GiraAiScreen(),
     ProfileScreen(), // Reuse profile screen
   ];
 
@@ -58,6 +60,11 @@ class _SellerNavigationState extends State<SellerNavigation> {
             icon: Icon(Icons.local_shipping_outlined),
             activeIcon: Icon(Icons.local_shipping),
             label: 'Pengiriman',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.smart_toy_outlined),
+            activeIcon: Icon(Icons.smart_toy),
+            label: 'Gen AI',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
