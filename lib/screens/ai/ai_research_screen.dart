@@ -27,34 +27,34 @@ class _GiraAiScreenState extends State<GiraAiScreen> {
   // Quick prompt chips berdasarkan kategori
   final List<_QuickPrompt> _quickPrompts = [
     _QuickPrompt(
-      icon: '🥗',
-      text: 'Menu sehat minggu ini',
-      category: 'menu',
+      icon: '📈',
+      text: 'Info harga benih padi terkini',
+      category: 'general',
     ),
     _QuickPrompt(
-      icon: '🍳',
-      text: 'Resep dari sayuran segar',
-      category: 'recipe',
-    ),
-    _QuickPrompt(
-      icon: '🌿',
-      text: 'Cara menanam sayuran di rumah',
+      icon: '🐛',
+      text: 'Cara membasmi hama wereng',
       category: 'farming',
     ),
     _QuickPrompt(
-      icon: '💰',
-      text: 'Rekomendasi belanja hemat',
-      category: 'product',
-    ),
-    _QuickPrompt(
-      icon: '🥦',
-      text: 'Manfaat brokoli untuk kesehatan',
-      category: 'nutrition',
+      icon: '🌱',
+      text: 'Tips memilih bibit jagung unggul',
+      category: 'farming',
     ),
     _QuickPrompt(
       icon: '🌾',
-      text: 'Pupuk terbaik untuk padi',
+      text: 'Rekomendasi pupuk organik',
       category: 'product',
+    ),
+    _QuickPrompt(
+      icon: '💰',
+      text: 'Cari alat pertanian murah',
+      category: 'product',
+    ),
+    _QuickPrompt(
+      icon: '⏳',
+      text: 'Berapa lama masa panen tomat?',
+      category: 'farming',
     ),
   ];
 
@@ -85,11 +85,12 @@ class _GiraAiScreenState extends State<GiraAiScreen> {
         content:
             'Halo! Aku **Gira**, asisten AI Girantra 🌿\n\n'
             'Aku bisa membantu kamu dengan:\n'
-            '• 🛒 Rekomendasi produk segar terbaik\n'
-            '• 🍳 Resep masakan dari bahan yang ada\n'
-            '• 📅 Menu harian sehat untuk keluarga\n'
-            '• 🌱 Tips berkebun dan pertanian\n'
-            '• 💚 Info nutrisi dan manfaat sayuran\n\n'
+            '• 📈 Info harga benih padi terkini\n'
+            '• 🐛 Cara membasmi hama wereng\n'
+            '• 🌱 Tips memilih bibit jagung unggul\n'
+            '• 🌾 Rekomendasi pupuk organik\n'
+            '• 💰 Cari alat pertanian murah\n'
+            '• ⏳ Berapa lama masa panen toma?\n\n'
             'Mau tanya apa hari ini?',
         timestamp: DateTime.now(),
         category: 'general',

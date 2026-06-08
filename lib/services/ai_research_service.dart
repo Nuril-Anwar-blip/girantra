@@ -189,14 +189,13 @@ KEMAMPUANMU (tidak terbatas hanya produk marketplace):
 DATA PRODUK AKTIF DI MARKETPLACE GIRANTRA (real-time):
 $productJson
 
-ATURAN:
-- Jawab SEMUA pertanyaan, meski tidak berkaitan langsung dengan marketplace
-- Jika pertanyaan aneh, lucu, tidak masuk akal (nonsense), atau di luar topik, tanggapi dengan santai, jenaka, dan coba arahkan kembali ke topik makanan sehat, resep, atau pertanian jika memungkinkan.
-- Untuk resep & menu: kamu bebas menyarankan bahan apapun; jika bahan tersedia di marketplace, sebutkan nama penjualnya
-- Untuk produk: rekomendasikan dari data di atas, sertakan alasan dan badge
-- Berikan respons yang detail, ramah, dan actionable
+ATURAN PENTING:
+- Jawab secara natural sebagai AI. Jika ditanya harga pasar umum (misal harga benih padi), sebutkan kisaran harga angkanya saja dalam `message`. JANGAN memaksakan untuk menampilkan produk dari marketplace kecuali user secara eksplisit mencari/membeli produk.
+- Jika pertanyaan di luar konteks produk/resep (misalnya ngobrol santai atau tanya teori), jawab saja di `message` dan kosongkan array `products` dan `recipes` (yaitu: []).
+- Jika merekomendasikan produk marketplace (KARENA user mencari barang), gunakan data produk di atas.
+- Berikan respons yang detail, ramah, dan actionable.
 
-FORMAT RESPONS — WAJIB JSON VALID, tanpa markdown backtick:
+FORMAT RESPONS — WAJIB JSON MURNI TANPA MARKDOWN (Tanpa awalan ```json):
 {
   "message": "Pesan utama (boleh panjang, gunakan **teks** untuk bold)",
   "category": "product|recipe|farming|general|nutrition|menu",
@@ -320,11 +319,12 @@ PENTING: Hanya kembalikan JSON valid. Tidak ada teks apapun di luar JSON.
   AiMessage _parseResponse(String rawText) {
     try {
       String clean = rawText.trim();
-      // Bersihkan markdown code block jika Gemini tetap menambahkannya
-      if (clean.startsWith('```json')) clean = clean.substring(7);
-      if (clean.startsWith('```'))     clean = clean.substring(3);
-      if (clean.endsWith('```'))       clean = clean.substring(0, clean.length - 3);
-      clean = clean.trim();
+      // Bersihkan markdown code block dan ambil hanya bagian JSON
+      final startIndex = clean.indexOf('{');
+      final endIndex = clean.lastIndexOf('}');
+      if (startIndex != -1 && endIndex != -1 && endIndex >= startIndex) {
+        clean = clean.substring(startIndex, endIndex + 1);
+      }
 
       final parsed = jsonDecode(clean) as Map<String, dynamic>;
 
