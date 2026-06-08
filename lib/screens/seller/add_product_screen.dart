@@ -274,8 +274,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           _buildTextField(label: 'HARGA JUAL (Rp)', hint: 'Misal: 45.000', controller: _sellingPriceController, isNumber: true),
                           const SizedBox(height: 16),
                           // AI Recommendation (Disabled)
-                          _buildTextField(label: 'REKOMENDASI HARGA AI', hint: 'Fitur yang akan datang', controller: TextEditingController(), isEnabled: false),
-                          const SizedBox(height: 16),
+                          // _buildTextField(label: 'REKOMENDASI HARGA AI', hint: 'Fitur yang akan datang', controller: TextEditingController(), isEnabled: false),
+                          // const SizedBox(height: 16),
                           
                           // Category Dropdown
                           Text('KATEGORI', style: AppTextStyles.subtitle.copyWith(fontSize: 12, fontWeight: FontWeight.w600)),
