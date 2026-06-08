@@ -1,56 +1,61 @@
 import 'package:flutter/material.dart';
 import '../../services/ai_research_service.dart';
-import '../../widgets/seller_recommendation_card.dart';
 import '../../ui/app_colors.dart';
 
-class AiResearchScreen extends StatefulWidget {
-  const AiResearchScreen({super.key});
+// ─────────────────────────────────────────────────────────────────────────────
+// Gira AI Research Screen
+// ─────────────────────────────────────────────────────────────────────────────
+
+class GiraAiScreen extends StatefulWidget {
+  const GiraAiScreen({super.key});
 
   @override
-  State<AiResearchScreen> createState() => _AiResearchScreenState();
+  State<GiraAiScreen> createState() => _GiraAiScreenState();
 }
 
-class _AiResearchScreenState extends State<AiResearchScreen> {
-  final _service = AiResearchService();
+class _GiraAiScreenState extends State<GiraAiScreen> {
+  final _service = AiAssistantService();
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
+  final _focusNode = FocusNode();
 
-  List<_ChatEntry> _messages = [];
+  List<AiMessage> _messages = [];
   List<Map<String, dynamic>> _history = [];
   bool _isLoading = false;
-  MarketStats? _stats;
+  Map<String, dynamic> _stats = {};
 
-  final List<Map<String, dynamic>> _chips = [
-    {
-      'icon': Icons.grass,
-      'text': 'Pupuk termurah minggu ini',
-      'category': 'fertilizer',
-    },
-    {
-      'icon': Icons.star,
-      'text': 'Penjual rating tertinggi',
-      'category': 'reputation',
-    },
-    {
-      'icon': Icons.eco,
-      'text': 'Benih unggul harga terjangkau',
-      'category': 'seeds',
-    },
-    {
-      'icon': Icons.bakery_dining_sharp,
-      'text': 'Sayuran organik murah',
-      'category': 'produce',
-    },
-    {
-      'icon': Icons.bar_chart,
-      'text': 'Bandingkan harga pupuk NPK',
-      'category': 'fertilizer',
-    },
-    {
-      'icon': Icons.trending_up,
-      'text': 'Produk terlaris bulan ini',
-      'category': 'trending',
-    },
+  // Quick prompt chips berdasarkan kategori
+  final List<_QuickPrompt> _quickPrompts = [
+    _QuickPrompt(
+      icon: '🥗',
+      text: 'Menu sehat minggu ini',
+      category: 'menu',
+    ),
+    _QuickPrompt(
+      icon: '🍳',
+      text: 'Resep dari sayuran segar',
+      category: 'recipe',
+    ),
+    _QuickPrompt(
+      icon: '🌿',
+      text: 'Cara menanam sayuran di rumah',
+      category: 'farming',
+    ),
+    _QuickPrompt(
+      icon: '💰',
+      text: 'Rekomendasi belanja hemat',
+      category: 'product',
+    ),
+    _QuickPrompt(
+      icon: '🥦',
+      text: 'Manfaat brokoli untuk kesehatan',
+      category: 'nutrition',
+    ),
+    _QuickPrompt(
+      icon: '🌾',
+      text: 'Pupuk terbaik untuk padi',
+      category: 'product',
+    ),
   ];
 
   @override
@@ -64,6 +69,7 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -74,12 +80,19 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
 
   void _addWelcomeMessage() {
     _messages.add(
-      _ChatEntry.ai(
-        message:
-            'Halo! Saya asisten AI Girantra 👋\n\n'
-            'Saya bisa membantu kamu menemukan **penjual terbaik dan termurah** '
-            'berdasarkan analisis harga, rating, dan ulasan pembeli real-time.\n\n'
-            'Mau cari produk apa hari ini?',
+      AiMessage(
+        role: 'assistant',
+        content:
+            'Halo! Aku **Gira**, asisten AI Girantra 🌿\n\n'
+            'Aku bisa membantu kamu dengan:\n'
+            '• 🛒 Rekomendasi produk segar terbaik\n'
+            '• 🍳 Resep masakan dari bahan yang ada\n'
+            '• 📅 Menu harian sehat untuk keluarga\n'
+            '• 🌱 Tips berkebun dan pertanian\n'
+            '• 💚 Info nutrisi dan manfaat sayuran\n\n'
+            'Mau tanya apa hari ini?',
+        timestamp: DateTime.now(),
+        category: 'general',
       ),
     );
   }
@@ -90,7 +103,13 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
 
     _textController.clear();
     setState(() {
-      _messages.add(_ChatEntry.user(message: trimmed));
+      _messages.add(
+        AiMessage(
+          role: 'user',
+          content: trimmed,
+          timestamp: DateTime.now(),
+        ),
+      );
       _isLoading = true;
     });
     _scrollToBottom();
@@ -98,39 +117,39 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
     try {
       final result = await _service.sendMessage(
         userMessage: trimmed,
-        conversationHistory: _history,
+        history: _history,
       );
 
       // Simpan ke history untuk multi-turn
       _history.add({'role': 'user', 'content': trimmed});
-      _history.add({'role': 'assistant', 'content': result.message});
+      _history.add({'role': 'assistant', 'content': result.content});
 
-      // Batasi history agar tidak terlalu panjang (hemat token)
-      if (_history.length > 20) {
-        _history = _history.sublist(_history.length - 20);
+      // Batasi history
+      if (_history.length > 24) {
+        _history = _history.sublist(_history.length - 24);
       }
 
-      setState(() {
-        _messages.add(
-          _ChatEntry.ai(
-            message: result.message,
-            recommendations: result.recommendations,
-            tip: result.tip,
-          ),
-        );
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _messages.add(result);
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _messages.add(
-          _ChatEntry.ai(
-            message:
-                'Maaf, terjadi kesalahan: ${e.toString().replaceAll('Exception: ', '')}. '
-                'Pastikan GEMINI_API_KEY sudah diisi di file .env.',
-          ),
-        );
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _messages.add(
+            AiMessage(
+              role: 'assistant',
+              content:
+                  'Maaf, terjadi kesalahan: ${e.toString().replaceAll('Exception: ', '')}',
+              timestamp: DateTime.now(),
+              category: 'general',
+            ),
+          );
+          _isLoading = false;
+        });
+      }
     }
 
     _scrollToBottom();
@@ -141,69 +160,75 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 350),
           curve: Curves.easeOut,
         );
       }
     });
   }
 
-  String _formatStatNumber(int n) {
-    if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}k';
-    return n.toString();
+  void _clearChat() {
+    setState(() {
+      _messages.clear();
+      _history.clear();
+      _addWelcomeMessage();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F7),
+      backgroundColor: const Color(0xFFF5F7F5),
       appBar: _buildAppBar(),
       body: Column(
         children: [
           _buildStatsBar(),
-          _buildChips(),
           Expanded(child: _buildMessageList()),
           if (_isLoading) _buildTypingIndicator(),
-          _buildInputRow(),
+          _buildQuickPrompts(),
+          _buildInputBar(),
         ],
       ),
     );
   }
 
+  // ── App Bar ─────────────────────────────────────────────────────────────────
+
   AppBar _buildAppBar() {
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
-      leadingWidth: 110,
-      leading: TextButton.icon(
-        onPressed: () => Navigator.of(context).pop(),
-        icon: const Icon(
-          Icons.arrow_back_ios_new,
-          color: Color(0xFF1B1B1B),
-          size: 16,
-        ),
-        label: const Text(
-          'Kembali',
-          style: TextStyle(
-            fontFamily: 'Montserrat',
-            color: Color(0xFF1B1B1B),
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
+      automaticallyImplyLeading: false,
       title: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
-            decoration: const BoxDecoration(
-              color: Color(0xFF1D9E75),
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1D9E75), Color(0xFF2E7D32)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1D9E75).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: const Icon(
-              Icons.smart_toy_outlined,
-              color: Colors.white,
-              size: 18,
+            child: const Center(
+              child: Text(
+                'G',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -211,9 +236,9 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Asisten Riset Penjual',
+                'Gira AI',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF1B1B1B),
                   fontFamily: 'Montserrat',
@@ -231,9 +256,9 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
                   ),
                   const SizedBox(width: 4),
                   const Text(
-                    'AI Aktif',
+                    'Powered by Gemini AI',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
                       color: Color(0xFF1D9E75),
                       fontFamily: 'Montserrat',
                     ),
@@ -245,153 +270,84 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
         ],
       ),
       actions: [
-        Container(
-          margin: const EdgeInsets.only(right: 12),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEAF3DE),
-            borderRadius: BorderRadius.circular(20),
+        IconButton(
+          onPressed: _clearChat,
+          icon: const Icon(
+            Icons.refresh_rounded,
+            color: Color(0xFF7C7C7C),
+            size: 20,
           ),
-          child: const Text(
-            'AI Powered',
-            style: TextStyle(
-              fontSize: 11,
-              color: Color(0xFF3B6D11),
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Montserrat',
-            ),
-          ),
+          tooltip: 'Reset chat',
         ),
       ],
     );
   }
 
+  // ── Stats Bar ───────────────────────────────────────────────────────────────
+
   Widget _buildStatsBar() {
+    final total = _stats['totalProducts'] ?? 0;
+    final sellers = _stats['totalSellers'] ?? 0;
+    final rating = _stats['avgRating'] ?? 0.0;
+
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       child: Row(
         children: [
-          _StatCard(
-            value: _stats != null
-                ? _formatStatNumber(_stats!.totalSellers)
-                : '-',
-            label: 'Penjual aktif',
-          ),
-          const SizedBox(width: 10),
-          _StatCard(
-            value: _stats != null
-                ? _formatStatNumber(_stats!.totalProducts)
-                : '-',
-            label: 'Produk',
-          ),
-          const SizedBox(width: 10),
-          _StatCard(
-            value: _stats != null ? '${_stats!.avgRating} ⭐' : '-',
-            label: 'Avg rating',
-          ),
+          _StatChip(icon: '🛍️', label: '$total Produk'),
+          const SizedBox(width: 8),
+          _StatChip(icon: '🏪', label: '$sellers Penjual'),
+          const SizedBox(width: 8),
+          _StatChip(icon: '⭐', label: '$rating Rating'),
         ],
       ),
     );
   }
 
-  // widget
-  Widget _buildChips() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Pertanyaan cepat:',
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
-              fontFamily: 'Montserrat',
-            ),
-          ),
-          const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: _chips.map((chip) {
-                return GestureDetector(
-                  onTap: () => _sendMessage(chip['text'] as String),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                      borderRadius: BorderRadius.circular(20),
-                      color: Colors.white,
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          chip['icon'] as IconData,
-                          size: 16,
-                          color: const Color(0xFF1D9E75),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          chip['text'] as String,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontFamily: 'Montserrat',
-                            color: Color(0xFF1B1B1B),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // ── Message List ────────────────────────────────────────────────────────────
 
   Widget _buildMessageList() {
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: _messages.length,
       itemBuilder: (context, index) {
-        final entry = _messages[index];
-        return entry.isUser
-            ? _UserBubble(message: entry.message)
-            : _AiBubble(
-                message: entry.message,
-                recommendations: entry.recommendations,
-                tip: entry.tip,
-              );
+        final msg = _messages[index];
+        if (msg.role == 'user') {
+          return _UserBubble(message: msg);
+        }
+        return _AssistantBubble(message: msg);
       },
     );
   }
 
+  // ── Typing Indicator ────────────────────────────────────────────────────────
+
   Widget _buildTypingIndicator() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
-            decoration: const BoxDecoration(
-              color: Color(0xFF1D9E75),
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1D9E75), Color(0xFF2E7D32)],
+              ),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.smart_toy_outlined,
-              color: Colors.white,
-              size: 14,
+            child: const Center(
+              child: Text(
+                'G',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -404,7 +360,13 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
                 bottomLeft: Radius.circular(14),
                 bottomRight: Radius.circular(14),
               ),
-              border: Border.all(color: Colors.grey.withOpacity(0.15)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: const _TypingDots(),
           ),
@@ -413,62 +375,143 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
     );
   }
 
-  Widget _buildInputRow() {
+  // ── Quick Prompts ───────────────────────────────────────────────────────────
+
+  Widget _buildQuickPrompts() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 16),
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 8, 0, 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: _quickPrompts.map((p) {
+            return GestureDetector(
+              onTap: () => _sendMessage(p.text),
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FBF5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFF1D9E75).withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(p.icon, style: const TextStyle(fontSize: 14)),
+                    const SizedBox(width: 6),
+                    Text(
+                      p.text,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'Montserrat',
+                        color: Color(0xFF1B5E20),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  // ── Input Bar ───────────────────────────────────────────────────────────────
+
+  Widget _buildInputBar() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.withOpacity(0.2))),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
         child: Row(
           children: [
             Expanded(
-              child: TextField(
-                controller: _textController,
-                style: const TextStyle(fontSize: 14, fontFamily: 'Montserrat'),
-                decoration: InputDecoration(
-                  hintText: 'Tanya tentang produk atau penjual...',
-                  hintStyle: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[500],
-                    fontFamily: 'Montserrat',
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF7F7F7),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: Colors.grey.withOpacity(0.2)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: Color(0xFF1D9E75)),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F7F5),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: const Color(0xFFE0E0E0),
                   ),
                 ),
-                onSubmitted: _sendMessage,
-                textInputAction: TextInputAction.send,
+                child: TextField(
+                  controller: _textController,
+                  focusNode: _focusNode,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontFamily: 'Montserrat',
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Tanya Gira apa saja...',
+                    hintStyle: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[500],
+                      fontFamily: 'Montserrat',
+                    ),
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
+                  maxLines: 3,
+                  minLines: 1,
+                  onSubmitted: (v) {
+                    _sendMessage(v);
+                    _focusNode.requestFocus();
+                  },
+                  textInputAction: TextInputAction.send,
+                ),
               ),
             ),
             const SizedBox(width: 8),
             GestureDetector(
-              onTap: () => _sendMessage(_textController.text),
-              child: Container(
-                width: 44,
-                height: 44,
+              onTap: () {
+                _sendMessage(_textController.text);
+                _focusNode.requestFocus();
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
-                  color: _isLoading
-                      ? Colors.grey[400]
-                      : const Color(0xFF1D9E75),
+                  gradient: _isLoading
+                      ? null
+                      : const LinearGradient(
+                          colors: [Color(0xFF1D9E75), Color(0xFF2E7D32)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                  color: _isLoading ? Colors.grey[300] : null,
                   shape: BoxShape.circle,
+                  boxShadow: _isLoading
+                      ? null
+                      : [
+                          BoxShadow(
+                            color: const Color(0xFF1D9E75).withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                 ),
                 child: const Icon(
                   Icons.send_rounded,
@@ -484,28 +527,50 @@ class _AiResearchScreenState extends State<AiResearchScreen> {
   }
 }
 
-class _ChatEntry {
-  final bool isUser;
-  final String message;
-  final List<SellerRecommendation> recommendations;
-  final String tip;
+// ─────────────────────────────────────────────────────────────────────────────
+// Widgets
+// ─────────────────────────────────────────────────────────────────────────────
 
-  _ChatEntry.user({required this.message})
-    : isUser = true,
-      recommendations = const [],
-      tip = '';
+class _StatChip extends StatelessWidget {
+  final String icon;
+  final String label;
 
-  _ChatEntry.ai({
-    required this.message,
-    List<SellerRecommendation>? recommendations,
-    String? tip,
-  }) : isUser = false,
-       recommendations = recommendations ?? const [],
-       tip = tip ?? '';
+  const _StatChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FBF5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFBBDFCC)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 12)),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontFamily: 'Montserrat',
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1B5E20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
+// ── User chat bubble ──────────────────────────────────────────────────────────
+
 class _UserBubble extends StatelessWidget {
-  final String message;
+  final AiMessage message;
+
   const _UserBubble({required this.message});
 
   @override
@@ -514,22 +579,31 @@ class _UserBubble extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: const BoxDecoration(
-                color: Color(0xFF1D9E75),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(14),
-                  bottomLeft: Radius.circular(14),
-                  bottomRight: Radius.circular(14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1D9E75), Color(0xFF2E7D32)],
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
                   topRight: Radius.circular(4),
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1D9E75).withOpacity(0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Text(
-                message,
+                message.content,
                 style: const TextStyle(
                   fontSize: 14,
                   color: Colors.white,
@@ -539,10 +613,14 @@ class _UserBubble extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          CircleAvatar(
-            radius: 14,
-            backgroundColor: Colors.grey[200],
+          const SizedBox(width: 8),
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              shape: BoxShape.circle,
+            ),
             child: const Icon(
               Icons.person_outline,
               size: 16,
@@ -555,110 +633,669 @@ class _UserBubble extends StatelessWidget {
   }
 }
 
-class _AiBubble extends StatelessWidget {
-  final String message;
-  final List<SellerRecommendation> recommendations;
-  final String tip;
+// ── Assistant chat bubble ─────────────────────────────────────────────────────
 
-  const _AiBubble({
-    required this.message,
-    required this.recommendations,
-    required this.tip,
-  });
+class _AssistantBubble extends StatelessWidget {
+  final AiMessage message;
+
+  const _AssistantBubble({required this.message});
 
   @override
   Widget build(BuildContext context) {
+    final categoryColor = _getCategoryColor(message.category);
+    final categoryIcon = _getCategoryIcon(message.category);
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Avatar AI
+          // Avatar Gira
           Container(
-            width: 28,
-            height: 28,
-            decoration: const BoxDecoration(
-              color: Color(0xFF1D9E75),
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1D9E75), Color(0xFF2E7D32)],
+              ),
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1D9E75).withOpacity(0.3),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: const Icon(
-              Icons.smart_toy_outlined,
-              color: Colors.white,
-              size: 14,
+            child: const Center(
+              child: Text(
+                'G',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
 
-          // Bubble konten
+          // Bubble
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.all(13),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(14),
-                  bottomLeft: Radius.circular(14),
-                  bottomRight: Radius.circular(14),
-                  topLeft: Radius.circular(4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Category badge
+                if (message.category != null && message.category != 'general')
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: categoryColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          categoryIcon,
+                          style: const TextStyle(fontSize: 11),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _getCategoryLabel(message.category),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: categoryColor,
+                            fontFamily: 'Montserrat',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Main message bubble
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      topRight: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                      topLeft: Radius.circular(4),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Message text (parse **bold**)
+                      _RichText(text: message.content),
+
+                      // Product recommendations
+                      if (message.products.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        const _SectionDivider(label: '🛍️ Produk Tersedia'),
+                        const SizedBox(height: 8),
+                        ...message.products.map(
+                          (p) => _ProductCard(product: p),
+                        ),
+                      ],
+
+                      // Recipe suggestions
+                      if (message.recipes.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        const _SectionDivider(label: '👨‍🍳 Resep'),
+                        const SizedBox(height: 8),
+                        ...message.recipes.map(
+                          (r) => _RecipeCard(recipe: r),
+                        ),
+                      ],
+
+                      // Tip
+                      if (message.tip != null && message.tip!.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FBF5),
+                            borderRadius: BorderRadius.circular(8),
+                            border: const Border(
+                              left: BorderSide(
+                                color: Color(0xFF1D9E75),
+                                width: 3,
+                              ),
+                            ),
+                          ),
+                          child: Text(
+                            message.tip!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF1B5E20),
+                              fontFamily: 'Montserrat',
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                border: Border.all(color: Colors.grey.withOpacity(0.15)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Teks pesan utama (parse **bold**)
-                  _RichMessage(text: message),
-
-                  // Kartu rekomendasi penjual
-                  if (recommendations.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    ...recommendations.map(
-                      (rec) => SellerRecommendationCard(recommendation: rec),
-                    ),
-                  ],
-
-                  // Tip belanja
-                  if (tip.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F7F7),
-                        borderRadius: BorderRadius.circular(8),
-                        border: const Border(
-                          left: BorderSide(color: Color(0xFF1D9E75), width: 3),
-                        ),
-                      ),
-                      child: Text(
-                        tip,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[700],
-                          fontFamily: 'Montserrat',
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+
+  Color _getCategoryColor(String? cat) {
+    switch (cat) {
+      case 'recipe':
+        return Colors.orange;
+      case 'farming':
+        return Colors.green;
+      case 'nutrition':
+        return Colors.blue;
+      case 'menu':
+        return Colors.purple;
+      case 'product':
+        return const Color(0xFF1D9E75);
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getCategoryIcon(String? cat) {
+    switch (cat) {
+      case 'recipe':
+        return '🍳';
+      case 'farming':
+        return '🌱';
+      case 'nutrition':
+        return '💚';
+      case 'menu':
+        return '📅';
+      case 'product':
+        return '🛒';
+      default:
+        return '💬';
+    }
+  }
+
+  String _getCategoryLabel(String? cat) {
+    switch (cat) {
+      case 'recipe':
+        return 'Resep';
+      case 'farming':
+        return 'Pertanian';
+      case 'nutrition':
+        return 'Nutrisi';
+      case 'menu':
+        return 'Menu';
+      case 'product':
+        return 'Rekomendasi Produk';
+      default:
+        return 'Umum';
+    }
+  }
 }
 
-class _RichMessage extends StatelessWidget {
+// ── Section divider ────────────────────────────────────────────────────────────
+
+class _SectionDivider extends StatelessWidget {
+  final String label;
+
+  const _SectionDivider({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1B1B1B),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Container(height: 1, color: const Color(0xFFE9E9E9)),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Product card ───────────────────────────────────────────────────────────────
+
+class _ProductCard extends StatelessWidget {
+  final ProductSuggestion product;
+
+  const _ProductCard({required this.product});
+
+  String _formatPrice(double price) {
+    return 'Rp ${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F7F7),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE9E9E9)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Product image
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: product.imageUrl.isNotEmpty
+                ? Image.network(
+                    product.imageUrl,
+                    width: 56,
+                    height: 56,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 56,
+                      height: 56,
+                      color: Colors.grey[200],
+                      child: const Icon(
+                        Icons.image_outlined,
+                        color: Colors.grey,
+                        size: 24,
+                      ),
+                    ),
+                  )
+                : Container(
+                    width: 56,
+                    height: 56,
+                    color: Colors.grey[200],
+                    child: const Icon(
+                      Icons.image_outlined,
+                      color: Colors.grey,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Badge
+                if (product.badge != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _badgeColor(product.badge!).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      product.badge!,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: _badgeColor(product.badge!),
+                        fontFamily: 'Montserrat',
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                Text(
+                  product.productName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontFamily: 'Montserrat',
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1B1B1B),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.store_outlined,
+                      size: 11,
+                      color: Color(0xFF7C7C7C),
+                    ),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      child: Text(
+                        product.sellerName,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF7C7C7C),
+                          fontFamily: 'Montserrat',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${_formatPrice(product.price)}/${product.unit}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF1D9E75),
+                        fontFamily: 'Montserrat',
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.star,
+                          size: 11,
+                          color: Color(0xFFFF9800),
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${product.rating}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF7C7C7C),
+                            fontFamily: 'Montserrat',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                // Reason
+                if (product.reason.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '💡 ${product.reason}',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF5A8A5A),
+                      fontFamily: 'Montserrat',
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _badgeColor(String badge) {
+    if (badge.contains('Termurah')) return Colors.blue;
+    if (badge.contains('Terlaris')) return Colors.orange;
+    if (badge.contains('Rating')) return const Color(0xFFFF9800);
+    return const Color(0xFF1D9E75);
+  }
+}
+
+// ── Recipe card ────────────────────────────────────────────────────────────────
+
+class _RecipeCard extends StatefulWidget {
+  final RecipeSuggestion recipe;
+
+  const _RecipeCard({required this.recipe});
+
+  @override
+  State<_RecipeCard> createState() => _RecipeCardState();
+}
+
+class _RecipeCardState extends State<_RecipeCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBF0),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFFE0A0)),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(
+                      child: Text('🍳', style: TextStyle(fontSize: 22)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.recipe.name,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontFamily: 'Montserrat',
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1B1B1B),
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            _RecipeBadge(
+                              icon: '⏱️',
+                              text: widget.recipe.cookingTime,
+                            ),
+                            const SizedBox(width: 6),
+                            _RecipeBadge(
+                              icon: '📊',
+                              text: widget.recipe.difficulty,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    _isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: Colors.orange,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isExpanded) ...[
+            const Divider(height: 1, color: Color(0xFFFFE0A0)),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.recipe.description,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF7C7C7C),
+                      fontFamily: 'Montserrat',
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    '🥬 Bahan-bahan:',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'Montserrat',
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1B1B1B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ...widget.recipe.ingredients.map(
+                    (ing) => Padding(
+                      padding: const EdgeInsets.only(bottom: 2),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '• ',
+                            style: TextStyle(color: Colors.orange),
+                          ),
+                          Expanded(
+                            child: Text(
+                              ing,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'Montserrat',
+                                color: Color(0xFF1B1B1B),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    '👨‍🍳 Cara Masak:',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontFamily: 'Montserrat',
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1B1B1B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  ...widget.recipe.steps.asMap().entries.map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            margin: const EdgeInsets.only(right: 8, top: 1),
+                            decoration: const BoxDecoration(
+                              color: Colors.orange,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${entry.key + 1}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              entry.value,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'Montserrat',
+                                color: Color(0xFF1B1B1B),
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RecipeBadge extends StatelessWidget {
+  final String icon;
   final String text;
-  const _RichMessage({required this.text});
+
+  const _RecipeBadge({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        '$icon $text',
+        style: const TextStyle(
+          fontSize: 10,
+          fontFamily: 'Montserrat',
+          color: Colors.orange,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Rich text (parse **bold**) ─────────────────────────────────────────────────
+
+class _RichText extends StatelessWidget {
+  final String text;
+
+  const _RichText({required this.text});
 
   List<TextSpan> _parse(String raw) {
     final spans = <TextSpan>[];
     final regex = RegExp(r'\*\*(.*?)\*\*');
     int last = 0;
-
     for (final match in regex.allMatches(raw)) {
       if (match.start > last) {
         spans.add(TextSpan(text: raw.substring(last, match.start)));
@@ -693,47 +1330,7 @@ class _RichMessage extends StatelessWidget {
   }
 }
 
-class _StatCard extends StatelessWidget {
-  final String value;
-  final String label;
-  const _StatCard({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F7F7),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                fontFamily: 'Montserrat',
-                color: Color(0xFF1B1B1B),
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFF7C7C7C),
-                fontFamily: 'Montserrat',
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// ── Typing animation ───────────────────────────────────────────────────────────
 
 class _TypingDots extends StatefulWidget {
   const _TypingDots();
@@ -779,7 +1376,7 @@ class _TypingDotsState extends State<_TypingDots>
                 width: 7,
                 height: 7,
                 decoration: BoxDecoration(
-                  color: Colors.grey[500],
+                  color: Colors.grey[400],
                   shape: BoxShape.circle,
                 ),
               ),
@@ -789,4 +1386,18 @@ class _TypingDotsState extends State<_TypingDots>
       },
     );
   }
+}
+
+// ── Quick prompt model ─────────────────────────────────────────────────────────
+
+class _QuickPrompt {
+  final String icon;
+  final String text;
+  final String category;
+
+  const _QuickPrompt({
+    required this.icon,
+    required this.text,
+    required this.category,
+  });
 }

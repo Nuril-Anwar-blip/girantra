@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../ui/app_colors.dart';
 import '../buyer/home_screen.dart';
 import '../buyer/purchase_screen.dart';
+import '../ai/ai_research_screen.dart';
 import '../profile/profile_screen.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -25,6 +26,7 @@ class _MainNavigationState extends State<MainNavigation> {
   final List<Widget> _pages = const [
     HomeScreen(),
     PurchaseScreen(),
+    GiraAiScreen(),
     ProfileScreen(),
   ];
 
@@ -36,12 +38,20 @@ class _MainNavigationState extends State<MainNavigation> {
         children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
-        // The background color contrasts with the active icon color
         backgroundColor: Colors.white,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
         currentIndex: _currentIndex,
         type: BottomNavigationBarType.fixed,
+        selectedLabelStyle: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontWeight: FontWeight.w600,
+          fontSize: 11,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: 'Montserrat',
+          fontSize: 11,
+        ),
         onTap: (index) {
           setState(() {
             _currentIndex = index;
@@ -56,7 +66,12 @@ class _MainNavigationState extends State<MainNavigation> {
           BottomNavigationBarItem(
             icon: Icon(Icons.receipt_long_outlined),
             activeIcon: Icon(Icons.receipt_long),
-            label: 'Purchase',
+            label: 'Pesanan',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.smart_toy_outlined),
+            activeIcon: Icon(Icons.smart_toy),
+            label: 'Gira AI',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
