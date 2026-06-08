@@ -68,6 +68,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override 
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Girantra',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),

@@ -182,7 +182,6 @@ class _GiraAiScreenState extends State<GiraAiScreen> {
       appBar: _buildAppBar(),
       body: Column(
         children: [
-          _buildStatsBar(),
           Expanded(child: _buildMessageList()),
           if (_isLoading) _buildTypingIndicator(),
           _buildQuickPrompts(),
@@ -205,30 +204,20 @@ class _GiraAiScreenState extends State<GiraAiScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF1D9E75), Color(0xFF2E7D32)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: Colors.white,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1D9E75).withOpacity(0.3),
-                  blurRadius: 8,
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: const Center(
-              child: Text(
-                'G',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  fontFamily: 'Montserrat',
-                ),
-              ),
+            padding: const EdgeInsets.all(6),
+            child: Image.asset(
+              'assets/images/logo_girantra.png',
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(width: 10),
@@ -283,28 +272,6 @@ class _GiraAiScreenState extends State<GiraAiScreen> {
     );
   }
 
-  // ── Stats Bar ───────────────────────────────────────────────────────────────
-
-  Widget _buildStatsBar() {
-    final total = _stats['totalProducts'] ?? 0;
-    final sellers = _stats['totalSellers'] ?? 0;
-    final rating = _stats['avgRating'] ?? 0.0;
-
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-      child: Row(
-        children: [
-          _StatChip(icon: '🛍️', label: '$total Produk'),
-          const SizedBox(width: 8),
-          _StatChip(icon: '🏪', label: '$sellers Penjual'),
-          const SizedBox(width: 8),
-          _StatChip(icon: '⭐', label: '$rating Rating'),
-        ],
-      ),
-    );
-  }
-
   // ── Message List ────────────────────────────────────────────────────────────
 
   Widget _buildMessageList() {
@@ -333,21 +300,20 @@ class _GiraAiScreenState extends State<GiraAiScreen> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF1D9E75), Color(0xFF2E7D32)],
-              ),
+              color: Colors.white,
               shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Text(
-                'G',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  fontFamily: 'Montserrat',
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
-              ),
+              ],
+            ),
+            padding: const EdgeInsets.all(5),
+            child: Image.asset(
+              'assets/images/logo_girantra.png',
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(width: 10),
@@ -655,28 +621,20 @@ class _AssistantBubble extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF1D9E75), Color(0xFF2E7D32)],
-              ),
+              color: Colors.white,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1D9E75).withOpacity(0.3),
-                  blurRadius: 6,
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: const Center(
-              child: Text(
-                'G',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  fontFamily: 'Montserrat',
-                ),
-              ),
+            padding: const EdgeInsets.all(5),
+            child: Image.asset(
+              'assets/images/logo_girantra.png',
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(width: 10),
