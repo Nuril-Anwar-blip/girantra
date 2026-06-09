@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:girantra/screens/seller/add_product_screen.dart';
 import 'package:girantra/screens/seller/product_seller_screen.dart';
+import 'package:girantra/screens/seller/withdrawal_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import '../../ui/app_colors.dart';
@@ -218,7 +219,11 @@ class _DashboardSellerScreenState extends State<DashboardSellerScreen> {
             bottom: 0,
             right: 0,
             child: GestureDetector(
-              onTap: () {},
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const WithdrawalScreen()),
+                );
+              },
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,

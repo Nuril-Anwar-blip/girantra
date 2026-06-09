@@ -45,25 +45,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkSessionAndNavigate() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastActiveStr = prefs.getString('last_active_time');
-
-    bool isTimeout = false;
-    if (lastActiveStr != null) {
-      final lastActive = DateTime.parse(lastActiveStr);
-      final difference = DateTime.now().difference(lastActive);
-      if (difference.inMinutes >= 15) {
-        isTimeout = true;
-      }
-    }
-
-    final session = Supabase.instance.client.auth.currentSession;
-
+    // Session is handled automatically by Supabase auth-persist
+    // Wait slightly more for smooth animation
     if (!mounted) return;
-
-    if (session != null && isTimeout) {
-      await Supabase.instance.client.auth.signOut();
-    }
 
     // Selalu navigasi ke AuthGate — dia yang menentukan AuthScreen atau Home
     if (mounted) {

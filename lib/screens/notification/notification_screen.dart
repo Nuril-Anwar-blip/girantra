@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:girantra/ui/app_text_styles.dart';
-
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../services/notification_service.dart';
 import '../../ui/app_colors.dart';
+import '../../ui/app_text_styles.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -11,10 +12,96 @@ class NotificationScreen extends StatefulWidget {
 }
 
 class _NotificationScreenState extends State<NotificationScreen> {
-  bool _isBannerVisible = true;
+  final _service = NotificationService();
+  List<Map<String, dynamic>> _notifications = [];
+  bool _isLoading = true;
+  RealtimeChannel? _channel;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+    _subscribeRealtime();
+  }
+
+  @override
+  void dispose() {
+    _channel?.unsubscribe();
+    super.dispose();
+  }
+
+  Future<void> _loadNotifications() async {
+    final data = await _service.getNotifications();
+    if (mounted) {
+      setState(() {
+        _notifications = data;
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _subscribeRealtime() {
+    _channel = _service.subscribeToNotifications((payload) {
+      _loadNotifications();
+    });
+  }
+
+  Future<void> _markAsRead(int notificationId, int index) async {
+    await _service.markAsRead(notificationId);
+    if (mounted) {
+      setState(() {
+        _notifications[index]['is_read'] = true;
+      });
+    }
+  }
+
+  Future<void> _markAllAsRead(String type) async {
+    await _service.markAllAsRead();
+    if (mounted) {
+      setState(() {
+        for (var n in _notifications) {
+          n['is_read'] = true;
+        }
+      });
+    }
+  }
+
+  Future<void> _deleteNotification(int notificationId) async {
+    await _service.deleteNotification(notificationId);
+    if (mounted) {
+      setState(() {
+        _notifications.removeWhere((n) => n['notification_id'] == notificationId);
+      });
+    }
+  }
+
+  String _timeAgo(String? dateStr) {
+    if (dateStr == null) return '';
+    try {
+      final date = DateTime.parse(dateStr);
+      final diff = DateTime.now().difference(date);
+      if (diff.inMinutes < 1) return 'Baru saja';
+      if (diff.inMinutes < 60) return '${diff.inMinutes} menit lalu';
+      if (diff.inHours < 24) return '${diff.inHours} jam lalu';
+      if (diff.inDays < 7) return '${diff.inDays} hari lalu';
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (_) {
+      return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Pisahkan notifikasi berdasarkan tipe
+    final orderNotifs = _notifications
+        .where((n) => n['notification_type']?.toString().toLowerCase() == 'order')
+        .toList();
+    final generalNotifs = _notifications
+        .where((n) => n['notification_type']?.toString().toLowerCase() != 'order')
+        .toList();
+    final unreadOrderCount = orderNotifs.where((n) => n['is_read'] != true).length;
+    final unreadGeneralCount = generalNotifs.where((n) => n['is_read'] != true).length;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -51,258 +138,216 @@ class _NotificationScreenState extends State<NotificationScreen> {
           )
         ],
       ),
-      body: Column(
-        children: [
-          // Yellow Banner
-          if (_isBannerVisible)
-            Container(
-              color: const Color(0xFFFFEAAC), // Yellowish banner matching mockup
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: AppColors.accent, // Orange circle
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.notifications_none, color: Colors.white, size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Aktifkan notifikasi untuk dapatkan info status pesanan dan promo eksekutif',
-                      style: TextStyle(fontSize: 12, color: Colors.black87, height: 1.3),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _isBannerVisible = false;
-                      });
-                    },
-                    child: const Icon(Icons.close, color: Colors.black54, size: 20),
-                  ),
-                ],
-              ),
-            ),
-          
-          // Cards Content
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // Order Card Structure
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          : _notifications.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.notifications_off_outlined, size: 64, color: Colors.grey.shade300),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Belum ada notifikasi',
+                        style: AppTextStyles.subtitle.copyWith(color: Colors.grey.shade500),
                       ),
                     ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                )
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  onRefresh: _loadNotifications,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Pesanan Saya',
-                            style: AppTextStyles.h2.copyWith(color: AppColors.text, fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            'Tandai Sudah Dibaca (1)',
-                            style: AppTextStyles.link.copyWith(
-                              color: AppColors.accent,
-                              fontWeight: FontWeight.w400,
-                              decoration: TextDecoration.underline,
-                              decorationColor: AppColors.accent,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Order Item 1
-                      const _OrderItem(
-                        title: 'Pupuk Kompos Organik',
-                        price: 'Rp 45.000',
-                        status: 'Pesanan Selesai',
-                        imageUrl: 'https://images.unsplash.com/photo-1620577438162-817887e14577?auto=format&fit=crop&w=100&q=60', // Mock plant image
-                      ),
-                      const SizedBox(height: 10),
-                      // Order Item 2
-                      const _OrderItem(
-                        title: 'Bibit Padi Unggul',
-                        price: 'Rp 75.000',
-                        status: 'Pesanan Selesai',
-                        imageUrl: 'https://images.unsplash.com/photo-1596724896798-17de24c9eb72?w=100&auto=format&fit=crop&q=60', // Mock plant image
-                      ),
+                      // ──── Pesanan Saya ────
+                      if (orderNotifs.isNotEmpty)
+                        _buildSection(
+                          title: 'Pesanan Saya',
+                          unreadCount: unreadOrderCount,
+                          notifications: orderNotifs,
+                          type: 'order',
+                        ),
+                      if (orderNotifs.isNotEmpty && generalNotifs.isNotEmpty)
+                        const SizedBox(height: 16),
+                      // ──── Notifikasi Umum ────
+                      if (generalNotifs.isNotEmpty)
+                        _buildSection(
+                          title: 'Notifikasi Umum',
+                          unreadCount: unreadGeneralCount,
+                          notifications: generalNotifs,
+                          type: 'general',
+                        ),
+                      // Jika semua notifikasi bertipe order dan tidak ada general
+                      if (orderNotifs.isEmpty && generalNotifs.isNotEmpty)
+                        const SizedBox.shrink(),
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                
-                // General Notifications Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Notifikasi Umum',
-                            style: AppTextStyles.h2.copyWith(color: AppColors.text, fontWeight: FontWeight.w500),
-                          ),
-                          Text(
-                            'Tandai Sudah Dibaca (2)',
-                            style: AppTextStyles.link.copyWith(
-                              color: AppColors.accent,
-                              fontWeight: FontWeight.w400,
-                              decoration: TextDecoration.underline,
-                              decorationColor: AppColors.accent,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      const _GeneralNotifItem(text: 'Akun Girantra Berhasil diaktifkan'),
-                      const Divider(height: 32, thickness: 1, color: Color(0xFFEEEEEE)),
-                      const _GeneralNotifItem(text: 'Lorem Ipsum'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
-}
 
-class _OrderItem extends StatelessWidget {
-  final String title;
-  final String price;
-  final String status;
-  final String imageUrl;
-
-  const _OrderItem({
-    required this.title,
-    required this.price,
-    required this.status,
-    required this.imageUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSection({
+    required String title,
+    required int unreadCount,
+    required List<Map<String, dynamic>> notifications,
+    required String type,
+  }) {
     return Container(
-      height: 70, // Fixed height per item
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: AppColors.primary, width: 0.4), // Green outline border
-        borderRadius: BorderRadius.circular(5),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Item Image
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(5),
-              bottomLeft: Radius.circular(5),
-            ),
-            child: Image.network(
-              imageUrl,
-              width: 70,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(width: 70, color: Colors.grey[200]),
-            ),
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(width: 12),
-          // Info Column
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 8, right: 12),
-              child: Stack(
-                children: [
-                  Column(
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: AppTextStyles.h2.copyWith(color: AppColors.text, fontWeight: FontWeight.w500, fontSize: 16),
+              ),
+              if (unreadCount > 0)
+                GestureDetector(
+                  onTap: () => _markAllAsRead(type),
+                  child: Text(
+                    'Tandai Sudah Dibaca ($unreadCount)',
+                    style: AppTextStyles.link.copyWith(
+                      color: AppColors.accent,
+                      fontWeight: FontWeight.w400,
+                      fontSize: 12,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppColors.accent,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...notifications.asMap().entries.map((entry) {
+            final notif = entry.value;
+            final globalIndex = _notifications.indexOf(notif);
+            final isRead = notif['is_read'] == true;
+            final notifId = notif['notification_id'] as int;
+
+            return Dismissible(
+              key: Key('notif_$notifId'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade400,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.delete_outline, color: Colors.white),
+              ),
+              onDismissed: (_) => _deleteNotification(notifId),
+              child: GestureDetector(
+                onTap: () {
+                  if (!isRead) _markAsRead(notifId, globalIndex);
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isRead ? Colors.white : const Color(0xFFF0FFF4),
+                    border: Border.all(
+                      color: isRead ? AppColors.divider : AppColors.primary.withOpacity(0.3),
+                      width: 0.8,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
-                        style: AppTextStyles.subtitle.copyWith(color: AppColors.text, fontWeight: FontWeight.w500),
+                      // Icon
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: type == 'order'
+                              ? AppColors.primary.withOpacity(0.1)
+                              : AppColors.accent.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          type == 'order' ? Icons.shopping_bag_outlined : Icons.notifications_none,
+                          color: type == 'order' ? AppColors.primary : AppColors.accent,
+                          size: 20,
+                        ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        price,
-                        style: AppTextStyles.subtitle.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600),
+                      const SizedBox(width: 12),
+                      // Content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    notif['title']?.toString() ?? 'Notifikasi',
+                                    style: TextStyle(
+                                      fontFamily: 'Montserrat',
+                                      fontSize: 13,
+                                      fontWeight: isRead ? FontWeight.w500 : FontWeight.w700,
+                                      color: AppColors.text,
+                                    ),
+                                  ),
+                                ),
+                                if (!isRead)
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.primary,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              notif['message']?.toString() ?? '',
+                              style: TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 12,
+                                color: AppColors.mutedText,
+                                height: 1.4,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              _timeAgo(notif['created_at']?.toString()),
+                              style: const TextStyle(
+                                fontFamily: 'Montserrat',
+                                fontSize: 11,
+                                color: AppColors.mutedText,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Text(
-                      status,
-                      style: AppTextStyles.subtitle.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500, fontSize: 12),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );
   }
 }
-
-class _GeneralNotifItem extends StatelessWidget {
-  final String text;
-
-  const _GeneralNotifItem({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: const BoxDecoration(
-            color: AppColors.accent, // Orange circle
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.notifications_none, color: Colors.white, size: 20),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Text(
-            text,
-            style: AppTextStyles.subtitle.copyWith(color: AppColors.text, fontWeight: FontWeight.w400),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
