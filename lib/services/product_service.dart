@@ -17,7 +17,7 @@ class ProductService {
       return response.map((json) => ProductModel.fromJson(json)).toList();
     } catch (e) {
       print('Error getting products: $e');
-      return [];
+      throw Exception('Gagal mengambil data produk: $e');
     }
   }
 
@@ -50,7 +50,7 @@ class ProductService {
       return response.map((json) => ProductModel.fromJson(json)).toList();
     } catch (e) {
       print('Error getting products by category: $e');
-      return [];
+      throw Exception('Gagal mengambil data produk per kategori: $e');
     }
   }
 

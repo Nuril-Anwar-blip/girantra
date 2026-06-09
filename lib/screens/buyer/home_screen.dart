@@ -23,7 +23,10 @@ class _HomeScreenState extends State<HomeScreen> {
   final _productService = ProductService();
   final _searchController = TextEditingController();
 
-  late Future<List<ProductModel>> _futureProducts;
+  List<ProductModel> _products = [];
+  bool _isLoading = true;
+  bool _hasError = false;
+  RealtimeChannel? _productsChannel;
   String _searchQuery = '';
   FilterResult? _activeFilter;
   String _userAddress = 'Memuat lokasi...';
@@ -47,7 +50,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _futureProducts = _productService.getProducts();
+    _loadProducts();
+    _subscribeToRealtime();
     _searchController.addListener(() {
       setState(() => _searchQuery = _searchController.text.trim().toLowerCase());
     });
@@ -98,19 +102,60 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _subscribeToRealtime() {
+    try {
+      _productsChannel = Supabase.instance.client
+          .channel('public:products')
+          .onPostgresChanges(
+              event: PostgresChangeEvent.all,
+              schema: 'public',
+              table: 'products',
+              callback: (payload) {
+                debugPrint('🔄 Realtime update: ${payload.eventType}');
+                _loadProducts(isSilent: true);
+              })
+          .subscribe();
+    } catch (e) {
+      debugPrint('⚠️ Realtime subscription failed (non-fatal): $e');
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
+    _productsChannel?.unsubscribe();
     super.dispose();
   }
 
-  Future<void> _loadProducts() async {
-    setState(() {
-      _futureProducts = _productService.getProducts();
-    });
+  Future<void> _loadProducts({bool isSilent = false}) async {
+    if (!isSilent && mounted) {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+    }
     try {
-      await _futureProducts;
-    } catch (_) {}
+      final data = await _productService.getProducts();
+      if (mounted) {
+        setState(() {
+          _products = data;
+          _isLoading = false;
+          _hasError = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+        });
+        if (!isSilent) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal memuat produk. Menampilkan data terakhir.')),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _openFilter() async {
@@ -317,53 +362,73 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             const SizedBox(height: 10),
-            FutureBuilder<List<ProductModel>>(
-              future: _futureProducts,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(padding: EdgeInsets.only(top: 32), child: Center(child: CircularProgressIndicator(color: AppColors.primary)));
-                }
-                final products = _applyFilter(snapshot.data ?? []);
-                if (products.isEmpty) {
-                  final selectedCatName = _selectedCategoryId != null
-                      ? (_categories.firstWhere((c) => c['category_id'] == _selectedCategoryId, orElse: () => {'category_name': 'Kategori ini'})['category_name']?.toString() ?? 'Kategori ini')
-                      : null;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 40),
-                    child: Column(
-                      children: [
-                        Icon(_selectedCategoryId != null ? Icons.inventory_2_outlined : Icons.search_off, size: 56, color: Colors.grey.shade300),
-                        const SizedBox(height: 12),
-                        Text(
-                          _selectedCategoryId != null ? 'Produk "$selectedCatName" belum tersedia' : 'Produk "${_searchController.text}" tidak ditemukan',
-                          style: TextStyle(fontFamily: 'Montserrat', fontSize: 13, color: Colors.grey.shade500),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+            if (_isLoading && _products.isEmpty)
+              const Padding(padding: EdgeInsets.only(top: 32), child: Center(child: CircularProgressIndicator(color: AppColors.primary)))
+            else if (_products.isEmpty && _hasError)
+              Padding(
+                padding: const EdgeInsets.only(top: 40),
+                child: Column(
+                  children: [
+                    const Icon(Icons.wifi_off, size: 56, color: Colors.grey),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Gagal memuat data. Periksa koneksi internet.',
+                      style: TextStyle(fontFamily: 'Montserrat', fontSize: 13, color: Colors.grey.shade500),
+                      textAlign: TextAlign.center,
                     ),
-                  );
-                }
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.55),
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return ProductCard(
-                      imageUrl: product.image_url,
-                      tag: product.category_name ?? (product.category_id == 1 ? 'Pupuk' : (product.category_id == 2 ? 'Benih' : 'Produk')),
-                      title: product.product_name,
-                      location: product.seller_address?.isNotEmpty == true ? product.seller_address! : 'Surakarta',
-                      rating: product.rating > 0 ? '${product.rating}' : 'Baru',
-                      price: 'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
-                      unit: ' / ${product.unit.length > 1 ? product.unit.substring(0, 1).toUpperCase() + product.unit.substring(1).toLowerCase() : product.unit}',
-                      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProductDetailScreen(product: product))),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => _loadProducts(),
+                      child: const Text('Coba Lagi'),
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              Builder(
+                builder: (context) {
+                  final products = _applyFilter(_products);
+                  if (products.isEmpty) {
+                    final selectedCatName = _selectedCategoryId != null
+                        ? (_categories.firstWhere((c) => c['category_id'] == _selectedCategoryId, orElse: () => {'category_name': 'Kategori ini'})['category_name']?.toString() ?? 'Kategori ini')
+                        : null;
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Column(
+                        children: [
+                          Icon(_selectedCategoryId != null ? Icons.inventory_2_outlined : Icons.search_off, size: 56, color: Colors.grey.shade300),
+                          const SizedBox(height: 12),
+                          Text(
+                            _selectedCategoryId != null ? 'Produk "$selectedCatName" belum tersedia' : 'Produk "${_searchController.text}" tidak ditemukan',
+                            style: TextStyle(fontFamily: 'Montserrat', fontSize: 13, color: Colors.grey.shade500),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     );
-                  },
-                );
-              },
-            ),
+                  }
+                  return GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 0.55),
+                    itemCount: products.length,
+                    itemBuilder: (context, index) {
+                      final product = products[index];
+                      return ProductCard(
+                        imageUrl: product.image_url,
+                        tag: product.category_name ?? (product.category_id == 1 ? 'Pupuk' : (product.category_id == 2 ? 'Benih' : 'Produk')),
+                        title: product.product_name,
+                        location: product.seller_address?.isNotEmpty == true ? product.seller_address! : 'Surakarta',
+                        rating: product.rating > 0 ? '${product.rating}' : 'Baru',
+                        price: 'Rp ${product.selling_price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
+                        unit: ' / ${product.unit.length > 1 ? product.unit.substring(0, 1).toUpperCase() + product.unit.substring(1).toLowerCase() : product.unit}',
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProductDetailScreen(product: product))),
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),

@@ -37,32 +37,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
-      _saveLastActiveTime();
-    } else if (state == AppLifecycleState.resumed) {
-      _checkTimeoutOnResume();
-    }
-  }
-
-  Future<void> _saveLastActiveTime() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('last_active_time', DateTime.now().toIso8601String());
-  }
-
-  Future<void> _checkTimeoutOnResume() async {
-    final prefs = await SharedPreferences.getInstance();
-    final lastActiveStr = prefs.getString('last_active_time');
-    if (lastActiveStr != null) {
-      final lastActive = DateTime.parse(lastActiveStr);
-      final difference = DateTime.now().difference(lastActive);
-      // Timeout 15 menit
-      if (difference.inMinutes >= 15) {
-        final session = Supabase.instance.client.auth.currentSession;
-        if (session != null) {
-          await Supabase.instance.client.auth.signOut();
-        }
-      }
-    }
+    // No longer handling custom auth timeout here.
+    // Supabase handles session persistence automatically.
   }
 
   @override 
