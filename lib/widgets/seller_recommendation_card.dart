@@ -1,9 +1,33 @@
 import 'package:flutter/material.dart';
-import '../services/ai_research_service.dart';
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Kartu rekomendasi penjual
 // ─────────────────────────────────────────────────────────────────────────────
+
+class SellerRecommendation {
+  final String sellerName;
+  final double price;
+  final String unit;
+  final String productName;
+  final String labelType;
+  final String label;
+  final String location;
+  final double rating;
+  final int stock;
+  final int score;
+
+  const SellerRecommendation({
+    required this.sellerName,
+    required this.price,
+    required this.unit,
+    required this.productName,
+    required this.labelType,
+    required this.label,
+    required this.location,
+    required this.rating,
+    required this.stock,
+    required this.score,
+  });
+}
 
 class SellerRecommendationCard extends StatelessWidget {
   final SellerRecommendation recommendation;
