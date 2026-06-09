@@ -106,9 +106,7 @@ class _PurchaseScreenState extends State<PurchaseScreen>
             }
           }
 
-          if (paymentStatus == 'pending' || paymentStatus == 'failed' || paymentStatus == 'rejected' || paymentStatus == null) {
-            _belumBayar.add(o);
-          } else if (paymentStatus == 'paid') {
+          if (paymentStatus == 'paid') {
             if (currentStatus == null || currentStatus == 'pending') {
               _belumBayar.add(o); // Menunggu seller klik Terima
             } else if (currentStatus == 'processing' || currentStatus == 'packed') {
@@ -120,7 +118,11 @@ class _PurchaseScreenState extends State<PurchaseScreen>
             } else {
               _belumBayar.add(o);
             }
+          } else {
+            // 'pending', 'unpaid', 'failed', 'rejected', null, atau status lainnya
+            _belumBayar.add(o);
           }
+
         }
 
         _isLoading  = false;
