@@ -30,37 +30,50 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    final user = await _authService.signIn(
-      _emailController.text.trim(),
-      _passwordController.text.trim(),
-    );
+    try {
+      final user = await _authService.signIn(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
 
-    String? role;
-    if (user != null) {
-      role = await _authService.getUserRole(user.id);
-    }
+      String? role;
+      if (user != null) {
+        role = await _authService.getUserRole(user.id);
+      }
 
-    setState(() {
-      _isLoading = false;
-    });
+      if (!mounted) return;
 
-    if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
 
-    if (user != null) {
-      if (role == 'seller') {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const SellerNavigation()),
-          (route) => false,
-        );
+      if (user != null) {
+        if (role == 'seller') {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const SellerNavigation()),
+            (route) => false,
+          );
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const MainNavigation()),
+            (route) => false,
+          );
+        }
       } else {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const MainNavigation()),
-          (route) => false,
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login gagal, periksa email/password.')),
         );
       }
-    } else {
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login gagal, periksa email/password.')),
+        const SnackBar(
+          content: Text('Login gagal, periksa kembali email dan password Anda.'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
